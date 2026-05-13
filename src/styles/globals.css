@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --site-nav-height: 64px;
 }
 
 @theme inline {
@@ -20,7 +21,1398 @@
 }
 
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.siteHeader {
+  height: var(--site-nav-height);
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+}
+
+.siteNav {
+  width: min(1120px, calc(100% - 32px));
+  height: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.siteLogo {
+  color: #111827;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.siteMenu {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.siteMenuLink {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.siteMenuLink:hover,
+.siteMenuLink.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+.siteMain {
+  min-height: 100vh;
+  padding-top: var(--site-nav-height);
+}
+
+.homePage {
+  min-height: calc(100vh - var(--site-nav-height));
+  padding: 64px 24px;
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    #f8fafc;
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+.homeIntro,
+.pageGrid {
+  width: min(960px, 100%);
+  margin: 0 auto;
+}
+
+.homeIntro p {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.homeIntro h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 48px;
+  line-height: 1;
+}
+
+.pageGrid {
+  margin-top: 34px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pageCard {
+  min-height: 150px;
+  padding: 22px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+}
+
+.pageCard:hover {
+  border-color: #111827;
+  transform: translateY(-2px);
+}
+
+.pageCard span {
+  display: block;
+  color: #111827;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.pageCard p {
+  margin: 12px 0 0;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+@media (max-width: 720px) {
+  .siteNav {
+    width: min(100% - 20px, 1120px);
+    gap: 10px;
+  }
+
+  .siteLogo {
+    font-size: 16px;
+  }
+
+  .siteMenu {
+    overflow-x: auto;
+  }
+
+  .siteMenuLink {
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+
+  .homePage {
+    padding: 42px 18px;
+  }
+
+  .homeIntro h1 {
+    font-size: 38px;
+  }
+
+  .pageGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rpgPage {
+  min-height: calc(100vh - var(--site-nav-height));
+  padding: 24px;
+  background: #dbeafe;
+  color: #172033;
+}
+
+.rpgShell {
+  min-height: calc(100vh - var(--site-nav-height) - 48px);
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 170px;
+  gap: 16px;
+}
+
+.rpgPanel,
+.gameArea {
+  border: 1px solid rgba(23, 32, 51, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 36px rgba(23, 32, 51, 0.12);
+}
+
+.rpgPanel {
+  padding: 16px;
+}
+
+.panelLabel {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.rpgPanel strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.mapButtons {
+  margin-top: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.mapButtons button,
+.toolBar button,
+.movePad button {
+  min-height: 38px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mapButtons button.active,
+.toolBar button.active {
+  border-color: #172033;
+  background: #172033;
+  color: #ffffff;
+}
+
+.mapButtons button.locked,
+.mapButtons button:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.gameArea {
+  min-width: 0;
+  padding: 16px;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 14px;
+}
+
+.mobileBattleHud {
+  display: none;
+}
+
+.toolBar,
+.weaponBar {
+  display: grid;
+  gap: 8px;
+}
+
+.toolBar {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.weaponBar {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.toolBar button,
+.weaponBar button {
+  min-height: 72px;
+  position: relative;
+  padding: 8px 8px 8px 38px;
+  border: 2px solid rgba(15, 23, 42, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(241, 245, 249, 0.94)),
+    #ffffff;
+  color: #334155;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  column-gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55), 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.toolBar span {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 12px;
+}
+
+.weaponBar button.active {
+  border-color: #facc15;
+  background:
+    linear-gradient(135deg, rgba(255, 251, 235, 0.96), rgba(254, 226, 226, 0.96)),
+    #991b1b;
+  color: #111827;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.28), 0 12px 24px rgba(127, 29, 29, 0.18);
+}
+
+.weaponBar button.rare {
+  border-color: rgba(37, 99, 235, 0.5);
+}
+
+.weaponBar button.epic {
+  border-color: rgba(124, 58, 237, 0.55);
+}
+
+.weaponBar button.legend {
+  border-color: rgba(217, 119, 6, 0.72);
+  background:
+    linear-gradient(135deg, rgba(255, 247, 237, 0.98), rgba(254, 243, 199, 0.94)),
+    #ffffff;
+}
+
+.weaponKey {
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.weaponMark {
+  width: 34px;
+  height: 34px;
+  grid-row: span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(15, 23, 42, 0.18);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.86), transparent 28%),
+    linear-gradient(135deg, #64748b, #111827);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.weaponName {
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  color: #111827;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weaponBar small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.mapGrid {
+  aspect-ratio: 18 / 12;
+  width: 100%;
+  max-height: calc(100vh - var(--site-nav-height) - 130px);
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  grid-template-rows: repeat(12, minmax(0, 1fr));
+  position: relative;
+  overflow: hidden;
+  border: 4px solid #172033;
+  border-radius: 8px;
+  background: #172033;
+}
+
+.tile {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  appearance: none;
+  position: relative;
+  border: 1px solid rgba(23, 32, 51, 0.12);
+  background: #8bd17f;
+  cursor: crosshair;
+}
+
+.tile.ground {
+  background:
+    radial-gradient(circle at 24% 30%, rgba(255, 255, 255, 0.24) 0 8%, transparent 9%),
+    #8bd17f;
+}
+
+.tile.water {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0 20%, transparent 21% 100%),
+    #38bdf8;
+  cursor: not-allowed;
+}
+
+.tile.blocked {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0 18%, transparent 19%),
+    #475569;
+  cursor: not-allowed;
+}
+
+.tile.resource {
+  background:
+    radial-gradient(circle at 50% 42%, #14532d 0 24%, transparent 25%),
+    radial-gradient(circle at 52% 72%, #854d0e 0 12%, transparent 13%),
+    #76bd6f;
+}
+
+.tile.inWeaponRange::after {
+  content: '';
+  position: absolute;
+  inset: 13%;
+  border: 2px solid rgba(250, 204, 21, 0.32);
+  border-radius: 8px;
+  background: rgba(250, 204, 21, 0.08);
+  pointer-events: none;
+}
+
+.tile.build {
+  background: #f8fafc;
+}
+
+.tile.wall {
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.18) 0 10%, transparent 11% 100%),
+    #94a3b8;
+}
+
+.tile.house {
+  background:
+    linear-gradient(135deg, #b91c1c 0 48%, transparent 49%),
+    linear-gradient(45deg, transparent 0 52%, #b91c1c 53%),
+    #fef3c7;
+}
+
+.tile.farm {
+  background:
+    repeating-linear-gradient(90deg, #92400e 0 12%, #b45309 12% 24%);
+}
+
+.tile.lamp {
+  background:
+    radial-gradient(circle at 50% 38%, #fde68a 0 22%, transparent 23%),
+    linear-gradient(#334155 0 100%);
+}
+
+.buildMark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  font-size: clamp(10px, 1.4vw, 18px);
+  font-weight: 900;
+}
+
+.rpgPlayer {
+  width: calc(100% / 18 * 0.54);
+  height: calc(100% / 12 * 0.64);
+  position: absolute;
+  z-index: 5;
+  border: 2px solid #7f1d1d;
+  border-radius: 45% 45% 30% 30%;
+  background:
+    radial-gradient(circle at 50% 22%, #fed7aa 0 22%, transparent 23%),
+    linear-gradient(#2563eb 0 100%);
+  box-shadow: 0 3px 0 rgba(23, 32, 51, 0.26);
+  animation: playerBob 800ms ease-in-out infinite;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: left 120ms ease, top 120ms ease;
+}
+
+.rpgPlayer.hit {
+  animation: playerHit 260ms ease-out;
+}
+
+.monster {
+  width: calc(100% / 18 * 0.86);
+  height: calc(100% / 12 * 0.86);
+  position: absolute;
+  z-index: 8;
+  border: 3px solid #111827;
+  border-radius: 42% 42% 34% 34%;
+  background: linear-gradient(#dc2626, #7f1d1d);
+  box-shadow: 0 3px 0 rgba(17, 24, 39, 0.28);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: left 120ms ease, top 120ms ease, opacity 120ms ease;
+}
+
+.monsterRange {
+  position: absolute;
+  z-index: 3;
+  border: 2px solid rgba(239, 68, 68, 0.16);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.02) 58%, transparent 64%);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.monster.hit {
+  animation: monsterHit 260ms ease-out;
+}
+
+.monsterArt {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.monsterArt::before,
+.monsterArt::after {
+  content: '';
+  position: absolute;
+  background: rgba(17, 24, 39, 0.88);
+}
+
+.monsterArt::before {
+  width: 42%;
+  height: 28%;
+  left: -16%;
+  top: 10%;
+  border-radius: 70% 30% 45% 55%;
+  transform: rotate(-26deg);
+}
+
+.monsterArt::after {
+  width: 42%;
+  height: 28%;
+  right: -16%;
+  top: 10%;
+  border-radius: 30% 70% 55% 45%;
+  transform: rotate(26deg);
+}
+
+.monsterEye {
+  width: 16%;
+  height: 16%;
+  position: absolute;
+  top: 30%;
+  z-index: 2;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: inset 0 -2px 0 rgba(17, 24, 39, 0.28);
+}
+
+.monsterEye::after {
+  content: '';
+  width: 42%;
+  height: 42%;
+  position: absolute;
+  left: 34%;
+  top: 34%;
+  border-radius: 50%;
+  background: #111827;
+}
+
+.monsterEye.left {
+  left: 26%;
+}
+
+.monsterEye.right {
+  right: 26%;
+}
+
+.monsterMouth {
+  width: 34%;
+  height: 12%;
+  position: absolute;
+  left: 33%;
+  top: 60%;
+  z-index: 2;
+  border-radius: 0 0 999px 999px;
+  background: rgba(17, 24, 39, 0.72);
+}
+
+.monster.slime {
+  border-color: #166534;
+  border-radius: 50% 50% 38% 38%;
+  background:
+    radial-gradient(circle at 42% 18%, rgba(255, 255, 255, 0.5) 0 16%, transparent 17%),
+    linear-gradient(#4ade80, #15803d);
+}
+
+.monster.wolf,
+.monster.yeti {
+  background: linear-gradient(#94a3b8, #334155);
+  border-radius: 34% 34% 44% 44%;
+}
+
+.monster.golem {
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.16) 0 10%, transparent 10% 22%, rgba(15, 23, 42, 0.16) 22% 32%, transparent 32%),
+    linear-gradient(#94a3b8, #475569);
+}
+
+.monster.drake,
+.monster.imp,
+.monster.lava,
+.monster.titan {
+  background:
+    radial-gradient(circle at 35% 32%, #ffffff 0 7%, transparent 8%),
+    radial-gradient(circle at 65% 32%, #ffffff 0 7%, transparent 8%),
+    linear-gradient(#fb923c, #b91c1c);
+}
+
+.monster.hornet {
+  border-color: #854d0e;
+  background:
+    radial-gradient(circle at 35% 32%, #ffffff 0 7%, transparent 8%),
+    radial-gradient(circle at 65% 32%, #ffffff 0 7%, transparent 8%),
+    repeating-linear-gradient(90deg, #facc15 0 18%, #111827 18% 36%);
+}
+
+.monster.shaman,
+.monster.wraith,
+.monster.shade {
+  border-color: #581c87;
+  background:
+    radial-gradient(circle at 35% 32%, #ffffff 0 7%, transparent 8%),
+    radial-gradient(circle at 65% 32%, #ffffff 0 7%, transparent 8%),
+    linear-gradient(#a855f7, #581c87);
+}
+
+.monster.lizard,
+.monster.knight {
+  border-color: #1f2937;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 35% 32%, #fef3c7 0 7%, transparent 8%),
+    radial-gradient(circle at 65% 32%, #fef3c7 0 7%, transparent 8%),
+    linear-gradient(#64748b, #1f2937);
+}
+
+.monster.crab {
+  border-color: #7f1d1d;
+  border-radius: 45%;
+  background: linear-gradient(#f87171, #b91c1c);
+}
+
+.monster.bat {
+  border-color: #312e81;
+  border-radius: 50% 50% 36% 36%;
+  background: linear-gradient(#818cf8, #312e81);
+}
+
+.monsterHp {
+  height: 5px;
+  position: absolute;
+  right: 10%;
+  bottom: -8px;
+  left: 10%;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.72);
+}
+
+.monsterName {
+  min-width: 58px;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(17, 24, 39, 0.88);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.monsterStatus {
+  min-width: 24px;
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: #facc15;
+  color: #111827;
+  font-size: 10px;
+  font-weight: 900;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.45);
+}
+
+.monsterCooldown {
+  min-width: 34px;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.86);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+  text-align: center;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.deathOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.deathDialog {
+  width: min(420px, calc(100% - 40px));
+  padding: 28px;
+  border: 1px solid rgba(248, 250, 252, 0.22);
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+}
+
+.deathDialog span {
+  display: block;
+  color: #ef4444;
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.deathDialog p {
+  margin: 14px 0 22px;
+  color: #cbd5e1;
+}
+
+.deathDialog button {
+  min-height: 44px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.clearOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.36);
+  pointer-events: none;
+}
+
+.clearDialog {
+  width: min(420px, calc(100% - 40px));
+  position: relative;
+  overflow: hidden;
+  padding: 28px;
+  border: 2px solid rgba(250, 204, 21, 0.76);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 22% 10%, rgba(250, 204, 21, 0.42), transparent 28%),
+    radial-gradient(circle at 78% 18%, rgba(34, 197, 94, 0.28), transparent 30%),
+    #ffffff;
+  color: #111827;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  animation: clearPop 1800ms ease-in-out forwards;
+}
+
+.clearDialog span {
+  display: block;
+  color: #15803d;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.clearDialog strong {
+  display: block;
+  margin-top: 10px;
+  color: #92400e;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.clearDialog p {
+  margin: 10px 0 0;
+  color: #475569;
+  font-weight: 800;
+}
+
+.clearSparkles i {
+  width: 18px;
+  height: 18px;
+  position: absolute;
+  border-radius: 50%;
+  background: #facc15;
+  box-shadow: 0 0 18px rgba(250, 204, 21, 0.9);
+  animation: sparkleJump 900ms ease-in-out infinite;
+}
+
+.clearSparkles i:nth-child(1) {
+  left: 18%;
+  top: 22%;
+}
+
+.clearSparkles i:nth-child(2) {
+  right: 16%;
+  top: 28%;
+  animation-delay: 120ms;
+}
+
+.clearSparkles i:nth-child(3) {
+  left: 50%;
+  bottom: 16%;
+  animation-delay: 240ms;
+}
+
+@keyframes clearPop {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.88) rotate(-2deg);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04) rotate(1deg);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(0.96);
+  }
+}
+
+@keyframes sparkleJump {
+  0%,
+  100% {
+    transform: translateY(0) scale(0.72);
+  }
+
+  50% {
+    transform: translateY(-10px) scale(1.12);
+  }
+}
+
+.buildModeButton {
+  border-color: rgba(20, 83, 45, 0.42) !important;
+}
+
+.attackEffect {
+  height: 8px;
+  min-width: calc(100% / 18);
+  position: absolute;
+  z-index: 12;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #f8fafc, rgba(255, 255, 255, 0));
+  box-shadow: 0 0 18px rgba(248, 250, 252, 0.9);
+  pointer-events: none;
+  transform: translateY(-50%) rotate(var(--angle));
+  transform-origin: left center;
+  animation: attackFlash 360ms ease-out forwards;
+}
+
+.attackEffect.stick,
+.attackEffect.dagger,
+.attackEffect.sword,
+.attackEffect.axe,
+.attackEffect.hammer {
+  height: 16px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(251, 191, 36, 0.95), rgba(239, 68, 68, 0));
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+}
+
+.attackEffect.spear {
+  height: 10px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #bae6fd, #0ea5e9);
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.78);
+}
+
+.attackEffect.bow,
+.attackEffect.crossbow {
+  height: 6px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #111827, #f8fafc);
+  box-shadow: 0 0 14px rgba(15, 23, 42, 0.68);
+}
+
+.attackEffect.wand {
+  height: 12px;
+  background: linear-gradient(90deg, rgba(216, 180, 254, 0), #d8b4fe, #7c3aed);
+  box-shadow: 0 0 22px rgba(124, 58, 237, 0.82);
+}
+
+.attackEffect.fireStaff {
+  height: 18px;
+  background: linear-gradient(90deg, rgba(254, 215, 170, 0), #fde68a, #f97316, #dc2626);
+  box-shadow: 0 0 26px rgba(249, 115, 22, 0.9);
+}
+
+.damagePopup {
+  position: absolute;
+  z-index: 20;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.9);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 900;
+  pointer-events: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.32);
+  transform: translate(-50%, -50%);
+  animation: damageRise 760ms ease-out forwards;
+}
+
+.damagePopup.player {
+  background: rgba(153, 27, 27, 0.94);
+}
+
+.damagePopup.burn,
+.damagePopup.fireStaff {
+  background: rgba(194, 65, 12, 0.95);
+}
+
+.damagePopup.bleed {
+  background: rgba(159, 18, 57, 0.95);
+}
+
+.damagePopup.stun,
+.damagePopup.slow {
+  background: rgba(88, 28, 135, 0.94);
+}
+
+.damagePopup.knockback,
+.damagePopup.heavyKnockback {
+  background: rgba(30, 64, 175, 0.94);
+}
+
+@keyframes attackFlash {
+  0% {
+    opacity: 0;
+    scale: 0.25 1;
+  }
+
+  28% {
+    opacity: 1;
+    scale: 1 1;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 1.08 1;
+  }
+}
+
+@keyframes damageRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -35%) scale(0.8);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -70%) scale(1.08);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -150%) scale(0.92);
+  }
+}
+
+@keyframes monsterHit {
+  0% {
+    filter: brightness(1);
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  40% {
+    filter: brightness(2.2) saturate(1.6);
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+
+  100% {
+    filter: brightness(1);
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes playerHit {
+  0% {
+    filter: brightness(1);
+  }
+
+  35% {
+    filter: brightness(2.2) saturate(1.8);
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.24);
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}
+
+.statusPanel {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.movePad {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.attackButton,
+.respawnButton {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: #991b1b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.respawnButton {
+  background: #14532d;
+}
+
+.monsterList {
+  display: grid;
+  gap: 6px;
+}
+
+.monsterList div {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 7px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.monsterList span {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #7f1d1d;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.monsterList strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monsterList em {
+  color: #64748b;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.statusText {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.mobileControls {
+  display: none;
+}
+
+.forest .tile.ground,
+.forest .tile.resource {
+  background-color: #5fa760;
+}
+
+.quarry .tile.ground {
+  background-color: #b6beca;
+}
+
+.desert .tile.ground {
+  background-color: #e9c46a;
+}
+
+.snow .tile.ground {
+  background-color: #e0f2fe;
+}
+
+.swamp .tile.ground {
+  background-color: #84a98c;
+}
+
+.harbor .tile.ground {
+  background-color: #d9b382;
+}
+
+.ember .tile.ground {
+  background-color: #c08457;
+}
+
+@keyframes playerBob {
+  0%,
+  100% {
+    transform: translate(-50%, -50%);
+  }
+
+  50% {
+    transform: translate(-50%, calc(-50% - 3px));
+  }
+}
+
+@media (max-width: 960px) {
+  .siteMain {
+    padding-bottom: 230px;
+  }
+
+  .rpgShell {
+    grid-template-columns: 1fr;
+  }
+
+  .mapButtons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mapGrid {
+    max-height: none;
+  }
+
+  .statusPanel {
+    display: none;
+  }
+
+  .mobileBattleHud {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 8px;
+    background: #ffffff;
+  }
+
+  .mobileBattleHud strong,
+  .mobileBattleHud em {
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 900;
+  }
+
+  .mobileBattleHud span {
+    min-width: 0;
+    overflow: hidden;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileControls {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2500;
+    display: grid;
+    gap: 10px;
+    padding: 10px 12px 12px;
+    border-top: 1px solid rgba(15, 23, 42, 0.16);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 -18px 32px rgba(15, 23, 42, 0.18);
+    backdrop-filter: blur(14px);
+  }
+
+  .mobileWeaponControls {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr) 76px;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mobileWeaponControls button,
+  .touchPad button,
+  .mobileAttackButton,
+  .mobileBuildButton {
+    min-height: 50px;
+    border: 0;
+    border-radius: 8px;
+    background: #172033;
+    color: #ffffff;
+    font-weight: 900;
+  }
+
+  .mobileWeaponInfo {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+    text-align: center;
+  }
+
+  .mobileWeaponInfo strong,
+  .mobileWeaponInfo span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileWeaponInfo span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .mobileCooldownBar {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #cbd5e1;
+  }
+
+  .mobileCooldownBar i {
+    height: 100%;
+    display: block;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #22c55e, #facc15);
+    transition: width 100ms linear;
+  }
+
+  .mobileActionRow {
+    display: grid;
+    grid-template-columns: 174px minmax(104px, 1fr) 96px;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .touchPad {
+    display: grid;
+    grid-template-areas:
+      ". up ."
+      "left . right"
+      ". down .";
+    grid-template-columns: repeat(3, 52px);
+    grid-template-rows: repeat(3, 48px);
+    gap: 5px;
+  }
+
+  .touchPad .up {
+    grid-area: up;
+  }
+
+  .touchPad .left {
+    grid-area: left;
+  }
+
+  .touchPad .right {
+    grid-area: right;
+  }
+
+  .touchPad .down {
+    grid-area: down;
+  }
+
+  .touchPad button {
+    min-height: 48px;
+    padding: 0;
+    font-size: 13px;
+  }
+
+  .mobileAttackButton {
+    min-height: 112px;
+    background: #991b1b;
+    font-size: 20px;
+  }
+
+  .mobileBuildButton {
+    min-height: 112px;
+    background: #475569;
+    font-size: 13px;
+  }
+
+  .mobileBuildButton.active {
+    background: #14532d;
+  }
+}
+
+@media (max-width: 640px) {
+  .rpgPage {
+    padding: 12px;
+  }
+
+  .toolBar {
+    display: none;
+  }
+
+  .weaponBar {
+    display: none;
+  }
+
+  .mapButtons {
+    grid-template-columns: 1fr;
+  }
+
+  .rpgPanel:first-child {
+    display: none;
+  }
+
+  .gameArea {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .mapGrid {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobileActionRow {
+    grid-template-columns: 156px minmax(86px, 1fr) 82px;
+    gap: 8px;
+  }
+
+  .touchPad {
+    grid-template-columns: repeat(3, 46px);
+    grid-template-rows: repeat(3, 44px);
+  }
+
+  .touchPad button {
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  .mobileAttackButton,
+  .mobileBuildButton {
+    min-height: 102px;
+  }
+
+  .mobileWeaponControls {
+    grid-template-columns: 62px minmax(0, 1fr) 62px;
+  }
 }

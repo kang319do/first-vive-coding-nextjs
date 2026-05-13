@@ -1,11 +1,13 @@
-import "@/styles/globals.css";
-import Link from "next/link";
-import { useRouter } from "next/router";
+import '@/styles/globals.css';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 const menuItems = [
-  { href: "/", label: "홈" },
-  { href: "/bounce", label: "바운스게임" },
-  { href: "/rpg", label: "RPG게임" },
+  { href: '/', label: '홈' },
+  { href: '/bounce', label: '바운스 게임' },
+  { href: '/rpg', label: 'RPG 게임' },
+  { href: '/tangtang', label: '탕탕 특공대' },
+  { href: '/pokopia', label: '포코피아' },
 ];
 
 export default function App({ Component, pageProps }) {
@@ -26,8 +28,8 @@ export default function App({ Component, pageProps }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={isActive ? "siteMenuLink active" : "siteMenuLink"}
-                  aria-current={isActive ? "page" : undefined}
+                  className={isActive ? 'siteMenuLink active' : 'siteMenuLink'}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   {item.label}
                 </Link>

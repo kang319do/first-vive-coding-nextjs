@@ -17,6 +17,11 @@ const pages = [
     description: '몰려오는 적을 피하고 자동 무기와 레벨 업 강화로 오래 버티는 생존 액션 게임',
   },
   {
+    href: '/summon3d',
+    title: '3D 소환 사냥',
+    description: '하루 10번 무기와 스킬을 뽑고 리얼한 3D 몬스터를 사냥하는 게임',
+  },
+  {
     href: '/pokopia',
     title: '포코피아 진행판',
     description: '할 일을 체크하고 포켓몬 API 정보를 보며 진행률을 확인하는 페이지',

@@ -559,10 +559,14 @@ function updateGame(game, input, canvas, delta) {
   const player = game.player;
   const moveX = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch.x;
   const moveY = (input.down ? 1 : 0) - (input.up ? 1 : 0) + input.touch.y;
-  const moveLength = Math.hypot(moveX, moveY) || 1;
+  const mouseX = input.mouse.active ? input.mouse.x : 0;
+  const mouseY = input.mouse.active ? input.mouse.y : 0;
+  const totalMoveX = moveX + mouseX;
+  const totalMoveY = moveY + mouseY;
+  const moveLength = Math.hypot(totalMoveX, totalMoveY) || 1;
 
-  player.x = clamp(player.x + (moveX / moveLength) * player.speed * delta, 24, world.width - 24);
-  player.y = clamp(player.y + (moveY / moveLength) * player.speed * delta, 24, world.height - 24);
+  player.x = clamp(player.x + (totalMoveX / moveLength) * player.speed * delta, 24, world.width - 24);
+  player.y = clamp(player.y + (totalMoveY / moveLength) * player.speed * delta, 24, world.height - 24);
   player.invincible = Math.max(0, player.invincible - delta);
   if (player.regen > 0 && player.hp > 0) {
     player.hp = Math.min(player.maxHp, player.hp + player.regen * delta);
@@ -951,6 +955,7 @@ export default function TangtangPage() {
     left: false,
     right: false,
     touch: { x: 0, y: 0 },
+    mouse: { active: false, x: 0, y: 0 },
   });
   const audioRef = useRef(null);
   const [selectedStage, setSelectedStage] = useState(0);
@@ -1029,6 +1034,36 @@ export default function TangtangPage() {
     setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
   }
 
+  function selectWeaponByOffset(offset) {
+    const currentIndex = gameRef.current.player.weaponIndex;
+    const nextIndex = (currentIndex + offset + weapons.length) % weapons.length;
+    setWeapon(nextIndex);
+  }
+
+  function isGameUiPointer(event) {
+    return Boolean(event.target.closest('button, .startOverlay, .upgradeOverlay, .mobileGameHud'));
+  }
+
+  function updateMouseMove(event) {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    if (isGameUiPointer(event)) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left - rect.width / 2;
+    const y = event.clientY - rect.top - rect.height / 2;
+    const length = Math.max(1, Math.hypot(x, y));
+    inputRef.current.mouse = {
+      active: true,
+      x: x / length,
+      y: y / length,
+    };
+  }
+
+  function stopMouseMove(event) {
+    if (event?.pointerType && event.pointerType !== 'mouse') return;
+    inputRef.current.mouse = { active: false, x: 0, y: 0 };
+  }
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
@@ -1087,6 +1122,13 @@ export default function TangtangPage() {
   const hpRatio = Math.min(100, (player.hp / player.maxHp) * 100);
   const minutes = Math.floor(hud.time / 60).toString().padStart(2, '0');
   const seconds = Math.floor(hud.time % 60).toString().padStart(2, '0');
+  const currentWeapon = weapons[player.weaponIndex];
+  const currentWeaponLevel = hud.weaponLevels[currentWeapon.id] ?? 0;
+  const currentWeaponAwakened = Boolean(hud.awakenedWeapons[currentWeapon.id]);
+  const currentCooldown = (currentWeapon.cooldown ?? 0.4) / player.fireRate;
+  const cooldownLeft = Math.max(0, player.cooldown ?? 0);
+  const cooldownRatio = Math.max(0, Math.min(100, (1 - cooldownLeft / currentCooldown) * 100));
+  const cooldownText = cooldownLeft > 0 ? `${cooldownLeft.toFixed(1)}s` : 'READY';
 
   return (
     <section className="survivorPage">
@@ -1167,6 +1209,14 @@ export default function TangtangPage() {
             <i className="xpTrack"><b style={{ width: `${xpRatio}%` }} /></i>
           </div>
 
+          <div className="barBlock cooldownBlock">
+            <div>
+              <span>WEAPON CD</span>
+              <em>{cooldownText}</em>
+            </div>
+            <i className="cooldownTrack"><b style={{ width: `${cooldownRatio}%` }} /></i>
+          </div>
+
           <div className="buildStats">
             <div>
               <span>CRIT</span>
@@ -1204,8 +1254,30 @@ export default function TangtangPage() {
           </div>
         </aside>
 
-        <div className="arenaWrap">
+        <div
+          className="arenaWrap"
+          onPointerDown={(event) => {
+            if (event.pointerType === 'mouse' && !isGameUiPointer(event)) {
+              event.currentTarget.setPointerCapture(event.pointerId);
+              getAudioContext();
+              updateMouseMove(event);
+            }
+          }}
+          onPointerMove={(event) => {
+            if (inputRef.current.mouse.active) {
+              updateMouseMove(event);
+            }
+          }}
+          onPointerUp={stopMouseMove}
+          onPointerCancel={stopMouseMove}
+          onPointerLeave={stopMouseMove}
+        >
           <canvas ref={canvasRef} className="arenaCanvas" />
+          <div className="mobileGameHud">
+            <span>{stage.name}</span>
+            <strong>{minutes}:{seconds}</strong>
+            <em>HP {Math.ceil(player.hp)}</em>
+          </div>
           {!hud.running && !hud.over && (
             <div className="startOverlay">
               <strong>{stages[selectedStage].name} 진입</strong>
@@ -1256,6 +1328,20 @@ export default function TangtangPage() {
         }}
       >
         <span />
+      </div>
+
+      <div className="mobileWeaponPad" aria-label="무기 변경">
+        <button type="button" onClick={() => selectWeaponByOffset(-1)} aria-label="이전 무기">
+          ‹
+        </button>
+        <div>
+          <strong>{currentWeapon.displayName ?? currentWeapon.name}</strong>
+          <span>{currentWeaponAwakened ? 'AWAKEN' : `LV ${currentWeaponLevel}/5`} · {cooldownText}</span>
+          <i className="mobileCooldown"><b style={{ width: `${cooldownRatio}%` }} /></i>
+        </div>
+        <button type="button" onClick={() => selectWeaponByOffset(1)} aria-label="다음 무기">
+          ›
+        </button>
       </div>
 
       <style jsx>{`
@@ -1429,7 +1515,8 @@ export default function TangtangPage() {
         }
 
         .hpTrack,
-        .xpTrack {
+        .xpTrack,
+        .cooldownTrack {
           height: 10px;
           display: block;
           overflow: hidden;
@@ -1439,7 +1526,8 @@ export default function TangtangPage() {
         }
 
         .hpTrack b,
-        .xpTrack b {
+        .xpTrack b,
+        .cooldownTrack b {
           height: 100%;
           display: block;
           border-radius: inherit;
@@ -1451,6 +1539,11 @@ export default function TangtangPage() {
 
         .xpTrack b {
           background: linear-gradient(90deg, #38bdf8, #22c55e);
+        }
+
+        .cooldownTrack b {
+          background: linear-gradient(90deg, #facc15, #fb923c);
+          transition: width 80ms linear;
         }
 
         .weaponList {
@@ -1527,12 +1620,16 @@ export default function TangtangPage() {
           border-radius: 8px;
           background: #101827;
           box-shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+          cursor: crosshair;
+          user-select: none;
+          touch-action: none;
         }
 
         .arenaCanvas {
           width: 100%;
           height: 100%;
           display: block;
+          pointer-events: none;
         }
 
         .startOverlay,
@@ -1598,6 +1695,11 @@ export default function TangtangPage() {
           display: none;
         }
 
+        .mobileWeaponPad,
+        .mobileGameHud {
+          display: none;
+        }
+
         @media (max-width: 1040px) {
           .survivorLayout {
             grid-template-columns: 1fr;
@@ -1621,24 +1723,98 @@ export default function TangtangPage() {
 
         @media (max-width: 640px) {
           .survivorPage {
-            padding: 12px;
+            height: calc(100svh - var(--site-nav-height));
+            min-height: 0;
+            overflow: hidden;
+            padding: 8px;
           }
 
-          .survivorTop h1 {
-            font-size: 28px;
+          .survivorTop {
+            display: none;
           }
 
           .survivorPanel {
-            grid-template-columns: 1fr;
+            display: none;
           }
 
-          .weaponList,
-          .mapList {
-            grid-template-columns: 1fr;
+          .survivorLayout {
+            width: 100%;
+            height: 100%;
+            display: block;
+            margin: 0;
+          }
+
+          .arenaWrap {
+            width: 100%;
+            height: calc(100svh - var(--site-nav-height) - 16px);
+            min-height: 0;
+            border-radius: 8px;
+          }
+
+          .mobileGameHud {
+            min-height: 38px;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            left: 8px;
+            z-index: 4;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 9px;
+            border: 1px solid rgba(226, 232, 240, 0.18);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.68);
+            backdrop-filter: blur(8px);
+          }
+
+          .mobileGameHud span,
+          .mobileGameHud strong,
+          .mobileGameHud em {
+            min-width: 0;
+            overflow: hidden;
+            color: #f8fafc;
+            font-size: 12px;
+            font-style: normal;
+            font-weight: 900;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .mobileGameHud em {
+            color: #fecdd3;
+          }
+
+          .startOverlay,
+          .upgradeOverlay {
+            padding: 18px 14px 144px;
+          }
+
+          .startOverlay strong,
+          .upgradeOverlay > strong {
+            font-size: 25px;
+          }
+
+          .startOverlay p {
+            max-width: 300px;
+            font-size: 13px;
           }
 
           .upgradeOverlay > div {
+            width: min(300px, 100%);
+            max-height: 52vh;
+            overflow-y: auto;
             grid-template-columns: 1fr;
+          }
+
+          .upgradeOverlay button {
+            min-height: 94px;
+            padding: 12px;
+          }
+
+          .upgradeOverlay button span {
+            font-size: 17px;
           }
 
           .touchStick {
@@ -1662,6 +1838,79 @@ export default function TangtangPage() {
             border-radius: 50%;
             background: #facc15;
             box-shadow: 0 0 0 8px rgba(250, 204, 21, 0.16);
+          }
+
+          .mobileWeaponPad {
+            width: min(188px, calc(50vw - 20px));
+            min-height: 86px;
+            position: fixed;
+            left: 18px;
+            bottom: 18px;
+            z-index: 20;
+            display: grid;
+            grid-template-columns: 46px minmax(0, 1fr) 46px;
+            align-items: center;
+            gap: 7px;
+            padding: 8px;
+            border: 1px solid rgba(226, 232, 240, 0.24);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(10px);
+          }
+
+          .mobileWeaponPad button {
+            width: 46px;
+            height: 58px;
+            border: 0;
+            border-radius: 8px;
+            background: #facc15;
+            color: #111827;
+            font-size: 30px;
+            font-weight: 900;
+            line-height: 1;
+          }
+
+          .mobileWeaponPad div {
+            min-width: 0;
+            display: grid;
+            gap: 5px;
+            text-align: center;
+          }
+
+          .mobileWeaponPad strong,
+          .mobileWeaponPad span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .mobileWeaponPad strong {
+            color: #f8fafc;
+            font-size: 12px;
+            font-weight: 900;
+          }
+
+          .mobileWeaponPad span {
+            color: #93c5fd;
+            font-size: 11px;
+            font-weight: 900;
+          }
+
+          .mobileCooldown {
+            height: 7px;
+            display: block;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.86);
+          }
+
+          .mobileCooldown b {
+            height: 100%;
+            display: block;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #facc15, #fb923c);
+            transition: width 80ms linear;
           }
         }
       `}</style>

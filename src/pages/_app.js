@@ -7,6 +7,7 @@ const menuItems = [
   { href: '/bounce', label: '바운스 게임' },
   { href: '/rpg', label: 'RPG 게임' },
   { href: '/tangtang', label: '탕탕 특공대' },
+  { href: '/summon3d', label: '3D 소환 사냥' },
   { href: '/pokopia', label: '포코피아' },
 ];
 

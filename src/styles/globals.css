@@ -126,7 +126,7 @@ a {
 .pageGrid {
   margin-top: 34px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -187,6 +187,365 @@ a {
 
   .pageGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+.pokopiaPage {
+  min-height: calc(100vh - var(--site-nav-height));
+  padding: 28px;
+  background:
+    linear-gradient(rgba(22, 101, 52, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.05) 1px, transparent 1px),
+    #f8fafc;
+  background-size: 38px 38px, 38px 38px, auto;
+  color: #172033;
+}
+
+.pokopiaHero,
+.pokopiaProgress,
+.pokopiaLayout {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.pokopiaHero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 94% 14%, rgba(250, 204, 21, 0.26), transparent 22%),
+    #ffffff;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.1);
+}
+
+.pokopiaHero p,
+.panelHeader p {
+  margin: 0 0 7px;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.pokopiaHero h1,
+.panelHeader h2 {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.pokopiaHero h1 {
+  font-size: 42px;
+  line-height: 1.05;
+}
+
+.pokopiaHero span {
+  display: block;
+  margin-top: 12px;
+  color: #475569;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.progressBadge {
+  width: 132px;
+  min-width: 132px;
+  aspect-ratio: 1;
+  display: grid;
+  place-content: center;
+  border: 10px solid #22c55e;
+  border-left-color: #38bdf8;
+  border-bottom-color: #facc15;
+  border-radius: 50%;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.progressBadge strong {
+  color: #111827;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.progressBadge span {
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.pokopiaProgress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.progressTrack {
+  height: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.progressTrack span {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #38bdf8, #facc15);
+  transition: width 180ms ease;
+}
+
+.pokopiaProgress button,
+.todoForm button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #172033;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pokopiaLayout {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.3fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.todoPanel,
+.apiPanel,
+.notePanel {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+}
+
+.todoPanel,
+.apiPanel {
+  padding: 20px;
+}
+
+.todoPanel {
+  display: grid;
+  gap: 16px;
+}
+
+.apiPanel {
+  min-height: 100%;
+}
+
+.notePanel {
+  grid-column: 1 / -1;
+  padding: 20px;
+}
+
+.panelHeader h2 {
+  font-size: 24px;
+}
+
+.todoList {
+  display: grid;
+  gap: 8px;
+}
+
+.todoItem {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.todoItem input {
+  width: 20px;
+  height: 20px;
+  accent-color: #16a34a;
+}
+
+.todoItem span {
+  min-width: 0;
+  color: #1f2937;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.todoItem em {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.todoItem.done {
+  border-color: rgba(22, 163, 74, 0.28);
+  background: #f0fdf4;
+}
+
+.todoItem.done span {
+  color: #15803d;
+  text-decoration: line-through;
+}
+
+.todoForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.todoForm input,
+.notePanel textarea {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172033;
+  font: inherit;
+  font-weight: 800;
+}
+
+.todoForm input {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.apiMessage {
+  margin: 14px 0 0;
+  color: #475569;
+  font-weight: 800;
+}
+
+.pokemonGrid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pokemonCard {
+  min-height: 132px;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.pokemonCard img {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+}
+
+.pokemonCard span,
+.pokemonCard em {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.pokemonCard span {
+  color: #64748b;
+}
+
+.pokemonCard h3 {
+  margin: 3px 0 4px;
+  color: #111827;
+  font-size: 20px;
+}
+
+.pokemonCard p {
+  margin: 0 0 8px;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.pokemonCard em {
+  color: #475569;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.notePanel textarea {
+  min-height: 130px;
+  margin-top: 14px;
+  padding: 12px;
+  resize: vertical;
+}
+
+@media (max-width: 980px) {
+  .pageGrid,
+  .pokopiaLayout,
+  .pokemonGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pokopiaPage {
+    padding: 16px;
+  }
+
+  .pokopiaHero {
+    display: grid;
+    padding: 20px;
+  }
+
+  .pokopiaHero h1 {
+    font-size: 34px;
+  }
+
+  .progressBadge {
+    width: 112px;
+    min-width: 112px;
+  }
+
+  .pokopiaProgress,
+  .todoForm {
+    grid-template-columns: 1fr;
+  }
+
+  .todoItem {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .todoItem em {
+    grid-column: 2;
+    width: fit-content;
+  }
+
+  .pokemonCard {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .pokemonCard img {
+    width: 82px;
+    height: 82px;
   }
 }
 

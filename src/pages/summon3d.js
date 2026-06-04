@@ -11,6 +11,7 @@ const grades = [
 const gradeMap = Object.fromEntries(grades.map((grade) => [grade.id, grade]));
 const arenaLimit = 16;
 const arenaRadius = 18;
+const killChargeGoal = 12;
 
 const monsterTypes = [
   { id: 'stalker', name: '추적자', color: '#55606c', hp: 1, speed: 1, damage: 1, scale: 1 },
@@ -18,7 +19,37 @@ const monsterTypes = [
   { id: 'brute', name: '중갑 괴수', color: '#7f1d1d', hp: 1.85, speed: 0.64, damage: 1.45, scale: 1.32 },
   { id: 'spitter', name: '독침 괴수', color: '#581c87', hp: 0.95, speed: 0.82, damage: 0.88, scale: 0.96, ranged: true },
   { id: 'bomber', name: '폭발 괴수', color: '#92400e', hp: 0.8, speed: 1.18, damage: 2.2, scale: 0.9, explode: true },
+  { id: 'wraith', name: '그림자 망령', color: '#334155', hp: 1.12, speed: 1.36, damage: 1.18, scale: 1.02, unlockStage: 2 },
+  { id: 'shield', name: '방패 거인', color: '#0f766e', hp: 2.35, speed: 0.54, damage: 1.28, scale: 1.46, unlockStage: 3 },
+  { id: 'frost', name: '서리 사수', color: '#38bdf8', hp: 1.08, speed: 0.86, damage: 1.05, scale: 1.02, ranged: true, unlockStage: 4 },
+  { id: 'reaper', name: '심연 추격자', color: '#a21caf', hp: 1.55, speed: 1.72, damage: 1.58, scale: 1.18, unlockStage: 5 },
 ];
+
+const wavesPerStage = 20;
+
+const stageThemes = [
+  { name: '푸른 투기장', sky: '#08111f', fog: '#08111f', floor: '#142238', ring: '#38bdf8', light: '#ef4444', accent: '#67e8f9' },
+  { name: '용암 균열', sky: '#1f0f08', fog: '#2a130b', floor: '#3b1d13', ring: '#fb923c', light: '#f97316', accent: '#facc15' },
+  { name: '독안개 늪', sky: '#071a12', fog: '#052e1c', floor: '#123324', ring: '#22c55e', light: '#84cc16', accent: '#a7f3d0' },
+  { name: '서리 성역', sky: '#071827', fog: '#082f49', floor: '#13334a', ring: '#7dd3fc', light: '#38bdf8', accent: '#e0f2fe' },
+  { name: '심연 왕좌', sky: '#12071f', fog: '#1e1033', floor: '#24113f', ring: '#c084fc', light: '#a21caf', accent: '#f0abfc' },
+];
+
+function getStageNumber(wave) {
+  return Math.floor((Math.max(1, wave) - 1) / wavesPerStage) + 1;
+}
+
+function getStageWave(wave) {
+  return ((Math.max(1, wave) - 1) % wavesPerStage) + 1;
+}
+
+function getStageTheme(stage) {
+  return stageThemes[(Math.max(1, stage) - 1) % stageThemes.length];
+}
+
+function getUnlockedMonsterTypes(stage) {
+  return monsterTypes.filter((type) => (type.unlockStage ?? 1) <= stage);
+}
 
 const rewards = [
   { id: 'burst-rifle', kind: 'weapon', grade: 'rare', name: '연발 라이플', power: 12, cooldown: 0.48, speed: 8.5, count: 1, text: '빠른 기본 사격' },
@@ -95,6 +126,8 @@ function createGameState(difficultyId = 'normal') {
     running: false,
     difficultyId,
     wave: 1,
+    stage: 1,
+    stageWave: 1,
     waveLeft: 0,
     kills: 0,
     hp: 100,
@@ -107,6 +140,11 @@ function createGameState(difficultyId = 'normal') {
     damageBonus: 1,
     speedBonus: 1,
     cooldownBonus: 1,
+    stageDamageBonus: 1,
+    stageProjectileScale: 1,
+    stageExtraProjectiles: 0,
+    stageCooldownBonus: 1,
+    stageArmor: 0,
     player: { x: 0, z: 0 },
     monsters: [],
     bullets: [],
@@ -124,13 +162,24 @@ function resetSkillEffects(game) {
   game.maxHp = 100;
   game.hp = Math.min(game.hp, game.maxHp);
   game.regen = 0;
-  game.armor = 0;
-  game.projectileScale = 1;
-  game.extraProjectiles = 0;
+  game.armor = game.stageArmor ?? 0;
+  game.projectileScale = game.stageProjectileScale ?? 1;
+  game.extraProjectiles = game.stageExtraProjectiles ?? 0;
   game.frostAura = 0;
-  game.damageBonus = 1;
+  game.damageBonus = game.stageDamageBonus ?? 1;
   game.speedBonus = 1;
-  game.cooldownBonus = 1;
+  game.cooldownBonus = game.stageCooldownBonus ?? 1;
+}
+
+function applyStageBonuses(game) {
+  const stageBoost = Math.max(0, game.stage - 1);
+  game.stageDamageBonus = 1 + stageBoost * 0.16;
+  game.stageProjectileScale = 1 + stageBoost * 0.08;
+  game.stageExtraProjectiles = Math.floor(stageBoost / 2);
+  game.stageCooldownBonus = Math.max(0.68, 1 - stageBoost * 0.035);
+  game.stageArmor = stageBoost * 2;
+  resetSkillEffects(game);
+  if (game.skillTimer > 0 && game.activeSkills[0]) applySkill(game, game.activeSkills[0]);
 }
 
 function equipSkill(game, item) {
@@ -177,13 +226,21 @@ function triggerSkill(game) {
 
 function spawnWave(game) {
   const difficulty = difficulties.find((item) => item.id === game.difficultyId) ?? difficulties[1];
-  const count = 4 + game.wave * 2 + difficulty.waveBonus;
+  const nextStage = getStageNumber(game.wave);
+  const stageChanged = game.stage !== nextStage;
+  game.stage = nextStage;
+  game.stageWave = getStageWave(game.wave);
+  applyStageBonuses(game);
+
+  const unlockedTypes = getUnlockedMonsterTypes(game.stage);
+  const stagePower = Math.max(0, game.stage - 1);
+  const count = 4 + game.stageWave * 2 + difficulty.waveBonus + stagePower * 5;
   game.waveLeft = count;
   game.monsters = Array.from({ length: count }, (_, index) => {
     const angle = (Math.PI * 2 * index) / count + Math.random() * 0.55;
     const radius = arenaLimit + 1 + Math.random() * 4.5;
-    const type = monsterTypes[(index + game.wave + Math.floor(Math.random() * monsterTypes.length)) % monsterTypes.length];
-    const hp = Math.round((difficulty.monsterHp + game.wave * 10) * type.hp);
+    const type = unlockedTypes[(index + game.wave + Math.floor(Math.random() * unlockedTypes.length)) % unlockedTypes.length];
+    const hp = Math.round((difficulty.monsterHp + game.stageWave * 10 + stagePower * 42) * type.hp);
     return {
       id: `${Date.now()}-${index}`,
       type: type.id,
@@ -191,13 +248,16 @@ function spawnWave(game) {
       z: Math.sin(angle) * radius,
       hp,
       maxHp: hp,
-      speed: (difficulty.monsterSpeed + game.wave * 0.05) * type.speed,
-      damage: Math.round(difficulty.damage * type.damage),
+      speed: (difficulty.monsterSpeed + game.stageWave * 0.05 + stagePower * 0.14) * type.speed,
+      damage: Math.round((difficulty.damage + stagePower * 4) * type.damage),
       hitTimer: 0,
       attackCooldown: 0.4 + Math.random() * 1.4,
     };
   });
-  game.message = `웨이브 ${game.wave}: 몬스터 ${count}마리 접근 중`;
+  const theme = getStageTheme(game.stage);
+  game.message = stageChanged
+    ? `스테이지 ${game.stage} 진입! ${theme.name}에서 몬스터가 강해지고 새 괴수가 나타납니다.`
+    : `스테이지 ${game.stage}-${game.stageWave}: 몬스터 ${count}마리 접근 중`;
 }
 
 export default function Summon3dPage() {
@@ -269,6 +329,48 @@ export default function Summon3dPage() {
       arenaRing.rotation.x = Math.PI / 2;
       arenaRing.position.y = 0.04;
       scene.add(arenaRing);
+
+      const mapDecor = new THREE.Group();
+      scene.add(mapDecor);
+
+      function applySceneTheme(stage) {
+        const theme = getStageTheme(stage);
+        scene.background = new THREE.Color(theme.sky);
+        scene.fog = new THREE.Fog(theme.fog, 13, 34);
+        floor.material.color.set(theme.floor);
+        arenaRing.material.color.set(theme.ring);
+        arenaRing.material.emissive.set(theme.ring);
+        dangerLight.color.set(theme.light);
+
+        mapDecor.clear();
+        const accentMat = new THREE.MeshStandardMaterial({
+          color: theme.accent,
+          emissive: theme.ring,
+          emissiveIntensity: 0.75,
+          roughness: 0.72,
+          metalness: 0.18,
+        });
+        const stoneMat = new THREE.MeshStandardMaterial({ color: theme.floor, roughness: 0.9, metalness: 0.05 });
+        const decorCount = 8 + (stage % 3) * 4;
+        for (let index = 0; index < decorCount; index += 1) {
+          const angle = (Math.PI * 2 * index) / decorCount;
+          const distance = arenaRadius - 1.4 - (index % 2) * 1.2;
+          const height = 0.4 + (index % 4) * 0.18;
+          const base = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, height, 8), stoneMat);
+          base.position.set(Math.cos(angle) * distance, height / 2, Math.sin(angle) * distance);
+          base.castShadow = true;
+          mapDecor.add(base);
+
+          const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.16 + (stage % 2) * 0.04), accentMat);
+          gem.position.set(base.position.x, height + 0.18, base.position.z);
+          gem.castShadow = true;
+          mapDecor.add(gem);
+        }
+
+        scene.userData.stage = stage;
+      }
+
+      applySceneTheme(1);
 
       function addMesh(group, geometry, material, position, scale = [1, 1, 1], rotation = [0, 0, 0]) {
         const mesh = new THREE.Mesh(geometry, material);
@@ -406,6 +508,34 @@ export default function Summon3dPage() {
           addMesh(group, new THREE.CylinderGeometry(0.025, 0.025, 0.45, 8), bone, [0, 1.9, 0], [1, 1, 1], [0.4, 0, 0.25]);
           addMesh(group, new THREE.SphereGeometry(0.08, 12, 8), fire, [0.1, 2.08, 0.07]);
           for (const x of [-0.44, 0.44]) addMesh(group, new THREE.CapsuleGeometry(0.09, 0.42, 6, 10), hide, [x, 0.34, 0.08], [1, 1, 1], [0, 0, x < 0 ? -0.28 : 0.28]);
+        } else if (type.id === 'wraith') {
+          addMesh(group, new THREE.ConeGeometry(0.42, 1.1, 18), skin, [0, 0.92, 0], [1, 1.08, 0.82]);
+          addMesh(group, new THREE.SphereGeometry(0.3, 22, 14), hide, [0, 1.52, 0.08], [1, 0.85, 1.1]);
+          addEyePair(1.57, 0.36, 0.13, acid);
+          addMesh(group, new THREE.TorusGeometry(0.42, 0.025, 8, 38), acid, [0, 1.05, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
+          for (const x of [-0.38, 0.38]) addMesh(group, new THREE.CapsuleGeometry(0.06, 0.76, 6, 10), skin, [x, 0.9, 0.1], [1, 1, 1], [0.28, 0, x < 0 ? 0.62 : -0.62]);
+        } else if (type.id === 'shield') {
+          addMesh(group, new THREE.SphereGeometry(0.68, 28, 18), skin, [0, 0.95, 0], [1.15, 1.28, 0.92]);
+          addMesh(group, new THREE.BoxGeometry(1.05, 1.12, 0.16), greenGlow, [0, 0.98, 0.52], [1, 1, 1], [0.08, 0, 0]);
+          addMesh(group, new THREE.SphereGeometry(0.38, 22, 14), skin, [0, 1.72, 0.05]);
+          addEyePair(1.76, 0.36, 0.17, greenGlow);
+          for (const x of [-0.46, 0.46]) {
+            addMesh(group, new THREE.CapsuleGeometry(0.13, 0.74, 8, 12), skin, [x * 1.35, 0.82, 0.05], [1, 1, 1], [0, 0, x < 0 ? 0.5 : -0.5]);
+            addMesh(group, new THREE.BoxGeometry(0.28, 0.22, 0.28), hide, [x * 1.55, 0.34, 0.08]);
+          }
+        } else if (type.id === 'frost') {
+          addMesh(group, new THREE.CapsuleGeometry(0.38, 0.95, 10, 18), skin, [0, 0.98, 0], [1, 1.06, 0.9]);
+          addMesh(group, new THREE.SphereGeometry(0.34, 22, 14), skin, [0, 1.6, 0.14]);
+          addMesh(group, new THREE.CylinderGeometry(0.08, 0.14, 0.76, 18), greenGlow, [0, 1.52, 0.65], [1, 1, 1], [Math.PI / 2, 0, 0]);
+          addEyePair(1.66, 0.42, 0.14, greenGlow);
+          for (let i = 0; i < 5; i += 1) addMesh(group, new THREE.OctahedronGeometry(0.1), greenGlow, [-0.34 + i * 0.17, 1.02 + i * 0.06, -0.46]);
+        } else if (type.id === 'reaper') {
+          addMesh(group, new THREE.CapsuleGeometry(0.42, 1.18, 10, 18), skin, [0, 1.06, 0], [0.95, 1.18, 0.85]);
+          addMesh(group, new THREE.ConeGeometry(0.34, 0.58, 18), hide, [0, 1.88, 0.03]);
+          addEyePair(1.76, 0.36, 0.15, acid);
+          addMesh(group, new THREE.BoxGeometry(0.08, 1.25, 0.08), bone, [0.58, 1.17, 0.32], [1, 1, 1], [0, 0, -0.62]);
+          addMesh(group, new THREE.TorusGeometry(0.26, 0.018, 8, 32), acid, [0.82, 1.7, 0.35], [1, 0.75, 1], [0.2, 0, -0.62]);
+          for (const x of [-0.36, 0.36]) addMesh(group, new THREE.CapsuleGeometry(0.09, 0.78, 6, 12), skin, [x, 0.72, 0], [1, 1, 1], [0.18, 0, x < 0 ? 0.46 : -0.46]);
         } else {
           addMesh(group, new THREE.SphereGeometry(0.58, 24, 16), skin, [0, 0.92, 0], [1.06, 1.28, 0.78]);
           addMesh(group, new THREE.SphereGeometry(0.38, 24, 14), skin, [0, 1.58, 0.1], [1.1, 0.82, 0.95]);
@@ -491,6 +621,7 @@ export default function Summon3dPage() {
         const delta = Math.min(clock.getDelta(), 0.033);
         const game = gameRef.current;
         if (game.running) updateGame(game, delta);
+        if (scene.userData.stage !== game.stage) applySceneTheme(game.stage);
         syncMeshes(game, clock.elapsedTime);
         arenaRing.rotation.z += delta * 0.35;
         camera.position.x = game.player.x * 0.45;
@@ -674,10 +805,10 @@ export default function Summon3dPage() {
   function addKillCharge(killed, game) {
     const current = dailyRef.current;
     const totalCharge = (current.killCharge || 0) + killed;
-    const earned = Math.floor(totalCharge / 3);
+    const earned = Math.floor(totalCharge / killChargeGoal);
     const next = {
       ...current,
-      killCharge: totalCharge % 3,
+      killCharge: totalCharge % killChargeGoal,
       bonusPulls: (current.bonusPulls || 0) + earned,
     };
 
@@ -686,7 +817,7 @@ export default function Summon3dPage() {
     setDaily(next);
 
     if (earned > 0) {
-      game.message = `몬스터 3마리 처치 보상! 보너스 뽑기 ${earned}개 충전`;
+      game.message = `몬스터 ${killChargeGoal}마리 처치 보상! 보너스 뽑기 ${earned}개 충전`;
     }
   }
 
@@ -755,7 +886,7 @@ export default function Summon3dPage() {
   function pullOneWithBonus() {
     const currentDaily = dailyRef.current;
     if (currentDaily.pulls >= 10 && currentDaily.bonusPulls <= 0) {
-      gameRef.current.message = '오늘 기본 뽑기와 보너스 뽑기를 모두 사용했습니다. 몬스터 3마리를 처치하면 보너스 뽑기 1개가 충전됩니다.';
+      gameRef.current.message = `오늘 기본 뽑기와 보너스 뽑기를 모두 사용했습니다. 몬스터 ${killChargeGoal}마리를 처치하면 보너스 뽑기 1개가 충전됩니다.`;
       setHud({ ...gameRef.current });
       return;
     }
@@ -800,6 +931,8 @@ export default function Summon3dPage() {
 
   const difficulty = difficulties.find((item) => item.id === difficultyId) ?? difficulties[1];
   const hpRatio = Math.max(0, Math.min(100, (hud.hp / hud.maxHp) * 100));
+  const stageTheme = getStageTheme(hud.stage);
+  const unlockedMonsterTypes = getUnlockedMonsterTypes(hud.stage);
 
   return (
     <section className="summonPage">
@@ -812,7 +945,7 @@ export default function Summon3dPage() {
           오늘 뽑기 {10 - daily.pulls}/10
         </button>
         <div className="pullInfo">
-          기본 {Math.max(0, 10 - daily.pulls)} · 보너스 {daily.bonusPulls} · 처치 충전 {daily.killCharge}/3
+          기본 {Math.max(0, 10 - daily.pulls)} · 보너스 {daily.bonusPulls} · 처치 충전 {daily.killCharge}/{killChargeGoal}
         </div>
       </div>
 
@@ -828,7 +961,7 @@ export default function Summon3dPage() {
             <p>WASD / 방향키 이동 · 몬스터가 플레이어를 추적합니다</p>
           </div>
           <div className="waveHud">
-            <span>WAVE {hud.wave}</span>
+            <span>STAGE {hud.stage} · {hud.stageWave}/{wavesPerStage}</span>
             <strong>{hud.monsters.length}마리</strong>
           </div>
         </div>
@@ -852,6 +985,14 @@ export default function Summon3dPage() {
               ))}
             </div>
             <em>현재: {difficulty.name}</em>
+          </div>
+
+          <div className="activeBox">
+            <span>현재 맵</span>
+            <strong style={{ color: stageTheme.ring }}>스테이지 {hud.stage} · {stageTheme.name}</strong>
+            <p>
+              화력 {Math.round(hud.stageDamageBonus * 100)}% · 탄 크기 {Math.round(hud.stageProjectileScale * 100)}% · 추가 탄 {hud.stageExtraProjectiles} · 방어 {hud.stageArmor}
+            </p>
           </div>
 
           <button type="button" className="startButton" onClick={startGame}>
@@ -892,7 +1033,7 @@ export default function Summon3dPage() {
           </div>
 
           <div className="monsterTypeBox">
-            {monsterTypes.map((type) => (
+            {unlockedMonsterTypes.map((type) => (
               <div key={type.id} style={{ borderColor: type.color }}>
                 <span style={{ color: type.color }}>{type.name}</span>
               </div>

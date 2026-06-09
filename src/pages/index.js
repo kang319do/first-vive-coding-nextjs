@@ -7,6 +7,11 @@ const pages = [
     description: '공을 조종해서 위험한 블록을 피해 목표 지점까지 가는 게임',
   },
   {
+    href: '/swing-hook',
+    title: 'Swing Hook',
+    description: '줄을 걸고 놓는 타이밍으로 하늘 코스를 통과하는 스윙 액션 게임',
+  },
+  {
     href: '/rpg',
     title: 'RPG 게임',
     description: '마을을 탐험하고 블록과 구조물을 설치하는 2D RPG 게임',
@@ -25,16 +30,6 @@ const pages = [
     href: '/hero-arena',
     title: '블록 영웅 전장',
     description: '영웅을 골라 3D 전장에서 스킬 콤보로 봇 적들을 KO시키는 아레나 게임',
-  },
-  {
-    href: '/typing',
-    title: '타자연습 프로그램',
-    description: '한글, 영문, 코드 문장을 따라 치며 속도와 정확도를 확인하는 연습 도구',
-  },
-  {
-    href: '/pokopia',
-    title: '포코피아 진행표',
-    description: '할 일을 체크하고 API 정보를 보며 진행률을 확인하는 페이지',
   },
 ];
 

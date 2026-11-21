@@ -3,8 +3,8 @@ import Link from 'next/link';
 const studyTools = [
   {
     href: '/study-zone/typing',
-    title: '타자연습',
-    description: '자리연습과 단어 만들기를 단계별로 연습합니다.',
+    title: '한글 타자 교실',
+    description: '자리연습, 자리별 낱말연습(직접 단어 만들기 포함), 짧은 글, 산성비 게임까지 단계별로 연습합니다.',
   },
 ];
 
@@ -12,9 +12,9 @@ export default function StudyZoneHome() {
   return (
     <section className="studyZoneHome">
       <div className="studyZoneIntro">
-        <span>Study Zone</span>
-        <h1>Study Zone</h1>
-        <p>타자연습 같은 공부 프로그램은 이곳에 모아둡니다.</p>
+        <span>Study Lab</span>
+        <h1>스터디랩</h1>
+        <p>타자연습 같은 학습 프로그램을 이곳에 모아둡니다.</p>
       </div>
 
       <div className="pageGrid">

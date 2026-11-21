@@ -1,944 +1,1757 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import TypingKeyboard from './TypingKeyboard';
+import styles from './TypingPractice.module.css';
+import {
+  FINGER_INFO,
+  JAMO_TO_KEY_META,
+  SHORT_SENTENCE_SETS,
+  TYPING_STAGES,
+  composeHangul,
+  decomposeHangul,
+  getCumulativeStageKeys,
+  getJamoFromKeyEvent,
+  getWordRequiredStageIndex,
+  shuffleArray,
+} from '@/data/typingData';
 
-const PRACTICE_LENGTH = 20;
+const STORAGE_KEY = 'study-lab-typing-v2';
+const SEAT_LENGTH = 24;
+const WORD_SESSION_COUNT = 12;
 
-const practiceModes = [
-  { id: 'seat', label: '자리연습' },
-  { id: 'word', label: '단어 만들기' },
-];
-
-const stages = [
-  {
-    id: 'home',
-    name: '1단계',
-    title: '기본자리',
-    description: '왼손 ㅁ ㄴ ㅇ ㄹ · 오른손 ㅗ ㅓ ㅏ ㅣ',
-    leftKeys: ['ㅁ', 'ㄴ', 'ㅇ', 'ㄹ'],
-    rightKeys: ['ㅗ', 'ㅓ', 'ㅏ', 'ㅣ'],
-  },
-  {
-    id: 'top',
-    name: '2단계',
-    title: '윗자리',
-    description: '왼손 ㅂ ㅈ ㄷ ㄱ · 오른손 ㅛ ㅕ ㅑ ㅐ',
-    leftKeys: ['ㅂ', 'ㅈ', 'ㄷ', 'ㄱ'],
-    rightKeys: ['ㅛ', 'ㅕ', 'ㅑ', 'ㅐ'],
-  },
-  {
-    id: 'bottom',
-    name: '3단계',
-    title: '아랫자리',
-    description: '왼손 ㅋ ㅌ ㅊ ㅍ · 오른손 ㅠ ㅜ ㅡ',
-    leftKeys: ['ㅋ', 'ㅌ', 'ㅊ', 'ㅍ'],
-    rightKeys: ['ㅠ', 'ㅜ', 'ㅡ'],
-  },
-];
-
-const codeToJamo = {
-  KeyA: 'ㅁ',
-  KeyS: 'ㄴ',
-  KeyD: 'ㅇ',
-  KeyF: 'ㄹ',
-  KeyH: 'ㅗ',
-  KeyJ: 'ㅓ',
-  KeyK: 'ㅏ',
-  KeyL: 'ㅣ',
-  KeyQ: 'ㅂ',
-  KeyW: 'ㅈ',
-  KeyE: 'ㄷ',
-  KeyR: 'ㄱ',
-  KeyY: 'ㅛ',
-  KeyU: 'ㅕ',
-  KeyI: 'ㅑ',
-  KeyO: 'ㅐ',
-  KeyZ: 'ㅋ',
-  KeyX: 'ㅌ',
-  KeyC: 'ㅊ',
-  KeyV: 'ㅍ',
-  KeyB: 'ㅠ',
-  KeyN: 'ㅜ',
-  KeyM: 'ㅡ',
+const DEFAULT_PROGRESS = {
+  bestCpm: 0,
+  totalSessions: 0,
+  accuracySum: 0,
+  completedStages: [],
+  bestRainScore: 0,
+  weakKeys: {},
+  customWords: [],
 };
 
-const keyToJamo = Object.fromEntries(
-  Object.entries(codeToJamo).map(([code, jamo]) => [code.replace('Key', '').toLowerCase(), jamo]),
-);
+function buildSeatSequence(stageIndex, seed) {
+  const stage = TYPING_STAGES[stageIndex] ?? TYPING_STAGES[0];
+  let pool = [...stage.keys];
 
-const handLabels = {
-  left: '왼손',
-  right: '오른손',
-};
-
-const wordLessons = [
-  [
-    { word: '아리', keys: 'ㅇㅏㄹㅣ' },
-    { word: '나라', keys: 'ㄴㅏㄹㅏ' },
-    { word: '오리', keys: 'ㅇㅗㄹㅣ' },
-    { word: '엄마', keys: 'ㅇㅓㅁㅁㅏ' },
-    { word: '미나', keys: 'ㅁㅣㄴㅏ' },
-    { word: '머리', keys: 'ㅁㅓㄹㅣ' },
-  ],
-  [
-    { word: '개나리', keys: 'ㄱㅐㄴㅏㄹㅣ' },
-    { word: '고기', keys: 'ㄱㅗㄱㅣ' },
-    { word: '바다', keys: 'ㅂㅏㄷㅏ' },
-    { word: '여기', keys: 'ㅇㅕㄱㅣ' },
-    { word: '기러기', keys: 'ㄱㅣㄹㅓㄱㅣ' },
-    { word: '아기', keys: 'ㅇㅏㄱㅣ' },
-  ],
-  [
-    { word: '나무', keys: 'ㄴㅏㅁㅜ' },
-    { word: '구름', keys: 'ㄱㅜㄹㅡㅁ' },
-    { word: '기차', keys: 'ㄱㅣㅊㅏ' },
-    { word: '도토리', keys: 'ㄷㅗㅌㅗㄹㅣ' },
-    { word: '바나나', keys: 'ㅂㅏㄴㅏㄴㅏ' },
-    { word: '추억', keys: 'ㅊㅜㅇㅓㄱ' },
-  ],
-];
-
-function getStage(index) {
-  return stages[index] ?? stages[0];
-}
-
-function getStageKeys(stageIndex) {
-  const stage = getStage(stageIndex);
-  return [...stage.leftKeys, ...stage.rightKeys];
-}
-
-function getLearnedHandKeys(stageIndex, side) {
-  return stages.slice(0, stageIndex + 1).flatMap((stage) => stage[`${side}Keys`]);
-}
-
-function getAllowedKeys(stageIndex, mode) {
-  if (mode === 'word') {
-    return [...getLearnedHandKeys(stageIndex, 'left'), ...getLearnedHandKeys(stageIndex, 'right')];
+  // For short key sets like Stage 2 (ㅎ, ㅅ, ㅔ), blend a few home-row anchor keys so fingers return naturally
+  if (stage.keys.length <= 4) {
+    pool = [...stage.keys, ...stage.keys, ...stage.keys, 'ㄹ', 'ㅓ', 'ㅏ', 'ㄴ'];
   }
 
-  return getStageKeys(stageIndex);
+  const chars = Array.from({ length: SEAT_LENGTH }, (_, idx) => pool[idx % pool.length]);
+  return shuffleArray(chars, seed);
 }
 
-function shuffleItems(items, randomize = true) {
-  const shuffled = [...items];
+function buildWordSession(stageIndex, scope, customWords, seed) {
+  const stage = TYPING_STAGES[stageIndex] ?? TYPING_STAGES[0];
+  let baseList = [];
 
-  if (randomize) {
-    for (let index = shuffled.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(Math.random() * (index + 1));
-      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  if (scope === 'custom') {
+    const stageCustom = customWords.filter((item) => item.stageIndex <= stageIndex).map((item) => item.word);
+    baseList = stageCustom.length > 0 ? stageCustom : customWords.map((item) => item.word);
+  } else if (scope === 'cumulative') {
+    const cumulativeBuiltIn = TYPING_STAGES.slice(0, stageIndex + 1).flatMap((item) => item.words);
+    const stageCustom = customWords.filter((item) => item.stageIndex <= stageIndex).map((item) => item.word);
+    baseList = [...stageCustom, ...cumulativeBuiltIn];
+  } else {
+    const exactCustom = customWords.filter((item) => item.stageIndex === stageIndex).map((item) => item.word);
+    baseList = [...exactCustom, ...stage.words];
+  }
+
+  const unique = Array.from(new Set(baseList)).filter((word) => decomposeHangul(word).length > 0);
+  if (unique.length === 0) {
+    return [];
+  }
+
+  const shuffled = shuffleArray(unique, seed);
+  return shuffled.slice(0, Math.min(WORD_SESSION_COUNT, shuffled.length));
+}
+
+function calcCpm(strokeCount, startedAt, nowMs) {
+  if (!startedAt || strokeCount <= 0) return 0;
+  const elapsedSec = Math.max(0.5, (nowMs - startedAt) / 1000);
+  return Math.round((strokeCount / elapsedSec) * 60);
+}
+
+function ModeIcon({ type }) {
+  if (type === 'seat') {
+    return (
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="2" y="5" width="20" height="14" rx="3" />
+        <path d="M6 9h2M11 9h2M16 9h2M6 13h2M11 13h2M16 13h2M8 16h8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === 'word') {
+    return (
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 6h16M4 12h10M4 18h7" strokeLinecap="round" />
+        <circle cx="17.5" cy="15.5" r="3.5" />
+        <path d="M17.5 14v3M16 15.5h3" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === 'sentence') {
+    return (
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M5 4h11l3 3v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+        <path d="M8 10h8M8 14h8M8 18h5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M7 16.5A4.5 4.5 0 0 1 6.2 7.6 5.5 5.5 0 0 1 17 8.5h.5a3.5 3.5 0 0 1 .5 7" strokeLinecap="round" />
+      <path d="M8 19l-1 2M12 18l-1 3M16 19l-1 2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export default function TypingPractice() {
+  const [mode, setMode] = useState('lobby'); // 'lobby' | 'seat' | 'word' | 'sentence' | 'rain'
+  const [stageIndex, setStageIndex] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [progress, setProgress] = useState(DEFAULT_PROGRESS);
+  const [pressedFeedback, setPressedFeedback] = useState(null);
+  const [captureFocused, setCaptureFocused] = useState(false);
+
+  // Mode 1: Seat practice state
+  const [seatSequence, setSeatSequence] = useState(() => buildSeatSequence(0, 101));
+  const [seatIndex, setSeatIndex] = useState(0);
+  const [seatMistakes, setSeatMistakes] = useState(0);
+  const [seatWrongFlag, setSeatWrongFlag] = useState(false);
+  const [seatStartedAt, setSeatStartedAt] = useState(null);
+  const [seatFinishedAt, setSeatFinishedAt] = useState(null);
+  const [seatLastTick, setSeatLastTick] = useState(0);
+
+  // Mode 2: Word-by-stage practice state
+  const [wordScope, setWordScope] = useState('stage'); // 'stage' | 'cumulative' | 'custom'
+  const [wordList, setWordList] = useState(() => buildWordSession(0, 'stage', [], 202));
+  const [wordIndex, setWordIndex] = useState(0);
+  const [typedWordJamos, setTypedWordJamos] = useState([]);
+  const [wordCompletedStrokes, setWordCompletedStrokes] = useState(0);
+  const [wordMistakes, setWordMistakes] = useState(0);
+  const [wordWrongFlag, setWordWrongFlag] = useState(false);
+  const [wordStartedAt, setWordStartedAt] = useState(null);
+  const [wordFinishedAt, setWordFinishedAt] = useState(null);
+  const [wordLastTick, setWordLastTick] = useState(0);
+  const [customWordDraft, setCustomWordDraft] = useState('');
+  const [customWordNotice, setCustomWordNotice] = useState('');
+
+  // Mode 3: Short sentence practice state
+  const [sentenceSetId, setSentenceSetId] = useState(SHORT_SENTENCE_SETS[0].id);
+  const [sentenceIdx, setSentenceIdx] = useState(0);
+  const [sentenceInput, setSentenceInput] = useState('');
+  const [sentenceStartedAt, setSentenceStartedAt] = useState(null);
+  const [sentenceFinishedAt, setSentenceFinishedAt] = useState(null);
+  const [sentenceLastTick, setSentenceLastTick] = useState(0);
+  const [sentenceTotalChars, setSentenceTotalChars] = useState(0);
+  const [sentenceCorrectChars, setSentenceCorrectChars] = useState(0);
+  const [sentenceTotalStrokes, setSentenceTotalStrokes] = useState(0);
+
+  // Mode 4: Acid Rain game state
+  const [rainStageFilter, setRainStageFilter] = useState('all'); // 'all' | 0..4
+  const [rainRunning, setRainRunning] = useState(false);
+  const [rainGameOver, setRainGameOver] = useState(false);
+  const [rainDrops, setRainDrops] = useState([]);
+  const [rainInput, setRainInput] = useState('');
+  const [rainScore, setRainScore] = useState(0);
+  const [rainLives, setRainLives] = useState(5);
+  const [rainCombo, setRainCombo] = useState(0);
+  const [rainCleared, setRainCleared] = useState(0);
+
+  const captureInputRef = useRef(null);
+  const sentenceInputRef = useRef(null);
+  const rainInputRef = useRef(null);
+  const audioRef = useRef(null);
+  const feedbackTimerRef = useRef(null);
+  const rainIdRef = useRef(1);
+  const rainLastSpawnRef = useRef(0);
+  const rainScoreRef = useRef(0);
+  const rainClearedRef = useRef(0);
+
+  // Load persisted records on client only (hydration safe)
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setProgress({ ...DEFAULT_PROGRESS, ...parsed });
+      }
+    } catch {
+      // Ignore storage read errors
+    }
+  }, []);
+
+  function saveProgress(updater) {
+    setProgress((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage write errors
+      }
+      return next;
+    });
+  }
+
+  function playTone(kind) {
+    if (!soundEnabled || typeof window === 'undefined') return;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+
+    const ctx = audioRef.current ?? new AudioCtx();
+    audioRef.current = ctx;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (kind === 'wrong') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(190, now);
+      osc.frequency.exponentialRampToValueAtTime(130, now + 0.12);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } else if (kind === 'done') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523, now);
+      osc.frequency.setValueAtTime(659, now + 0.09);
+      osc.frequency.setValueAtTime(784, now + 0.18);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.26, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
+      osc.start(now);
+      osc.stop(now + 0.38);
+    } else if (kind === 'word') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(840, now + 0.11);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } else {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+      osc.start(now);
+      osc.stop(now + 0.09);
     }
   }
 
-  return shuffled;
-}
-
-function createPracticeText(stageIndex, randomize = true) {
-  const keys = getStageKeys(stageIndex);
-  const chars = Array.from({ length: PRACTICE_LENGTH }, (_, index) => keys[index % keys.length]);
-
-  return shuffleItems(chars, randomize).join('');
-}
-
-function createWordLesson(stageIndex, randomize = true) {
-  let cursor = 0;
-  const words = shuffleItems(wordLessons[stageIndex] ?? wordLessons[0], randomize).map((item) => {
-    const start = cursor;
-    cursor += item.keys.length;
-    return { ...item, start, end: cursor };
-  });
-
-  return {
-    target: words.map((item) => item.keys).join(''),
-    words,
-  };
-}
-
-function createLesson(stageIndex, mode, randomize = true) {
-  if (mode === 'word') {
-    return createWordLesson(stageIndex, randomize);
+  function flashKey(code, ok) {
+    if (!code) return;
+    setPressedFeedback({ code, ok });
+    if (feedbackTimerRef.current) {
+      window.clearTimeout(feedbackTimerRef.current);
+    }
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setPressedFeedback(null);
+    }, 170);
   }
 
-  return {
-    target: createPracticeText(stageIndex, randomize),
-    words: [],
-  };
-}
-
-function getStats(target, value, startedAt, finishedAt) {
-  const now = finishedAt ?? Date.now();
-  const elapsedMs = startedAt ? Math.max(1, now - startedAt) : 0;
-  const elapsedSeconds = elapsedMs / 1000;
-  let correct = 0;
-
-  for (let index = 0; index < value.length; index += 1) {
-    if (value[index] === target[index]) correct += 1;
+  function recordWeakKey(jamo) {
+    if (!jamo) return;
+    saveProgress((prev) => ({
+      ...prev,
+      weakKeys: {
+        ...prev.weakKeys,
+        [jamo]: (prev.weakKeys[jamo] ?? 0) + 1,
+      },
+    }));
   }
 
-  const accuracy = value.length ? Math.round((correct / value.length) * 100) : 100;
-  const charsPerMinute = elapsedSeconds ? Math.round((correct / elapsedSeconds) * 60) : 0;
-  const progress = Math.min(100, Math.round((value.length / target.length) * 100));
+  function recordSessionStats(cpm, accuracy, completedStageIdx = null) {
+    saveProgress((prev) => {
+      const nextCompleted =
+        completedStageIdx != null && !prev.completedStages.includes(completedStageIdx)
+          ? [...prev.completedStages, completedStageIdx].sort((a, b) => a - b)
+          : prev.completedStages;
 
-  return {
-    accuracy,
-    charsPerMinute,
-    progress,
-    correct,
-    mistakes: Math.max(0, value.length - correct),
-    elapsedSeconds,
-  };
-}
-
-export default function TypingPage() {
-  const [stageIndex, setStageIndex] = useState(0);
-  const [practiceMode, setPracticeMode] = useState('seat');
-  const [lesson, setLesson] = useState(() => createLesson(0, 'seat', false));
-  const [value, setValue] = useState('');
-  const [startedAt, setStartedAt] = useState(null);
-  const [finishedAt, setFinishedAt] = useState(null);
-  const [blockedKey, setBlockedKey] = useState('');
-  const inputRef = useRef(null);
-  const audioRef = useRef(null);
-
-  const currentStage = getStage(stageIndex);
-  const target = lesson.target;
-  const wordItems = lesson.words;
-  const stats = useMemo(() => getStats(target, value, startedAt, finishedAt), [target, value, startedAt, finishedAt]);
-  const isFinished = value === target;
-  const currentIndex = Math.min(value.length, target.length);
-  const nextChar = target[currentIndex] ?? '완료';
-  const visibleLeftKeys = practiceMode === 'word' ? getLearnedHandKeys(stageIndex, 'left') : currentStage.leftKeys;
-  const visibleRightKeys = practiceMode === 'word' ? getLearnedHandKeys(stageIndex, 'right') : currentStage.rightKeys;
-  const nextLeftIndex = visibleLeftKeys.indexOf(nextChar);
-  const nextRightIndex = visibleRightKeys.indexOf(nextChar);
-  const nextSide = nextLeftIndex >= 0 ? 'left' : nextRightIndex >= 0 ? 'right' : '';
-  const nextKeyPosition = nextLeftIndex >= 0 ? nextLeftIndex + 1 : nextRightIndex >= 0 ? nextRightIndex + 1 : 0;
-  const nextKeyGuide = nextSide ? `${handLabels[nextSide]} ${nextKeyPosition}번 자리` : '연습 완료';
-  const currentWord = wordItems.find((item) => currentIndex < item.end) ?? wordItems[wordItems.length - 1];
-  const previousChar = value[currentIndex - 1] ?? '';
-  const lastWasWrong = value.length > 0 && value[value.length - 1] !== target[value.length - 1];
-
-  function focusInput() {
-    window.requestAnimationFrame(() => inputRef.current?.focus());
+      return {
+        ...prev,
+        bestCpm: Math.max(prev.bestCpm, cpm),
+        totalSessions: prev.totalSessions + 1,
+        accuracySum: prev.accuracySum + accuracy,
+        completedStages: nextCompleted,
+      };
+    });
   }
 
-  function reset(nextStageIndex = stageIndex, nextMode = practiceMode) {
-    setStageIndex(nextStageIndex);
-    setPracticeMode(nextMode);
-    setLesson(createLesson(nextStageIndex, nextMode, true));
-    setValue('');
-    setStartedAt(null);
-    setFinishedAt(null);
-    setBlockedKey('');
-    focusInput();
+  function focusCaptureSoon() {
+    window.requestAnimationFrame(() => {
+      captureInputRef.current?.focus();
+    });
   }
 
-  function goNextStage() {
-    reset(Math.min(stages.length - 1, stageIndex + 1), practiceMode);
+  // ==================== SESSION STARTERS ====================
+  function startSeatMode(nextStage = stageIndex) {
+    setStageIndex(nextStage);
+    setMode('seat');
+    setSeatSequence(buildSeatSequence(nextStage));
+    setSeatIndex(0);
+    setSeatMistakes(0);
+    setSeatWrongFlag(false);
+    setSeatStartedAt(null);
+    setSeatFinishedAt(null);
+    setSeatLastTick(0);
+    focusCaptureSoon();
   }
 
-  function playSuccessSound(done = false) {
-    if (typeof window === 'undefined') return;
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-
-    const context = audioRef.current ?? new AudioContext();
-    audioRef.current = context;
-    if (context.state === 'suspended') context.resume();
-
-    const now = context.currentTime;
-    const gain = context.createGain();
-    gain.connect(context.destination);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(done ? 0.46 : 0.34, now + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + (done ? 0.34 : 0.12));
-
-    const oscillator = context.createOscillator();
-    oscillator.type = done ? 'triangle' : 'sine';
-    oscillator.frequency.setValueAtTime(done ? 660 : 520, now);
-    if (done) oscillator.frequency.exponentialRampToValueAtTime(990, now + 0.16);
-    oscillator.connect(gain);
-    oscillator.start(now);
-    oscillator.stop(now + (done ? 0.36 : 0.13));
+  function startWordMode(nextStage = stageIndex, nextScope = wordScope, customListOverride = null) {
+    const customList = customListOverride ?? progress.customWords;
+    setStageIndex(nextStage);
+    setWordScope(nextScope);
+    setMode('word');
+    setWordList(buildWordSession(nextStage, nextScope, customList));
+    setWordIndex(0);
+    setTypedWordJamos([]);
+    setWordCompletedStrokes(0);
+    setWordMistakes(0);
+    setWordWrongFlag(false);
+    setWordStartedAt(null);
+    setWordFinishedAt(null);
+    setWordLastTick(0);
+    focusCaptureSoon();
   }
 
-  function commitValue(nextValue) {
-    const limitedValue = nextValue.slice(0, target.length);
-    if (!startedAt && limitedValue.length > 0) setStartedAt(Date.now());
-    const typedForward = limitedValue.length > value.length;
-    const typedIndex = limitedValue.length - 1;
-    const typedCorrectly = typedForward && limitedValue[typedIndex] === target[typedIndex];
-    setValue(limitedValue);
-    setBlockedKey('');
-    if (typedCorrectly) playSuccessSound(limitedValue === target);
-    if (limitedValue === target && !finishedAt) setFinishedAt(Date.now());
-    if (limitedValue !== target && finishedAt) setFinishedAt(null);
+  function startSentenceMode(nextSetId = sentenceSetId) {
+    setSentenceSetId(nextSetId);
+    setMode('sentence');
+    setSentenceIdx(0);
+    setSentenceInput('');
+    setSentenceStartedAt(null);
+    setSentenceFinishedAt(null);
+    setSentenceLastTick(0);
+    setSentenceTotalChars(0);
+    setSentenceCorrectChars(0);
+    setSentenceTotalStrokes(0);
+    window.requestAnimationFrame(() => sentenceInputRef.current?.focus());
   }
 
-  function getTypedJamo(event) {
-    const directKey = getAllowedKeys(stageIndex, practiceMode).includes(event.key) ? event.key : '';
-    return codeToJamo[event.code] ?? keyToJamo[event.key.toLowerCase()] ?? directKey;
+  function openRainMode() {
+    setMode('rain');
+    setRainRunning(false);
+    setRainGameOver(false);
+    setRainDrops([]);
+    setRainInput('');
+    setRainScore(0);
+    setRainLives(5);
+    setRainCombo(0);
+    setRainCleared(0);
+    rainScoreRef.current = 0;
+    rainClearedRef.current = 0;
   }
 
-  function handleKeyDown(event) {
+  function startRainGame() {
+    setRainRunning(true);
+    setRainGameOver(false);
+    setRainDrops([]);
+    setRainInput('');
+    setRainScore(0);
+    setRainLives(5);
+    setRainCombo(0);
+    setRainCleared(0);
+    rainScoreRef.current = 0;
+    rainClearedRef.current = 0;
+    rainLastSpawnRef.current = 0;
+    window.requestAnimationFrame(() => rainInputRef.current?.focus());
+  }
+
+  // ==================== SEAT MODE INPUT ====================
+  const seatStage = TYPING_STAGES[stageIndex] ?? TYPING_STAGES[0];
+  const seatIsDone = seatIndex >= seatSequence.length;
+  const seatNextChar = seatIsDone ? '' : seatSequence[seatIndex];
+  const seatAllowedKeys = useMemo(() => {
+    if (seatStage.keys.length <= 4) {
+      return Array.from(new Set([...seatStage.keys, 'ㄹ', 'ㅓ', 'ㅏ', 'ㄴ']));
+    }
+    return seatStage.keys;
+  }, [seatStage]);
+
+  const seatAccuracy =
+    seatIndex + seatMistakes > 0 ? Math.round((seatIndex / (seatIndex + seatMistakes)) * 100) : 100;
+  const seatCpm = calcCpm(seatIndex, seatStartedAt, seatFinishedAt ?? seatLastTick);
+
+  function handleSeatKeyDown(event) {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (seatIsDone) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        startSeatMode(stageIndex);
+      }
+      return;
+    }
+
+    const typed = getJamoFromKeyEvent(event);
+    if (!typed) return;
+    event.preventDefault();
+
+    const now = Date.now();
+    const startTs = seatStartedAt ?? now;
+    if (!seatStartedAt) setSeatStartedAt(now);
+    setSeatLastTick(now);
+
+    if (typed === seatNextChar) {
+      flashKey(event.code, true);
+      const nextIdx = seatIndex + 1;
+      setSeatIndex(nextIdx);
+      setSeatWrongFlag(false);
+
+      if (nextIdx >= seatSequence.length) {
+        setSeatFinishedAt(now);
+        playTone('done');
+        const finalAcc = Math.round((nextIdx / (nextIdx + seatMistakes)) * 100);
+        const finalCpm = calcCpm(nextIdx, startTs, now);
+        recordSessionStats(finalCpm, finalAcc, stageIndex);
+      } else {
+        playTone('ok');
+      }
+    } else {
+      flashKey(event.code, false);
+      setSeatMistakes((prev) => prev + 1);
+      setSeatWrongFlag(true);
+      recordWeakKey(seatNextChar);
+      playTone('wrong');
+    }
+  }
+
+  // ==================== WORD-BY-STAGE MODE INPUT ====================
+  const wordIsDone = wordList.length > 0 && wordIndex >= wordList.length;
+  const currentTargetWord = wordIsDone ? '' : wordList[wordIndex] ?? '';
+  const currentTargetJamos = useMemo(() => decomposeHangul(currentTargetWord), [currentTargetWord]);
+  const nextWordJamo = currentTargetJamos[typedWordJamos.length] ?? '';
+  const composedTypedWord = useMemo(() => composeHangul(typedWordJamos), [typedWordJamos]);
+  const wordAllowedKeys = useMemo(() => {
+    if (wordScope === 'custom') return null;
+    return getCumulativeStageKeys(stageIndex);
+  }, [stageIndex, wordScope]);
+
+  const totalWordStrokesNow = wordCompletedStrokes + typedWordJamos.length;
+  const wordAccuracy =
+    totalWordStrokesNow + wordMistakes > 0
+      ? Math.round((totalWordStrokesNow / (totalWordStrokesNow + wordMistakes)) * 100)
+      : 100;
+  const wordCpm = calcCpm(totalWordStrokesNow, wordStartedAt, wordFinishedAt ?? wordLastTick);
+
+  function handleWordKeyDown(event) {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (wordIsDone) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        startWordMode(stageIndex, wordScope);
+      }
+      return;
+    }
 
     if (event.key === 'Backspace') {
       event.preventDefault();
-      commitValue(value.slice(0, -1));
+      if (typedWordJamos.length > 0) {
+        setTypedWordJamos((prev) => prev.slice(0, -1));
+        setWordWrongFlag(false);
+      }
       return;
     }
 
-    const typedJamo = getTypedJamo(event);
-    if (!typedJamo) return;
-
+    const typed = getJamoFromKeyEvent(event);
+    if (!typed) return;
     event.preventDefault();
-    if (!getAllowedKeys(stageIndex, practiceMode).includes(typedJamo)) {
-      setBlockedKey(`${typedJamo}는 이번 단계 자리가 아닙니다`);
-      return;
-    }
 
-    commitValue(value + typedJamo);
+    const now = Date.now();
+    const startTs = wordStartedAt ?? now;
+    if (!wordStartedAt) setWordStartedAt(now);
+    setWordLastTick(now);
+
+    if (typed === nextWordJamo) {
+      flashKey(event.code, true);
+      const nextTyped = [...typedWordJamos, typed];
+      setWordWrongFlag(false);
+
+      if (nextTyped.length >= currentTargetJamos.length) {
+        const nextCompletedStrokes = wordCompletedStrokes + currentTargetJamos.length;
+        const nextWordIdx = wordIndex + 1;
+        setWordCompletedStrokes(nextCompletedStrokes);
+        setTypedWordJamos([]);
+        setWordIndex(nextWordIdx);
+
+        if (nextWordIdx >= wordList.length) {
+          setWordFinishedAt(now);
+          playTone('done');
+          const finalAcc = Math.round(
+            (nextCompletedStrokes / (nextCompletedStrokes + wordMistakes)) * 100,
+          );
+          const finalCpm = calcCpm(nextCompletedStrokes, startTs, now);
+          recordSessionStats(finalCpm, finalAcc, stageIndex);
+        } else {
+          playTone('word');
+        }
+      } else {
+        setTypedWordJamos(nextTyped);
+        playTone('ok');
+      }
+    } else {
+      flashKey(event.code, false);
+      setWordMistakes((prev) => prev + 1);
+      setWordWrongFlag(true);
+      recordWeakKey(nextWordJamo);
+      playTone('wrong');
+    }
   }
 
-  function renderKey(key, side) {
-    const keyList = side === 'left' ? visibleLeftKeys : visibleRightKeys;
-    const keyIndex = keyList.indexOf(key) + 1;
-    const isActive = nextChar === key;
+  function handleAddCustomWord(event) {
+    event.preventDefault();
+    const cleaned = customWordDraft.trim().replace(/\s+/g, '');
+    if (!cleaned) return;
 
+    const jamos = decomposeHangul(cleaned);
+    if (jamos.length === 0) {
+      setCustomWordNotice('한글 단어를 입력해 주세요.');
+      return;
+    }
+
+    const requiredStageIdx = getWordRequiredStageIndex(cleaned);
+    const requiredStage = TYPING_STAGES[requiredStageIdx];
+    const alreadyExists = progress.customWords.some((item) => item.word === cleaned);
+    const nextCustomWords = alreadyExists
+      ? progress.customWords
+      : [{ word: cleaned, stageIndex: requiredStageIdx }, ...progress.customWords];
+
+    saveProgress((prev) => ({
+      ...prev,
+      customWords: nextCustomWords,
+    }));
+
+    setCustomWordDraft('');
+    setCustomWordNotice(
+      `"${cleaned}" 추가 완료 · ${requiredStage.name}(${requiredStage.title}) · ${jamos.join('')}`,
+    );
+
+    // Immediately include in current session if compatible, or jump to that stage
+    const targetStage = requiredStageIdx > stageIndex && wordScope !== 'custom' ? requiredStageIdx : stageIndex;
+    startWordMode(targetStage, wordScope, nextCustomWords);
+  }
+
+  function handleRemoveCustomWord(wordToRemove) {
+    const nextCustomWords = progress.customWords.filter((item) => item.word !== wordToRemove);
+    saveProgress((prev) => ({
+      ...prev,
+      customWords: nextCustomWords,
+    }));
+    startWordMode(stageIndex, wordScope, nextCustomWords);
+  }
+
+  // ==================== SHORT SENTENCE MODE ====================
+  const currentSentenceSet =
+    SHORT_SENTENCE_SETS.find((set) => set.id === sentenceSetId) ?? SHORT_SENTENCE_SETS[0];
+  const sentenceIsDone = sentenceIdx >= currentSentenceSet.sentences.length;
+  const activeSentence = sentenceIsDone ? '' : currentSentenceSet.sentences[sentenceIdx];
+  const nextSentence = sentenceIsDone ? '' : currentSentenceSet.sentences[sentenceIdx + 1] ?? '';
+
+  const liveSentenceCorrect = useMemo(() => {
+    let ok = 0;
+    for (let i = 0; i < sentenceInput.length; i += 1) {
+      if (sentenceInput[i] === activeSentence[i]) ok += 1;
+    }
+    return ok;
+  }, [sentenceInput, activeSentence]);
+
+  const sentenceDisplayAcc =
+    sentenceTotalChars + sentenceInput.length > 0
+      ? Math.round(
+          ((sentenceCorrectChars + liveSentenceCorrect) / (sentenceTotalChars + sentenceInput.length)) * 100,
+        )
+      : 100;
+
+  const sentenceDisplayStrokes = sentenceTotalStrokes + decomposeHangul(sentenceInput).length;
+  const sentenceCpm = calcCpm(
+    sentenceDisplayStrokes,
+    sentenceStartedAt,
+    sentenceFinishedAt ?? sentenceLastTick,
+  );
+
+  const sentenceNextHintJamo = useMemo(() => {
+    if (!activeSentence) return '';
+    const cursorChar = activeSentence[sentenceInput.length];
+    if (!cursorChar) return '';
+    const decomposed = decomposeHangul(cursorChar);
+    return decomposed[0] ?? '';
+  }, [activeSentence, sentenceInput]);
+
+  function submitCurrentSentence() {
+    if (sentenceIsDone || !sentenceInput.trim()) return;
+    const now = Date.now();
+    const startTs = sentenceStartedAt ?? now;
+    const nextTotalChars = sentenceTotalChars + activeSentence.length;
+    const nextCorrectChars = sentenceCorrectChars + liveSentenceCorrect;
+    const nextTotalStrokes = sentenceTotalStrokes + decomposeHangul(sentenceInput).length;
+    const nextIdx = sentenceIdx + 1;
+
+    setSentenceTotalChars(nextTotalChars);
+    setSentenceCorrectChars(nextCorrectChars);
+    setSentenceTotalStrokes(nextTotalStrokes);
+    setSentenceInput('');
+    setSentenceIdx(nextIdx);
+    setSentenceLastTick(now);
+
+    if (nextIdx >= currentSentenceSet.sentences.length) {
+      setSentenceFinishedAt(now);
+      playTone('done');
+      const finalAcc = nextTotalChars > 0 ? Math.round((nextCorrectChars / nextTotalChars) * 100) : 100;
+      const finalCpm = calcCpm(nextTotalStrokes, startTs, now);
+      recordSessionStats(finalCpm, finalAcc);
+    } else {
+      playTone('word');
+    }
+  }
+
+  function handleSentenceChange(event) {
+    const val = event.target.value;
+    const now = Date.now();
+    if (!sentenceStartedAt && val.length > 0) setSentenceStartedAt(now);
+    setSentenceLastTick(now);
+    setSentenceInput(val);
+
+    if (val === activeSentence) {
+      window.setTimeout(() => {
+        submitCurrentSentence();
+      }, 60);
+    }
+  }
+
+  // ==================== ACID RAIN GAME LOOP ====================
+  const rainWordPool = useMemo(() => {
+    if (rainStageFilter === 'all') {
+      return TYPING_STAGES.flatMap((stage) => stage.words);
+    }
+    const idx = Number(rainStageFilter);
+    return TYPING_STAGES.slice(0, idx + 1).flatMap((stage) => stage.words);
+  }, [rainStageFilter]);
+
+  useEffect(() => {
+    if (mode !== 'rain' || !rainRunning || rainGameOver) return undefined;
+
+    let rafId = 0;
+    let lastTime = performance.now();
+
+    const step = (now) => {
+      const dt = Math.min(0.06, (now - lastTime) / 1000);
+      lastTime = now;
+
+      const level = 1 + Math.floor(rainClearedRef.current / 6);
+      const spawnInterval = Math.max(950, 2300 - level * 140);
+      const fallSpeed = 7.5 + level * 1.45; // % per second
+
+      let shouldSpawn = false;
+      if (!rainLastSpawnRef.current || now - rainLastSpawnRef.current >= spawnInterval) {
+        rainLastSpawnRef.current = now;
+        shouldSpawn = true;
+      }
+
+      let missedCount = 0;
+      setRainDrops((prev) => {
+        const moved = [];
+        for (const drop of prev) {
+          const nextY = drop.y + drop.speed * dt;
+          if (nextY >= 88) {
+            missedCount += 1;
+          } else {
+            moved.push({ ...drop, y: nextY });
+          }
+        }
+
+        if (shouldSpawn && moved.length < 7) {
+          const word = rainWordPool[Math.floor(Math.random() * rainWordPool.length)] ?? '하늘';
+          moved.push({
+            id: rainIdRef.current++,
+            word,
+            x: 14 + Math.random() * 72,
+            y: 4,
+            speed: fallSpeed * (0.85 + Math.random() * 0.3),
+          });
+        }
+
+        return moved;
+      });
+
+      if (missedCount > 0) {
+        playTone('wrong');
+        setRainCombo(0);
+        setRainLives((prev) => {
+          const nextLives = Math.max(0, prev - missedCount);
+          if (nextLives === 0) {
+            setRainRunning(false);
+            setRainGameOver(true);
+            saveProgress((p) => ({
+              ...p,
+              bestRainScore: Math.max(p.bestRainScore, rainScoreRef.current),
+            }));
+          }
+          return nextLives;
+        });
+      }
+
+      rafId = window.requestAnimationFrame(step);
+    };
+
+    rafId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [mode, rainRunning, rainGameOver, rainWordPool]);
+
+  function handleRainSubmit(rawValue) {
+    const guess = rawValue.trim();
+    if (!guess || !rainRunning) return;
+
+    const targetDrop = rainDrops
+      .filter((drop) => drop.word === guess)
+      .sort((a, b) => b.y - a.y)[0];
+
+    if (targetDrop) {
+      setRainDrops((prev) => prev.filter((drop) => drop.id !== targetDrop.id));
+      const nextCombo = rainCombo + 1;
+      const gained = 100 + Math.min(nextCombo, 10) * 15;
+      const nextScore = rainScore + gained;
+      rainScoreRef.current = nextScore;
+      rainClearedRef.current += 1;
+
+      setRainCombo(nextCombo);
+      setRainScore(nextScore);
+      setRainCleared((prev) => prev + 1);
+      setRainInput('');
+      playTone('word');
+    } else {
+      setRainCombo(0);
+      setRainInput('');
+      playTone('wrong');
+    }
+  }
+
+  // Derived lobby summaries
+  const avgAccuracy =
+    progress.totalSessions > 0 ? Math.round(progress.accuracySum / progress.totalSessions) : 0;
+  const topWeakKeys = useMemo(() => {
+    return Object.entries(progress.weakKeys)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [progress.weakKeys]);
+
+  // ==================== RENDER LOBBY ====================
+  if (mode === 'lobby') {
     return (
-      <span key={`${side}-${key}`} className={isActive ? 'active' : ''}>
-        <b>{key}</b>
-        <em>{handLabels[side]} {keyIndex}</em>
-        {isActive && <i>여기</i>}
-      </span>
+      <section className={styles.page}>
+        <div className={styles.shell}>
+          {/* Classic + Modern Hero Banner */}
+          <div className={styles.lobbyHero}>
+            <div>
+              <span className={styles.lobbyHeroBadge}>STUDY LAB · 두벌식 표준 한글 타자연습</span>
+              <h1 className={styles.lobbyHeroTitle}>
+                손끝으로 익히는
+                <br />
+                한글 타자 교실
+              </h1>
+              <p className={styles.lobbyHeroDesc}>
+                한메타자·한컴타자연습처럼 <strong>자리연습 → 자리별 낱말연습 → 짧은 글 → 산성비 게임</strong>까지
+                단계별로 익히고, 배운 자리 글쇠로 직접 단어를 만들어 연습할 수 있습니다.
+              </p>
+
+              <div className={styles.lobbyHeroActions}>
+                <button
+                  type="button"
+                  className={styles.primaryCta}
+                  onClick={() => startSeatMode(stageIndex)}
+                >
+                  자리연습 바로 시작 →
+                </button>
+                <button
+                  type="button"
+                  className={styles.ghostCta}
+                  onClick={() => startWordMode(stageIndex, 'stage')}
+                >
+                  자리별 낱말연습
+                </button>
+                <button
+                  type="button"
+                  className={styles.ghostCta}
+                  onClick={() => setSoundEnabled((prev) => !prev)}
+                >
+                  {soundEnabled ? '🔊 타건음 켜짐' : '🔇 타건음 꺼짐'}
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.heroVisualCard}>
+              <div className={styles.miniKeyboardArt} aria-hidden="true">
+                <div className={styles.miniKeyRow}>
+                  {['ㅂ', 'ㅈ', 'ㄷ', 'ㄱ', 'ㅅ', 'ㅛ', 'ㅕ'].map((ch) => (
+                    <span key={ch} className={styles.miniKey}>
+                      {ch}
+                    </span>
+                  ))}
+                </div>
+                <div className={styles.miniKeyRow}>
+                  {['ㅁ', 'ㄴ', 'ㅇ', 'ㄹ', 'ㅎ', 'ㅗ', 'ㅓ'].map((ch) => (
+                    <span
+                      key={ch}
+                      className={`${styles.miniKey}${ch === 'ㄹ' || ch === 'ㅓ' ? ` ${styles.miniKeyAccent}` : ''}`}
+                    >
+                      {ch}
+                    </span>
+                  ))}
+                </div>
+                <div className={styles.miniKeyRow}>
+                  {['ㅋ', 'ㅌ', 'ㅊ', 'ㅍ', 'ㅠ', 'ㅜ', 'ㅡ'].map((ch) => (
+                    <span key={ch} className={styles.miniKey}>
+                      {ch}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.heroMetrics}>
+                <div className={styles.heroMetricBox}>
+                  <span>최고 타수</span>
+                  <strong>{progress.bestCpm}</strong>
+                </div>
+                <div className={styles.heroMetricBox}>
+                  <span>평균 정확도</span>
+                  <strong>{avgAccuracy > 0 ? `${avgAccuracy}%` : '-'}</strong>
+                </div>
+                <div className={styles.heroMetricBox}>
+                  <span>완료 단계</span>
+                  <strong>{progress.completedStages.length} / 5</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4 Visual Mode Cards */}
+          <div className={styles.sectionHead}>
+            <h2>연습 메뉴 선택</h2>
+            <p>원하는 연습 카드를 눌러 바로 시작하세요</p>
+          </div>
+
+          <div className={styles.modeCardGrid}>
+            <button
+              type="button"
+              className={styles.modeCard}
+              style={{ '--card-accent': '#2563eb', '--card-soft': '#eff6ff' }}
+              onClick={() => startSeatMode(stageIndex)}
+            >
+              <div className={styles.modeCardTop}>
+                <span className={styles.modeIcon}>
+                  <ModeIcon type="seat" />
+                </span>
+                <span className={styles.modeTag}>1~5단계</span>
+              </div>
+              <h3>자리연습</h3>
+              <p>3단 두벌식 키보드와 양손 손가락 가이드를 보며 기본자리부터 Shift 쌍자음까지 익힙니다.</p>
+              <div className={styles.modeCardFooter}>
+                <span>기초 다지기</span>
+                <span>시작 →</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={styles.modeCard}
+              style={{ '--card-accent': '#059669', '--card-soft': '#ecfdf5' }}
+              onClick={() => startWordMode(stageIndex, 'stage')}
+            >
+              <div className={styles.modeCardTop}>
+                <span className={styles.modeIcon}>
+                  <ModeIcon type="word" />
+                </span>
+                <span className={styles.modeTag}>핵심 추천</span>
+              </div>
+              <h3>자리별 낱말연습</h3>
+              <p>각 자리 단계 글쇠로 만든 낱말을 조합하며 치고, 내가 원하는 단어도 직접 추가해 연습합니다.</p>
+              <div className={styles.modeCardFooter}>
+                <span>직접 단어 만들기 포함</span>
+                <span>시작 →</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={styles.modeCard}
+              style={{ '--card-accent': '#7c3aed', '--card-soft': '#f5f3ff' }}
+              onClick={() => startSentenceMode(sentenceSetId)}
+            >
+              <div className={styles.modeCardTop}>
+                <span className={styles.modeIcon}>
+                  <ModeIcon type="sentence" />
+                </span>
+                <span className={styles.modeTag}>속담 · 글귀</span>
+              </div>
+              <h3>짧은 글 연습</h3>
+              <p>실제 한글 문장을 리듬감 있게 입력하며 실시간 타수와 오타 위치를 확인합니다.</p>
+              <div className={styles.modeCardFooter}>
+                <span>3개 주제 · 24문장</span>
+                <span>시작 →</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={styles.modeCard}
+              style={{ '--card-accent': '#ea580c', '--card-soft': '#fff7ed' }}
+              onClick={openRainMode}
+            >
+              <div className={styles.modeCardTop}>
+                <span className={styles.modeIcon}>
+                  <ModeIcon type="rain" />
+                </span>
+                <span className={styles.modeTag}>
+                  {progress.bestRainScore > 0 ? `최고 ${progress.bestRainScore}점` : '미니게임'}
+                </span>
+              </div>
+              <h3>산성비 게임</h3>
+              <p>하늘에서 떨어지는 자리별 단어를 빠르게 쳐서 없애는 베네치아 스타일 타자 게임입니다.</p>
+              <div className={styles.modeCardFooter}>
+                <span>단계별 단어 선택</span>
+                <span>도전 →</span>
+              </div>
+            </button>
+          </div>
+
+          {/* 5-Stage Curriculum Roadmap */}
+          <div className={styles.roadmapPanel}>
+            <div className={styles.sectionHead}>
+              <h2>단계별 자리 커리큘럼</h2>
+              <p>원하는 단계의 자리연습 또는 자리별 낱말연습으로 바로 이동할 수 있습니다</p>
+            </div>
+
+            <div className={styles.stageRoadmapGrid}>
+              {TYPING_STAGES.map((stage, idx) => {
+                const isDone = progress.completedStages.includes(idx);
+
+                return (
+                  <div
+                    key={stage.id}
+                    className={`${styles.roadmapCard}${isDone ? ` ${styles.roadmapCardDone}` : ''}`}
+                  >
+                    <div className={styles.roadmapTop}>
+                      <span className={styles.roadmapStep}>{stage.name}</span>
+                      {isDone && <span className={styles.roadmapDoneBadge}>완료 ✓</span>}
+                    </div>
+                    <strong className={styles.roadmapTitle}>{stage.title}</strong>
+                    <span className={styles.roadmapKeys}>{stage.badge}</span>
+                    <div className={styles.roadmapActions}>
+                      <button
+                        type="button"
+                        className={styles.roadmapBtn}
+                        onClick={() => startSeatMode(idx)}
+                      >
+                        자리연습
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.roadmapBtn} ${styles.roadmapBtnAccent}`}
+                        onClick={() => startWordMode(idx, 'stage')}
+                      >
+                        낱말연습
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Weak Key Analysis */}
+          {topWeakKeys.length > 0 && (
+            <div className={styles.weakKeysStrip}>
+              <div className={styles.weakKeysLeft}>
+                <strong>자주 틀린 글쇠 (약점 키)</strong>
+                {topWeakKeys.map(([jamo, count]) => (
+                  <span key={jamo} className={styles.weakKeyPill}>
+                    {jamo} <small>({count}회)</small>
+                  </span>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={styles.weakKeyResetBtn}
+                onClick={() => saveProgress((prev) => ({ ...prev, weakKeys: {} }))}
+              >
+                약점 기록 초기화
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
     );
   }
 
+  // ==================== SHARED WORKSPACE HEADER ====================
+  const modeTitles = {
+    seat: { title: '자리연습', sub: '3단 두벌식 키보드와 손가락 위치를 보며 정확하게 익힙니다.' },
+    word: { title: '자리별 낱말연습', sub: '단계별 자리 글쇠로 만든 단어와 직접 추가한 단어를 연습합니다.' },
+    sentence: { title: '짧은 글 연습', sub: '문장 전체를 입력하고 Enter를 누르거나 끝까지 치면 다음 글로 넘어갑니다.' },
+    rain: { title: '산성비 게임', sub: '단어가 바닥 물결에 닿기 전에 입력하고 Enter/Space로 없애세요.' },
+  };
+
   return (
-    <section className="typingPage">
-      <div className="typingShell">
-        <header className="typingHeader">
-          <div>
-            <span>Study Zone</span>
-            <h1>타자 공부</h1>
-            <p>자리연습과 단어 만들기를 단계별로 연습합니다.</p>
-          </div>
-          <div className="headerActions">
-            <button type="button" onClick={() => reset()}>
-              새 연습
+    <section className={styles.page}>
+      <div className={styles.shell}>
+        {/* Top Bar */}
+        <header className={styles.topBar}>
+          <div className={styles.topBarLeft}>
+            <button type="button" className={styles.backBtn} onClick={() => setMode('lobby')}>
+              ← 시작 메뉴
             </button>
-            <button type="button" onClick={goNextStage} disabled={stageIndex >= stages.length - 1}>
-              다음 단계
+            <div className={styles.topBarTitle}>
+              <h1>{modeTitles[mode].title}</h1>
+              <span>{modeTitles[mode].sub}</span>
+            </div>
+          </div>
+
+          <div className={styles.topBarRight}>
+            <div className={styles.modeSwitchPills} role="tablist" aria-label="연습 모드 전환">
+              <button
+                type="button"
+                className={mode === 'seat' ? styles.activePill : ''}
+                onClick={() => startSeatMode(stageIndex)}
+              >
+                자리
+              </button>
+              <button
+                type="button"
+                className={mode === 'word' ? styles.activePill : ''}
+                onClick={() => startWordMode(stageIndex, wordScope)}
+              >
+                자리별 낱말
+              </button>
+              <button
+                type="button"
+                className={mode === 'sentence' ? styles.activePill : ''}
+                onClick={() => startSentenceMode(sentenceSetId)}
+              >
+                짧은 글
+              </button>
+              <button
+                type="button"
+                className={mode === 'rain' ? styles.activePill : ''}
+                onClick={openRainMode}
+              >
+                산성비
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className={styles.actionBtn}
+              onClick={() => setSoundEnabled((prev) => !prev)}
+            >
+              {soundEnabled ? '🔊 소리' : '🔇 음소거'}
             </button>
           </div>
         </header>
 
-        <div className="stageTabs">
-          {stages.map((stage, index) => (
-            <button key={stage.id} type="button" className={stageIndex === index ? 'active' : ''} onClick={() => reset(index)}>
-              <span>{stage.name}</span>
-              <strong>{stage.title}</strong>
-              <em>{stage.description}</em>
-            </button>
-          ))}
-        </div>
-
-        <div className="modeTabs" aria-label="연습 종류">
-          {practiceModes.map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              className={practiceMode === mode.id ? 'active' : ''}
-              onClick={() => reset(stageIndex, mode.id)}
-            >
-              {mode.label}
-            </button>
-          ))}
-        </div>
-
-        <main className="practicePanel">
-          <div className="lessonTitle">
-            <span>{currentStage.name} · {currentStage.title} · {practiceMode === 'word' ? '단어 만들기' : '20개 랜덤'}</span>
-            <strong>{currentIndex + (isFinished ? 0 : 1)} / {target.length}</strong>
-          </div>
-
-          <div className="seatBoard" aria-label="자리표">
-            <div className="handBlock left">
-              <strong>왼손</strong>
-              <div>{visibleLeftKeys.map((key) => renderKey(key, 'left'))}</div>
-            </div>
-            <div className={lastWasWrong ? 'nextKey wrong' : 'nextKey'}>
-              <span>{isFinished ? '연습 완료' : '이번 글쇠'}</span>
-              <strong>{nextChar}</strong>
-              <small>{nextKeyGuide}</small>
-              <em>{blockedKey || (lastWasWrong ? '방금 글자가 틀렸습니다' : previousChar ? `방금 입력: ${previousChar}` : '천천히 정확하게')}</em>
-            </div>
-            <div className="handBlock right">
-              <strong>오른손</strong>
-              <div>{visibleRightKeys.map((key) => renderKey(key, 'right'))}</div>
-            </div>
-          </div>
-
-          <div className="singlePractice" aria-label="현재 연습 글자">
-            <span>{practiceMode === 'word' ? '현재 단어' : '미리보기 없음'}</span>
-            <strong>{practiceMode === 'word' ? currentWord?.word ?? nextChar : nextChar}</strong>
-            <em>{isFinished ? '완료했습니다' : practiceMode === 'word' ? `다음 글쇠: ${nextChar}` : `${currentIndex + 1}번째 글쇠를 입력하세요`}</em>
-          </div>
-
-          {practiceMode === 'word' && (
-            <div className="wordStrip" aria-label="단어 목록">
-              {wordItems.map((item) => {
-                const className =
-                  currentIndex >= item.end ? 'done' :
-                  currentIndex >= item.start ? 'current' :
-                  '';
-                return <span key={`${item.word}-${item.start}`} className={className}>{item.word}</span>;
-              })}
-            </div>
-          )}
-
-          <textarea
-            ref={inputRef}
-            value={value}
-            onKeyDown={handleKeyDown}
-            placeholder="여기에 한 글자씩 입력하세요"
-            readOnly
-            spellCheck="false"
-            autoFocus
-          />
-
-          <div className="progressDots" style={{ gridTemplateColumns: `repeat(${Math.min(target.length, 20)}, minmax(0, 1fr))` }} aria-label="진행 상황">
-            {Array.from({ length: target.length }, (_, index) => {
-              const typed = value[index];
-              const className =
-                typed == null ? (index === currentIndex ? 'current' : '') :
-                typed === target[index] ? 'correct' :
-                'wrong';
-              return <span key={index} className={className}>{index + 1}</span>;
-            })}
-          </div>
-
-          <div className="progressTrack">
-            <span style={{ width: `${stats.progress}%` }} />
-          </div>
-
-          {isFinished && (
-            <div className="finishBox">
-              <span>완료! 정확도 {stats.accuracy}% · 속도 {stats.charsPerMinute}타/분</span>
-              {stageIndex < stages.length - 1 && (
-                <button type="button" onClick={goNextStage}>
-                  다음 단계로
+        {/* ==================== MODE 1: SEAT PRACTICE ==================== */}
+        {mode === 'seat' && (
+          <>
+            <div className={styles.stageStrip}>
+              {TYPING_STAGES.map((stage, idx) => (
+                <button
+                  key={stage.id}
+                  type="button"
+                  className={`${styles.stageChip}${stageIndex === idx ? ` ${styles.stageChipActive}` : ''}`}
+                  onClick={() => startSeatMode(idx)}
+                >
+                  <span>
+                    {stage.name}
+                    {progress.completedStages.includes(idx) ? ' ✓' : ''}
+                  </span>
+                  <strong>{stage.title}</strong>
+                  <em>{stage.badge}</em>
                 </button>
+              ))}
+            </div>
+
+            <div className={styles.statsRow}>
+              <div className={styles.statCard}>
+                <span>현재 타수</span>
+                <div>
+                  <strong>{seatCpm}</strong>
+                  <em>타/분</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>정확도</span>
+                <div>
+                  <strong>{seatAccuracy}</strong>
+                  <em>%</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>오타</span>
+                <div>
+                  <strong>{seatMistakes}</strong>
+                  <em>회</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>진행</span>
+                <div>
+                  <strong>{seatIndex}</strong>
+                  <em>/ {seatSequence.length}</em>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.practiceCard}>
+              <div
+                className={`${styles.captureBox}${captureFocused ? ` ${styles.captureBoxFocused}` : ''}`}
+                onClick={() => captureInputRef.current?.focus()}
+              >
+                <input
+                  ref={captureInputRef}
+                  className={styles.captureHiddenInput}
+                  value=""
+                  readOnly
+                  onKeyDown={handleSeatKeyDown}
+                  onFocus={() => setCaptureFocused(true)}
+                  onBlur={() => setCaptureFocused(false)}
+                  aria-label="자리연습 키 입력 영역"
+                />
+                <span className={styles.captureHint}>
+                  {captureFocused
+                    ? '입력 준비 완료! 키보드를 보고 치지 말고 손가락 감각으로 눌러보세요.'
+                    : '여기를 클릭하면 키보드 입력이 활성화됩니다.'}
+                </span>
+                <span className={styles.captureKeyTip}>한/영 전환 없이 바로 입력 가능</span>
+              </div>
+
+              <div className={styles.seatDisplay}>
+                <div
+                  className={`${styles.currentBigKey}${
+                    seatWrongFlag ? ` ${styles.currentBigKeyWrong}` : ''
+                  }`}
+                >
+                  <span>{seatIsDone ? '단계 완료!' : `${seatStage.name} · ${seatStage.title}`}</span>
+                  <strong>{seatIsDone ? '✓' : seatNextChar}</strong>
+                  <small>
+                    {seatIsDone
+                      ? '수고하셨습니다'
+                      : FINGER_INFO[JAMO_TO_KEY_META[seatNextChar]?.finger]?.label ?? ''}
+                  </small>
+                </div>
+
+                <div className={styles.seatQueueBox}>
+                  <div className={styles.seatQueueTop}>
+                    <span>{seatStage.description}</span>
+                    <span
+                      className={`${styles.seatStatusPill}${
+                        seatWrongFlag ? ` ${styles.seatStatusError}` : ''
+                      }`}
+                    >
+                      {seatIsDone
+                        ? '완료!'
+                        : seatWrongFlag
+                          ? '다시 정확히 눌러보세요'
+                          : `${seatIndex + 1}번째 글쇠`}
+                    </span>
+                  </div>
+
+                  <div className={styles.charTrack}>
+                    {seatSequence.map((ch, idx) => {
+                      const cls =
+                        idx < seatIndex
+                          ? styles.charCellCorrect
+                          : idx === seatIndex
+                            ? seatWrongFlag
+                              ? styles.charCellWrong
+                              : styles.charCellCurrent
+                            : '';
+
+                      return (
+                        <span key={`${idx}-${ch}`} className={`${styles.charCell} ${cls}`}>
+                          {ch}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  <div className={styles.progressTrack}>
+                    <div
+                      className={styles.progressFill}
+                      style={{ width: `${Math.round((seatIndex / seatSequence.length) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {seatIsDone && (
+                <div className={styles.finishBanner}>
+                  <strong>
+                    {seatStage.name}({seatStage.title}) 완료! · 속도 {seatCpm}타/분 · 정확도 {seatAccuracy}%
+                  </strong>
+                  <div className={styles.finishBannerActions}>
+                    <button
+                      type="button"
+                      className={styles.actionBtn}
+                      onClick={() => startSeatMode(stageIndex)}
+                    >
+                      다시 연습
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                      onClick={() => startWordMode(stageIndex, 'stage')}
+                    >
+                      이 자리 낱말연습 →
+                    </button>
+                    {stageIndex < TYPING_STAGES.length - 1 && (
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        onClick={() => startSeatMode(stageIndex + 1)}
+                      >
+                        다음 단계
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <TypingKeyboard
+                nextJamo={seatNextChar}
+                allowedKeys={seatAllowedKeys}
+                pressedFeedback={pressedFeedback}
+              />
+            </div>
+          </>
+        )}
+
+        {/* ==================== MODE 2: WORD BY STAGE ==================== */}
+        {mode === 'word' && (
+          <>
+            <div className={styles.stageStrip}>
+              {TYPING_STAGES.map((stage, idx) => (
+                <button
+                  key={stage.id}
+                  type="button"
+                  className={`${styles.stageChip}${stageIndex === idx ? ` ${styles.stageChipActive}` : ''}`}
+                  onClick={() => startWordMode(idx, wordScope)}
+                >
+                  <span>{stage.name}</span>
+                  <strong>{stage.title} 단어</strong>
+                  <em>{stage.badge}</em>
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.statsRow}>
+              <div className={styles.statCard}>
+                <span>타수</span>
+                <div>
+                  <strong>{wordCpm}</strong>
+                  <em>타/분</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>정확도</span>
+                <div>
+                  <strong>{wordAccuracy}</strong>
+                  <em>%</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>오타</span>
+                <div>
+                  <strong>{wordMistakes}</strong>
+                  <em>회</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>완료 단어</span>
+                <div>
+                  <strong>{wordIndex}</strong>
+                  <em>/ {wordList.length}</em>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.practiceCard}>
+              {/* Scope filter + Custom word builder */}
+              <div className={styles.wordControlsBar}>
+                <div className={styles.wordFilterGroup}>
+                  <button
+                    type="button"
+                    className={`${styles.filterChip}${wordScope === 'stage' ? ` ${styles.filterChipActive}` : ''}`}
+                    onClick={() => startWordMode(stageIndex, 'stage')}
+                  >
+                    {seatStage.name} 집중 단어
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.filterChip}${wordScope === 'cumulative' ? ` ${styles.filterChipActive}` : ''}`}
+                    onClick={() => startWordMode(stageIndex, 'cumulative')}
+                  >
+                    1~{stageIndex + 1}단계 누적 단어
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.filterChip}${wordScope === 'custom' ? ` ${styles.filterChipActive}` : ''}`}
+                    onClick={() => startWordMode(stageIndex, 'custom')}
+                  >
+                    내가 만든 단어 ({progress.customWords.length})
+                  </button>
+                </div>
+
+                <form className={styles.customWordForm} onSubmit={handleAddCustomWord}>
+                  <input
+                    type="text"
+                    className={styles.customWordInput}
+                    value={customWordDraft}
+                    onChange={(e) => setCustomWordDraft(e.target.value)}
+                    placeholder="직접 단어 추가 (예: 나비)"
+                    maxLength={10}
+                  />
+                  <button type="submit" className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}>
+                    + 단어 만들기
+                  </button>
+                </form>
+              </div>
+
+              {customWordNotice && <div className={styles.customWordNotice}>{customWordNotice}</div>}
+
+              {wordList.length === 0 ? (
+                <div className={styles.finishBanner}>
+                  <strong>아직 만든 단어가 없습니다. 위 입력창에서 한글 단어를 추가해 보세요!</strong>
+                  <button
+                    type="button"
+                    className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                    onClick={() => startWordMode(stageIndex, 'stage')}
+                  >
+                    기본 자리 단어로 연습
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className={`${styles.captureBox}${captureFocused ? ` ${styles.captureBoxFocused}` : ''}`}
+                    onClick={() => captureInputRef.current?.focus()}
+                  >
+                    <input
+                      ref={captureInputRef}
+                      className={styles.captureHiddenInput}
+                      value=""
+                      readOnly
+                      onKeyDown={handleWordKeyDown}
+                      onFocus={() => setCaptureFocused(true)}
+                      onBlur={() => setCaptureFocused(false)}
+                      aria-label="자리별 낱말연습 키 입력 영역"
+                    />
+                    <span className={styles.captureHint}>
+                      {captureFocused
+                        ? '입력 준비 완료! 자모를 순서대로 치면 한글 단어가 실시간으로 조합됩니다.'
+                        : '여기를 클릭해서 단어 입력을 시작하세요.'}
+                    </span>
+                    <span className={styles.captureKeyTip}>Backspace로 수정 가능 · 한/영 자동 인식</span>
+                  </div>
+
+                  <div className={styles.wordStageArena}>
+                    <div
+                      className={`${styles.wordPromptBox}${
+                        wordWrongFlag ? ` ${styles.wordPromptWrong}` : ''
+                      }`}
+                    >
+                      <div className={styles.wordPromptMeta}>
+                        <span>
+                          {wordIsDone
+                            ? '모든 낱말을 완료했습니다!'
+                            : `${seatStage.name} · ${wordIndex + 1} / ${wordList.length}번째 단어`}
+                        </span>
+                      </div>
+
+                      <div className={styles.wordPromptTarget}>
+                        {wordIsDone ? '완료!' : currentTargetWord}
+                      </div>
+
+                      {!wordIsDone && (
+                        <>
+                          <div className={styles.wordTypedPreview} aria-live="polite">
+                            {composedTypedWord || '...'}
+                          </div>
+
+                          <div className={styles.jamoChips} aria-label="글쇠 순서">
+                            {currentTargetJamos.map((jamo, idx) => {
+                              const cls =
+                                idx < typedWordJamos.length
+                                  ? styles.jamoChipDone
+                                  : idx === typedWordJamos.length
+                                    ? styles.jamoChipCurrent
+                                    : '';
+
+                              return (
+                                <span key={`${idx}-${jamo}`} className={`${styles.jamoChip} ${cls}`}>
+                                  {jamo}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className={styles.wordQueueSide}>
+                      <h3>
+                        <span>이번 연습 단어 목록</span>
+                        <span>
+                          {wordIndex}/{wordList.length}
+                        </span>
+                      </h3>
+                      <div className={styles.wordChipList}>
+                        {wordList.map((w, idx) => {
+                          const isCustom = progress.customWords.some((item) => item.word === w);
+                          const chipCls =
+                            idx < wordIndex
+                              ? styles.wordChipDone
+                              : idx === wordIndex
+                                ? styles.wordChipCurrent
+                                : '';
+
+                          return (
+                            <span key={`${w}-${idx}`} className={`${styles.wordChip} ${chipCls}`}>
+                              {w}
+                              {isCustom && (
+                                <button
+                                  type="button"
+                                  className={styles.wordChipDelete}
+                                  title="내가 만든 단어 삭제"
+                                  onClick={() => handleRemoveCustomWord(w)}
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.progressTrack}>
+                    <div
+                      className={styles.progressFill}
+                      style={{
+                        width: `${Math.round((wordIndex / Math.max(1, wordList.length)) * 100)}%`,
+                      }}
+                    />
+                  </div>
+
+                  {wordIsDone && (
+                    <div className={styles.finishBanner}>
+                      <strong>
+                        낱말연습 완료! · 속도 {wordCpm}타/분 · 정확도 {wordAccuracy}%
+                      </strong>
+                      <div className={styles.finishBannerActions}>
+                        <button
+                          type="button"
+                          className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                          onClick={() => startWordMode(stageIndex, wordScope)}
+                        >
+                          새 낱말 세트
+                        </button>
+                        {stageIndex < TYPING_STAGES.length - 1 && (
+                          <button
+                            type="button"
+                            className={styles.actionBtn}
+                            onClick={() => startWordMode(stageIndex + 1, wordScope)}
+                          >
+                            다음 단계 단어 →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <TypingKeyboard
+                    nextJamo={nextWordJamo}
+                    allowedKeys={wordAllowedKeys}
+                    pressedFeedback={pressedFeedback}
+                  />
+                </>
               )}
             </div>
-          )}
-        </main>
+          </>
+        )}
 
-        <aside className="statsGrid">
-          <div>
-            <span>타수</span>
-            <strong>{stats.charsPerMinute}</strong>
-            <em>타/분</em>
-          </div>
-          <div>
-            <span>정확도</span>
-            <strong>{stats.accuracy}</strong>
-            <em>%</em>
-          </div>
-          <div>
-            <span>오타</span>
-            <strong>{stats.mistakes}</strong>
-            <em>개</em>
-          </div>
-          <div>
-            <span>진행</span>
-            <strong>{currentIndex}</strong>
-            <em>/ {target.length}</em>
-          </div>
-        </aside>
+        {/* ==================== MODE 3: SHORT SENTENCE ==================== */}
+        {mode === 'sentence' && (
+          <>
+            <div className={styles.sentenceSetTabs}>
+              {SHORT_SENTENCE_SETS.map((set) => (
+                <button
+                  key={set.id}
+                  type="button"
+                  className={`${styles.filterChip}${
+                    sentenceSetId === set.id ? ` ${styles.filterChipActive}` : ''
+                  }`}
+                  onClick={() => startSentenceMode(set.id)}
+                >
+                  {set.title} ({set.sentences.length}문장)
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.statsRow}>
+              <div className={styles.statCard}>
+                <span>현재 타수</span>
+                <div>
+                  <strong>{sentenceCpm}</strong>
+                  <em>타/분</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>정확도</span>
+                <div>
+                  <strong>{sentenceDisplayAcc}</strong>
+                  <em>%</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>입력 타수</span>
+                <div>
+                  <strong>{sentenceDisplayStrokes}</strong>
+                  <em>타</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>진행</span>
+                <div>
+                  <strong>{sentenceIdx}</strong>
+                  <em>/ {currentSentenceSet.sentences.length}</em>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.practiceCard}>
+              {sentenceIsDone ? (
+                <div className={styles.finishBanner}>
+                  <strong>
+                    {currentSentenceSet.title} 완료! · 평균 {sentenceCpm}타/분 · 정확도 {sentenceDisplayAcc}%
+                  </strong>
+                  <div className={styles.finishBannerActions}>
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                      onClick={() => startSentenceMode(sentenceSetId)}
+                    >
+                      다시 치기
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.sentenceBoard}>
+                  <div className={styles.sentenceTargetLine} aria-label="목표 문장">
+                    {Array.from(activeSentence).map((ch, idx) => {
+                      let cls = styles.sentenceCharPending;
+                      if (idx < sentenceInput.length) {
+                        cls =
+                          sentenceInput[idx] === ch
+                            ? styles.sentenceCharCorrect
+                            : styles.sentenceCharWrong;
+                      } else if (idx === sentenceInput.length) {
+                        cls = styles.sentenceCharCursor;
+                      }
+
+                      return (
+                        <span key={`${idx}-${ch}`} className={cls}>
+                          {ch}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  <input
+                    ref={sentenceInputRef}
+                    type="text"
+                    className={styles.sentenceInput}
+                    value={sentenceInput}
+                    onChange={handleSentenceChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                        e.preventDefault();
+                        submitCurrentSentence();
+                      }
+                    }}
+                    placeholder="위 문장을 한글로 그대로 입력하고 Enter를 누르세요"
+                    autoFocus
+                  />
+
+                  {nextSentence && (
+                    <div className={styles.sentenceNextPreview}>다음 문장: {nextSentence}</div>
+                  )}
+                </div>
+              )}
+
+              <div className={styles.progressTrack}>
+                <div
+                  className={styles.progressFill}
+                  style={{
+                    width: `${Math.round((sentenceIdx / currentSentenceSet.sentences.length) * 100)}%`,
+                  }}
+                />
+              </div>
+
+              <TypingKeyboard nextJamo={sentenceNextHintJamo} compact />
+            </div>
+          </>
+        )}
+
+        {/* ==================== MODE 4: ACID RAIN GAME ==================== */}
+        {mode === 'rain' && (
+          <>
+            <div className={styles.statsRow}>
+              <div className={styles.statCard}>
+                <span>점수</span>
+                <div>
+                  <strong>{rainScore}</strong>
+                  <em>점</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>콤보</span>
+                <div>
+                  <strong>{rainCombo}</strong>
+                  <em>연속</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>격추 단어</span>
+                <div>
+                  <strong>{rainCleared}</strong>
+                  <em>개</em>
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <span>남은 목숨</span>
+                <div>
+                  <strong>{'♥'.repeat(rainLives) || '0'}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.practiceCard}>
+              <div className={styles.rainToolbar}>
+                <div className={styles.wordFilterGroup}>
+                  <button
+                    type="button"
+                    className={`${styles.filterChip}${
+                      rainStageFilter === 'all' ? ` ${styles.filterChipActive}` : ''
+                    }`}
+                    onClick={() => setRainStageFilter('all')}
+                    disabled={rainRunning}
+                  >
+                    전체 단어
+                  </button>
+                  {TYPING_STAGES.map((stage, idx) => (
+                    <button
+                      key={stage.id}
+                      type="button"
+                      className={`${styles.filterChip}${
+                        rainStageFilter === idx ? ` ${styles.filterChipActive}` : ''
+                      }`}
+                      onClick={() => setRainStageFilter(idx)}
+                      disabled={rainRunning}
+                    >
+                      1~{idx + 1}단계 ({stage.shortTitle})
+                    </button>
+                  ))}
+                </div>
+
+                {rainRunning && (
+                  <button
+                    type="button"
+                    className={styles.actionBtn}
+                    onClick={() => setRainRunning(false)}
+                  >
+                    일시정지
+                  </button>
+                )}
+              </div>
+
+              <div className={styles.rainArena}>
+                {rainDrops.map((drop) => {
+                  const isDanger = drop.y > 68;
+                  const isMatching =
+                    rainInput.trim().length > 0 && drop.word.startsWith(rainInput.trim());
+
+                  return (
+                    <div
+                      key={drop.id}
+                      className={`${styles.rainDrop}${isDanger ? ` ${styles.rainDropDanger}` : ''}${
+                        isMatching ? ` ${styles.rainDropMatch}` : ''
+                      }`}
+                      style={{ left: `${drop.x}%`, top: `${drop.y}%` }}
+                    >
+                      {drop.word}
+                    </div>
+                  );
+                })}
+
+                <div className={styles.rainWaterLine}>
+                  <span>산성비 방어선 · 레벨 {1 + Math.floor(rainCleared / 6)}</span>
+                  <span>최고 기록 {Math.max(progress.bestRainScore, rainScore)}점</span>
+                </div>
+
+                {!rainRunning && (
+                  <div className={styles.rainOverlay}>
+                    <div className={styles.rainOverlayCard}>
+                      <h2>{rainGameOver ? '게임 종료!' : '산성비 타자 게임'}</h2>
+                      <p>
+                        {rainGameOver
+                          ? `최종 점수 ${rainScore}점 · 총 ${rainCleared}개 단어를 막아냈습니다!`
+                          : '위에서 떨어지는 단어를 입력하고 Enter 또는 Space를 눌러 격추하세요. 자리별 단계를 선택하면 초보자도 즐길 수 있습니다.'}
+                      </p>
+                      <button type="button" className={styles.primaryCta} onClick={startRainGame}>
+                        {rainGameOver ? '다시 도전하기' : '게임 시작'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.rainInputBar}>
+                <input
+                  ref={rainInputRef}
+                  type="text"
+                  className={styles.rainInput}
+                  value={rainInput}
+                  disabled={!rainRunning}
+                  onChange={(e) => setRainInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      handleRainSubmit(rainInput);
+                    }
+                  }}
+                  placeholder={rainRunning ? '떨어지는 단어를 입력하고 Enter / Space!' : '게임 시작을 눌러주세요'}
+                />
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                  disabled={!rainRunning}
+                  onClick={() => handleRainSubmit(rainInput)}
+                >
+                  격추
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-
-      <style jsx>{`
-        .typingPage {
-          min-height: calc(100vh - var(--site-nav-height));
-          padding: 22px;
-          background:
-            linear-gradient(rgba(30, 64, 175, 0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(30, 64, 175, 0.06) 1px, transparent 1px),
-            #eef4fb;
-          background-size: 32px 32px, 32px 32px, auto;
-          color: #111827;
-        }
-
-        .typingShell {
-          width: min(1120px, 100%);
-          margin: 0 auto;
-          display: grid;
-          gap: 14px;
-        }
-
-        .typingHeader,
-        .practicePanel,
-        .statsGrid div,
-        .stageTabs button,
-        .modeTabs {
-          border: 1px solid rgba(30, 64, 175, 0.18);
-          border-radius: 8px;
-          background: #ffffff;
-          box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
-        }
-
-        .typingHeader {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 14px;
-          padding: 22px;
-          border-top: 6px solid #2563eb;
-        }
-
-        .typingHeader span,
-        .lessonTitle span,
-        .statsGrid span {
-          color: #2563eb;
-          font-size: 12px;
-          font-weight: 900;
-          text-transform: uppercase;
-        }
-
-        .typingHeader h1 {
-          margin: 4px 0 0;
-          color: #0f172a;
-          font-size: 42px;
-          line-height: 1;
-        }
-
-        .typingHeader p {
-          margin: 10px 0 0;
-          color: #64748b;
-          font-size: 14px;
-          font-weight: 800;
-        }
-
-        .headerActions {
-          display: flex;
-          gap: 8px;
-        }
-
-        .typingHeader button,
-        .stageTabs button,
-        .finishBox button {
-          min-height: 42px;
-          border: 0;
-          border-radius: 8px;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .typingHeader button,
-        .finishBox button {
-          padding: 0 18px;
-          background: #111827;
-          color: #ffffff;
-        }
-
-        .typingHeader button:disabled {
-          opacity: 0.42;
-          cursor: not-allowed;
-        }
-
-        .stageTabs {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 10px;
-        }
-
-        .modeTabs {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 8px;
-          padding: 8px;
-        }
-
-        .stageTabs button {
-          min-height: 112px;
-          padding: 14px;
-          color: #334155;
-          text-align: left;
-        }
-
-        .modeTabs button {
-          min-height: 46px;
-          border: 0;
-          border-radius: 8px;
-          background: #eef2ff;
-          color: #334155;
-          font-size: 15px;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .stageTabs button.active,
-        .modeTabs button.active {
-          border-color: #2563eb;
-          background: #dbeafe;
-          color: #1e3a8a;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-        }
-
-        .stageTabs span,
-        .stageTabs strong,
-        .stageTabs em {
-          display: block;
-        }
-
-        .stageTabs span {
-          font-size: 12px;
-          font-weight: 900;
-        }
-
-        .stageTabs strong {
-          margin-top: 5px;
-          font-size: 22px;
-        }
-
-        .stageTabs em {
-          margin-top: 8px;
-          color: #64748b;
-          font-size: 12px;
-          font-style: normal;
-          font-weight: 800;
-          line-height: 1.35;
-        }
-
-        .practicePanel {
-          padding: 22px;
-          display: grid;
-          gap: 16px;
-          border-top: 6px solid #0f172a;
-        }
-
-        .lessonTitle {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-        }
-
-        .lessonTitle strong {
-          padding: 8px 12px;
-          border-radius: 8px;
-          background: #fef3c7;
-          color: #92400e;
-          font-size: 14px;
-        }
-
-        .seatBoard {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) 156px minmax(0, 1fr);
-          gap: 12px;
-          align-items: stretch;
-        }
-
-        .handBlock,
-        .nextKey,
-        .singlePractice {
-          border: 1px solid rgba(15, 23, 42, 0.12);
-          border-radius: 8px;
-          background: #f8fafc;
-          padding: 14px;
-        }
-
-        .handBlock > strong,
-        .nextKey span,
-        .singlePractice span {
-          display: block;
-          color: #475569;
-          font-size: 12px;
-          font-weight: 900;
-          text-align: center;
-        }
-
-        .handBlock div {
-          margin-top: 10px;
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 8px;
-        }
-
-        .handBlock span {
-          min-height: 68px;
-          display: grid;
-          place-items: center;
-          border: 1px solid rgba(15, 23, 42, 0.14);
-          border-radius: 8px;
-          background: #ffffff;
-          box-shadow: inset 0 -4px 0 rgba(15, 23, 42, 0.08);
-          position: relative;
-        }
-
-        .handBlock span.active {
-          border-color: #f97316;
-          background: #ffedd5;
-          box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.24), inset 0 -5px 0 rgba(154, 52, 18, 0.22);
-          transform: translateY(-2px);
-        }
-
-        .handBlock b {
-          color: #0f172a;
-          font-size: 30px;
-          line-height: 1;
-        }
-
-        .handBlock em {
-          color: #94a3b8;
-          font-size: 10px;
-          font-style: normal;
-          font-weight: 900;
-        }
-
-        .handBlock i {
-          position: absolute;
-          top: -11px;
-          right: -8px;
-          padding: 3px 7px;
-          border-radius: 999px;
-          background: #ef4444;
-          color: #ffffff;
-          font-size: 11px;
-          font-style: normal;
-          font-weight: 900;
-          box-shadow: 0 5px 12px rgba(239, 68, 68, 0.3);
-        }
-
-        .nextKey,
-        .singlePractice {
-          display: grid;
-          place-items: center;
-          background: #111827;
-          text-align: center;
-        }
-
-        .nextKey.wrong {
-          background: #7f1d1d;
-        }
-
-        .nextKey span,
-        .singlePractice span {
-          color: #93c5fd;
-        }
-
-        .nextKey strong,
-        .singlePractice strong {
-          color: #facc15;
-          font-size: 52px;
-          line-height: 1;
-        }
-
-        .nextKey small {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 28px;
-          padding: 4px 10px;
-          border-radius: 999px;
-          background: #f97316;
-          color: #ffffff;
-          font-size: 13px;
-          font-weight: 900;
-        }
-
-        .nextKey em,
-        .singlePractice em {
-          color: #cbd5e1;
-          font-size: 12px;
-          font-style: normal;
-          font-weight: 900;
-        }
-
-        .singlePractice {
-          min-height: 178px;
-        }
-
-        .singlePractice strong {
-          font-size: 88px;
-        }
-
-        .wordStrip {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          padding: 12px;
-          border: 1px solid rgba(15, 23, 42, 0.12);
-          border-radius: 8px;
-          background: #f8fafc;
-        }
-
-        .wordStrip span {
-          min-height: 34px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 12px;
-          border-radius: 8px;
-          background: #e2e8f0;
-          color: #475569;
-          font-weight: 900;
-        }
-
-        .wordStrip span.current {
-          background: #fef3c7;
-          color: #92400e;
-          box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.22);
-        }
-
-        .wordStrip span.done {
-          background: #dcfce7;
-          color: #166534;
-        }
-
-        textarea {
-          width: 100%;
-          min-height: 104px;
-          resize: vertical;
-          padding: 16px;
-          border: 2px solid rgba(37, 99, 235, 0.26);
-          border-radius: 8px;
-          outline: 0;
-          color: #111827;
-          font: inherit;
-          font-size: 24px;
-          font-weight: 800;
-          line-height: 1.55;
-        }
-
-        textarea:focus {
-          border-color: #2563eb;
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
-        }
-
-        .progressDots {
-          display: grid;
-          grid-template-columns: repeat(20, minmax(0, 1fr));
-          gap: 5px;
-        }
-
-        .progressDots span {
-          min-height: 28px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 6px;
-          background: #e2e8f0;
-          color: #64748b;
-          font-size: 11px;
-          font-weight: 900;
-        }
-
-        .progressDots .current {
-          background: #fef3c7;
-          color: #92400e;
-          box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.24);
-        }
-
-        .progressDots .correct {
-          background: #dcfce7;
-          color: #166534;
-        }
-
-        .progressDots .wrong {
-          background: #dc2626;
-          color: #ffffff;
-        }
-
-        .progressTrack {
-          height: 14px;
-          overflow: hidden;
-          border-radius: 999px;
-          background: #e2e8f0;
-        }
-
-        .progressTrack span {
-          height: 100%;
-          display: block;
-          border-radius: inherit;
-          background: linear-gradient(90deg, #22c55e, #2563eb);
-          transition: width 120ms ease;
-        }
-
-        .finishBox {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 14px;
-          border-radius: 8px;
-          background: #dcfce7;
-          color: #166534;
-          font-weight: 900;
-        }
-
-        .statsGrid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-        .statsGrid div {
-          min-height: 120px;
-          padding: 18px;
-        }
-
-        .statsGrid strong {
-          display: block;
-          margin-top: 8px;
-          color: #0f172a;
-          font-size: 38px;
-          line-height: 1;
-        }
-
-        .statsGrid em {
-          color: #64748b;
-          font-size: 12px;
-          font-style: normal;
-          font-weight: 900;
-        }
-
-        @media (max-width: 900px) {
-          .seatBoard {
-            grid-template-columns: 1fr;
-          }
-
-          .nextKey {
-            min-height: 132px;
-          }
-        }
-
-        @media (max-width: 760px) {
-          .typingPage {
-            padding: 14px;
-          }
-
-          .typingHeader,
-          .lessonTitle,
-          .finishBox {
-            display: grid;
-          }
-
-          .typingHeader h1 {
-            font-size: 32px;
-          }
-
-          .headerActions,
-          .stageTabs,
-          .statsGrid {
-            grid-template-columns: 1fr;
-            display: grid;
-          }
-
-          .progressDots {
-            grid-template-columns: repeat(10, minmax(0, 1fr));
-          }
-        }
-      `}</style>
     </section>
   );
 }

@@ -12,6 +12,11 @@ const pages = [
     description: '줄을 걸고 놓는 타이밍으로 하늘 코스를 통과하는 스윙 액션 게임',
   },
   {
+    href: '/jump-map',
+    title: 'Jump Map',
+    description: '벽점프와 벽 미끄러짐으로 아이템을 모으고 50개 스테이지를 깨는 점프맵 게임',
+  },
+  {
     href: '/rpg',
     title: 'RPG 게임',
     description: '마을을 탐험하고 블록과 구조물을 설치하는 2D RPG 게임',

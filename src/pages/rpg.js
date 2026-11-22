@@ -4,7 +4,6 @@ const mapWidth = 18;
 const mapHeight = 12;
 
 const buildTools = [
-  { id: 'wall', name: '벽', mark: 'W' },
   { id: 'house', name: '집', mark: 'H' },
   { id: 'farm', name: '밭', mark: 'F' },
   { id: 'lamp', name: '등불', mark: 'L' },
@@ -282,7 +281,7 @@ export default function RpgPage() {
   const [mapIndex, setMapIndex] = useState(0);
   const [unlockedMapIndex, setUnlockedMapIndex] = useState(0);
   const [player, setPlayer] = useState(maps[0].start);
-  const [selectedTool, setSelectedTool] = useState('wall');
+  const [selectedTool, setSelectedTool] = useState('house');
   const [selectedWeapon, setSelectedWeapon] = useState('stick');
   const [isBuildMode, setIsBuildMode] = useState(false);
   const [playerCooldownLeft, setPlayerCooldownLeft] = useState(0);
@@ -296,6 +295,8 @@ export default function RpgPage() {
   const [playerHit, setPlayerHit] = useState(false);
   const [clearPopup, setClearPopup] = useState(null);
   const audioContext = useRef(null);
+  const moveHoldTimerRef = useRef(null);
+  const movePlayerRef = useRef(null);
   const isPlayerDead = playerHp <= 0;
   const currentMap = maps[mapIndex];
   const currentBuilds = builds[currentMap.id] ?? {};
@@ -499,7 +500,7 @@ export default function RpgPage() {
   }
 
   function buildOnTile(x, y) {
-    if (!isBuildMode) {
+    if (!isBuildMode || selectedTool === 'wall') {
       return;
     }
 
@@ -825,6 +826,37 @@ export default function RpgPage() {
   }, [currentMonsters.length, mapIndex, clearPopup, isPlayerDead]);
 
   useEffect(() => {
+    movePlayerRef.current = movePlayer;
+  });
+
+  useEffect(() => {
+    return () => {
+      if (moveHoldTimerRef.current) {
+        window.clearInterval(moveHoldTimerRef.current);
+      }
+    };
+  }, []);
+
+  function startHoldMove(event, dx, dy) {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    movePlayerRef.current?.(dx, dy);
+    if (moveHoldTimerRef.current) {
+      window.clearInterval(moveHoldTimerRef.current);
+    }
+    moveHoldTimerRef.current = window.setInterval(() => {
+      movePlayerRef.current?.(dx, dy);
+    }, 150);
+  }
+
+  function stopHoldMove() {
+    if (moveHoldTimerRef.current) {
+      window.clearInterval(moveHoldTimerRef.current);
+      moveHoldTimerRef.current = null;
+    }
+  }
+
+  useEffect(() => {
     if (playerHp <= 0) {
       playSound('death');
     }
@@ -862,26 +894,22 @@ export default function RpgPage() {
             <em>{playerCooldownLeft > 0 ? `${playerCooldownLeft.toFixed(1)}s` : 'READY'}</em>
           </div>
 
-          <div className="toolBar buildToolBar">
-            <button
-              type="button"
-              className={isBuildMode ? 'active buildModeButton' : 'buildModeButton'}
-              onClick={() => setIsBuildMode((current) => !current)}
+          <div className="mobileMapBar" aria-label="모바일 맵 선택">
+            <select
+              className="mobileMapSelect"
+              value={mapIndex}
+              onChange={(event) => changeMap(Number(event.target.value))}
+              aria-label="맵 이동"
             >
-              <span>{isBuildMode ? 'ON' : 'OFF'}</span>
-              건설 모드
+              {maps.map((map, index) => (
+                <option key={map.id} value={index} disabled={index > unlockedMapIndex}>
+                  {index + 1}. {map.name} {index > unlockedMapIndex ? '(잠김)' : ''}
+                </option>
+              ))}
+            </select>
+            <button type="button" className="mobileRespawnBtn" onClick={respawnMonsters}>
+              몬스터 생성
             </button>
-            {buildTools.map((tool) => (
-              <button
-                key={tool.id}
-                type="button"
-                className={tool.id === selectedTool ? 'active' : ''}
-                onClick={() => setSelectedTool(tool.id)}
-              >
-                <span>{tool.mark}</span>
-                {tool.name}
-              </button>
-            ))}
           </div>
 
           <div className="weaponBar">
@@ -919,19 +947,11 @@ export default function RpgPage() {
                 'ground';
 
               return (
-                <button
+                <div
                   key={tileKey}
-                  type="button"
-                  className={`tile ${tileType} ${inRange ? 'inWeaponRange' : ''} ${build ? `build ${build}` : ''}`}
-                  onClick={() => buildOnTile(x, y)}
+                  className={`tile ${tileType} ${inRange ? 'inWeaponRange' : ''}`}
                   aria-label={`${x}, ${y}`}
-                >
-                  {build && (
-                    <span className="buildMark">
-                      {buildTools.find((tool) => tool.id === build)?.mark}
-                    </span>
-                  )}
-                </button>
+                />
               );
             })}
 
@@ -1053,10 +1073,6 @@ export default function RpgPage() {
               {playerCooldownLeft > 0 ? `공격 가능까지 ${playerCooldownLeft.toFixed(1)}초` : '공격 준비 완료'}
             </p>
           </div>
-          <div>
-            <span className="panelLabel">BUILD</span>
-            <strong>{Object.values(currentBuilds).filter(Boolean).length}</strong>
-          </div>
           <button type="button" className="attackButton" onClick={attack}>
             공격
           </button>
@@ -1094,22 +1110,57 @@ export default function RpgPage() {
 
         <div className="mobileActionRow">
           <div className="touchPad">
-            <button type="button" className="up" onClick={() => movePlayer(0, -1)}>위</button>
-            <button type="button" className="left" onClick={() => movePlayer(-1, 0)}>왼쪽</button>
-            <button type="button" className="right" onClick={() => movePlayer(1, 0)}>오른쪽</button>
-            <button type="button" className="down" onClick={() => movePlayer(0, 1)}>아래</button>
+            <button
+              type="button"
+              className="up"
+              onPointerDown={(e) => startHoldMove(e, 0, -1)}
+              onPointerUp={stopHoldMove}
+              onPointerCancel={stopHoldMove}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              className="left"
+              onPointerDown={(e) => startHoldMove(e, -1, 0)}
+              onPointerUp={stopHoldMove}
+              onPointerCancel={stopHoldMove}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              ◀
+            </button>
+            <button
+              type="button"
+              className="right"
+              onPointerDown={(e) => startHoldMove(e, 1, 0)}
+              onPointerUp={stopHoldMove}
+              onPointerCancel={stopHoldMove}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              ▶
+            </button>
+            <button
+              type="button"
+              className="down"
+              onPointerDown={(e) => startHoldMove(e, 0, 1)}
+              onPointerUp={stopHoldMove}
+              onPointerCancel={stopHoldMove}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              ▼
+            </button>
           </div>
-
-          <button type="button" className="mobileAttackButton" onClick={attack}>
-            공격
-          </button>
 
           <button
             type="button"
-            className={isBuildMode ? 'mobileBuildButton active' : 'mobileBuildButton'}
-            onClick={() => setIsBuildMode((current) => !current)}
+            className="mobileAttackButton"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              attack();
+            }}
           >
-            건설 {isBuildMode ? 'ON' : 'OFF'}
+            공격
           </button>
         </div>
       </div>

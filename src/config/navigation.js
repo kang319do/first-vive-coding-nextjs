@@ -11,8 +11,6 @@ export const navigationMenus = [
       { href: '/jump-map', label: 'Jump Map' },
       { href: '/rpg', label: 'RPG 게임' },
       { href: '/tangtang', label: '탕탕 서바이벌' },
-      { href: '/summon3d', label: '3D 소환 사냥' },
-      { href: '/hero-arena', label: '영웅 전장' },
     ],
   },
   {

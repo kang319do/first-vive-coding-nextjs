@@ -14,27 +14,17 @@ const pages = [
   {
     href: '/jump-map',
     title: 'Jump Map',
-    description: '벽점프와 벽 미끄러짐으로 아이템을 모으고 50개 스테이지를 깨는 점프맵 게임',
+    description: '슬라이딩·공중 대시·블록 쌓기·벽점프로 극악 50스테이지를 돌파하는 파쿠르 게임',
   },
   {
     href: '/rpg',
     title: 'RPG 게임',
-    description: '마을을 탐험하고 블록과 구조물을 설치하는 2D RPG 게임',
+    description: '다양한 맵을 탐험하고 무기를 바꿔가며 몬스터와 싸우는 2D RPG 게임',
   },
   {
     href: '/tangtang',
     title: '탕탕 서바이벌',
     description: '몰려오는 적을 처치하고 무기를 강화하며 오래 버티는 액션 게임',
-  },
-  {
-    href: '/summon3d',
-    title: '3D 소환 사냥',
-    description: '무기와 스킬을 뽑고 3D 몬스터 웨이브를 사냥하는 게임',
-  },
-  {
-    href: '/hero-arena',
-    title: '블록 영웅 전장',
-    description: '영웅을 골라 3D 전장에서 스킬 콤보로 봇 적들을 KO시키는 아레나 게임',
   },
 ];
 

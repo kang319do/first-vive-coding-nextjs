@@ -958,6 +958,10 @@ export default function TangtangPage() {
     mouse: { active: false, x: 0, y: 0 },
   });
   const audioRef = useRef(null);
+  const arenaTouchRef = useRef({ pointerId: null, originX: 0, originY: 0 });
+  const stickPointerRef = useRef(null);
+  const [floatingStick, setFloatingStick] = useState(null);
+  const [fixedStickOffset, setFixedStickOffset] = useState({ x: 0, y: 0 });
   const [selectedStage, setSelectedStage] = useState(0);
   const [hud, setHud] = useState(() => gameRef.current);
   const [version, setVersion] = useState(0);
@@ -1062,6 +1066,57 @@ export default function TangtangPage() {
   function stopMouseMove(event) {
     if (event?.pointerType && event.pointerType !== 'mouse') return;
     inputRef.current.mouse = { active: false, x: 0, y: 0 };
+  }
+
+  function startArenaTouch(event) {
+    if (isGameUiPointer(event) || !gameRef.current.running || gameRef.current.pausedForUpgrade) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ox = event.clientX - rect.left;
+    const oy = event.clientY - rect.top;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    getAudioContext();
+    arenaTouchRef.current = { pointerId: event.pointerId, originX: ox, originY: oy };
+    setFloatingStick({ x: ox, y: oy, dx: 0, dy: 0 });
+    inputRef.current.touch = { x: 0, y: 0 };
+  }
+
+  function moveArenaTouch(event) {
+    if (arenaTouchRef.current.pointerId !== event.pointerId) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const rawDx = event.clientX - rect.left - arenaTouchRef.current.originX;
+    const rawDy = event.clientY - rect.top - arenaTouchRef.current.originY;
+    const maxRadius = 46;
+    const dist = Math.hypot(rawDx, rawDy);
+    const clamped = Math.min(dist, maxRadius);
+    const nx = dist > 4 ? rawDx / dist : 0;
+    const ny = dist > 4 ? rawDy / dist : 0;
+    inputRef.current.touch = { x: nx, y: ny };
+    setFloatingStick({
+      x: arenaTouchRef.current.originX,
+      y: arenaTouchRef.current.originY,
+      dx: nx * clamped,
+      dy: ny * clamped,
+    });
+  }
+
+  function endArenaTouch(event) {
+    if (arenaTouchRef.current.pointerId !== event.pointerId) return;
+    arenaTouchRef.current.pointerId = null;
+    inputRef.current.touch = { x: 0, y: 0 };
+    setFloatingStick(null);
+  }
+
+  function updateFixedStick(event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const rawX = event.clientX - rect.left - rect.width / 2;
+    const rawY = event.clientY - rect.top - rect.height / 2;
+    const maxRadius = rect.width / 2 - 20;
+    const dist = Math.hypot(rawX, rawY);
+    const nx = dist > 4 ? rawX / dist : 0;
+    const ny = dist > 4 ? rawY / dist : 0;
+    const clamped = Math.min(dist, maxRadius);
+    inputRef.current.touch = { x: nx, y: ny };
+    setFixedStickOffset({ x: nx * clamped, y: ny * clamped });
   }
 
   useEffect(() => {
@@ -1257,32 +1312,72 @@ export default function TangtangPage() {
         <div
           className="arenaWrap"
           onPointerDown={(event) => {
-            if (event.pointerType === 'mouse' && !isGameUiPointer(event)) {
-              event.currentTarget.setPointerCapture(event.pointerId);
-              getAudioContext();
-              updateMouseMove(event);
+            if (event.pointerType === 'mouse') {
+              if (!isGameUiPointer(event)) {
+                event.currentTarget.setPointerCapture(event.pointerId);
+                getAudioContext();
+                updateMouseMove(event);
+              }
+            } else {
+              startArenaTouch(event);
             }
           }}
           onPointerMove={(event) => {
-            if (inputRef.current.mouse.active) {
-              updateMouseMove(event);
+            if (event.pointerType === 'mouse') {
+              if (inputRef.current.mouse.active) {
+                updateMouseMove(event);
+              }
+            } else {
+              moveArenaTouch(event);
             }
           }}
-          onPointerUp={stopMouseMove}
-          onPointerCancel={stopMouseMove}
+          onPointerUp={(event) => {
+            stopMouseMove(event);
+            endArenaTouch(event);
+          }}
+          onPointerCancel={(event) => {
+            stopMouseMove(event);
+            endArenaTouch(event);
+          }}
           onPointerLeave={stopMouseMove}
+          onContextMenu={(e) => e.preventDefault()}
         >
           <canvas ref={canvasRef} className="arenaCanvas" />
+          {floatingStick && (
+            <div
+              className="floatingStick"
+              style={{ left: `${floatingStick.x}px`, top: `${floatingStick.y}px` }}
+              aria-hidden="true"
+            >
+              <span
+                style={{
+                  transform: `translate(${floatingStick.dx}px, ${floatingStick.dy}px)`,
+                }}
+              />
+            </div>
+          )}
           <div className="mobileGameHud">
-            <span>{stage.name}</span>
+            <span>{stage.name} · LV {hud.level}</span>
             <strong>{minutes}:{seconds}</strong>
             <em>HP {Math.ceil(player.hp)}</em>
           </div>
           {!hud.running && !hud.over && (
             <div className="startOverlay">
               <strong>{stages[selectedStage].name} 진입</strong>
-              <p>WASD 또는 방향키로 이동하세요. 숫자키 1-{weapons.length}로 무기를 즉시 바꿀 수 있습니다.</p>
-              <button type="button" onClick={() => resetGame()}>시작</button>
+              <p>화면을 드래그하거나 조이스틱(PC: WASD/방향키)으로 이동하세요.</p>
+              <div className="mobileStagePicker" aria-label="스테이지 선택">
+                {stages.map((item, index) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={selectedStage === index ? 'active' : ''}
+                    onClick={() => setSelectedStage(index)}
+                  >
+                    {item.level}. {item.name}
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={() => resetGame(selectedStage)}>시작</button>
             </div>
           )}
           {hud.pausedForUpgrade && (
@@ -1312,22 +1407,33 @@ export default function TangtangPage() {
         className="touchStick"
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
+          stickPointerRef.current = event.pointerId;
+          getAudioContext();
+          updateFixedStick(event);
         }}
         onPointerMove={(event) => {
-          const rect = event.currentTarget.getBoundingClientRect();
-          const x = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-          const y = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-          const length = Math.max(1, Math.hypot(x, y));
-          inputRef.current.touch = { x: x / length, y: y / length };
+          if (stickPointerRef.current !== event.pointerId) return;
+          updateFixedStick(event);
         }}
-        onPointerUp={() => {
+        onPointerUp={(event) => {
+          if (stickPointerRef.current !== event.pointerId) return;
+          stickPointerRef.current = null;
           inputRef.current.touch = { x: 0, y: 0 };
+          setFixedStickOffset({ x: 0, y: 0 });
         }}
-        onPointerCancel={() => {
+        onPointerCancel={(event) => {
+          if (stickPointerRef.current !== event.pointerId) return;
+          stickPointerRef.current = null;
           inputRef.current.touch = { x: 0, y: 0 };
+          setFixedStickOffset({ x: 0, y: 0 });
         }}
+        onContextMenu={(e) => e.preventDefault()}
       >
-        <span />
+        <span
+          style={{
+            transform: `translate(${fixedStickOffset.x}px, ${fixedStickOffset.y}px)`,
+          }}
+        />
       </div>
 
       <div className="mobileWeaponPad" aria-label="무기 변경">
@@ -1691,6 +1797,32 @@ export default function TangtangPage() {
           line-height: 1.4;
         }
 
+        .floatingStick {
+          width: 108px;
+          height: 108px;
+          position: absolute;
+          z-index: 6;
+          transform: translate(-50%, -50%);
+          display: grid;
+          place-items: center;
+          border: 2px solid rgba(250, 204, 21, 0.55);
+          border-radius: 50%;
+          background: rgba(15, 23, 42, 0.42);
+          pointer-events: none;
+        }
+
+        .floatingStick span {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: rgba(250, 204, 21, 0.92);
+          box-shadow: 0 0 16px rgba(250, 204, 21, 0.45);
+        }
+
+        .mobileStagePicker {
+          display: none;
+        }
+
         .touchStick {
           display: none;
         }
@@ -1721,7 +1853,7 @@ export default function TangtangPage() {
           }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 900px), (hover: none) and (pointer: coarse) {
           .survivorPage {
             height: calc(100svh - var(--site-nav-height));
             min-height: 0;
@@ -1749,6 +1881,31 @@ export default function TangtangPage() {
             height: calc(100svh - var(--site-nav-height) - 16px);
             min-height: 0;
             border-radius: 8px;
+          }
+
+          .mobileStagePicker {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            max-width: 340px;
+          }
+
+          .mobileStagePicker button {
+            min-height: 32px;
+            padding: 0 10px;
+            border: 1px solid rgba(226, 232, 240, 0.25);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.78);
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 800;
+          }
+
+          .mobileStagePicker button.active {
+            border-color: #facc15;
+            background: #facc15;
+            color: #111827;
           }
 
           .mobileGameHud {
@@ -1818,11 +1975,11 @@ export default function TangtangPage() {
           }
 
           .touchStick {
-            width: 116px;
-            height: 116px;
+            width: 112px;
+            height: 112px;
             position: fixed;
-            right: 18px;
-            bottom: 18px;
+            right: 16px;
+            bottom: max(16px, env(safe-area-inset-bottom));
             z-index: 20;
             display: grid;
             place-items: center;
@@ -1830,42 +1987,44 @@ export default function TangtangPage() {
             border-radius: 50%;
             background: rgba(15, 23, 42, 0.62);
             touch-action: none;
+            user-select: none;
           }
 
           .touchStick span {
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: #facc15;
             box-shadow: 0 0 0 8px rgba(250, 204, 21, 0.16);
+            pointer-events: none;
           }
 
           .mobileWeaponPad {
-            width: min(188px, calc(50vw - 20px));
-            min-height: 86px;
+            width: min(214px, calc(100vw - 144px));
+            min-height: 80px;
             position: fixed;
-            left: 18px;
-            bottom: 18px;
+            left: 14px;
+            bottom: max(16px, env(safe-area-inset-bottom));
             z-index: 20;
             display: grid;
-            grid-template-columns: 46px minmax(0, 1fr) 46px;
+            grid-template-columns: 36px minmax(0, 1fr) 36px;
             align-items: center;
-            gap: 7px;
+            gap: 6px;
             padding: 8px;
             border: 1px solid rgba(226, 232, 240, 0.24);
-            border-radius: 8px;
-            background: rgba(15, 23, 42, 0.72);
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.78);
             backdrop-filter: blur(10px);
           }
 
           .mobileWeaponPad button {
-            width: 46px;
-            height: 58px;
+            width: 36px;
+            height: 54px;
             border: 0;
             border-radius: 8px;
             background: #facc15;
             color: #111827;
-            font-size: 30px;
+            font-size: 26px;
             font-weight: 900;
             line-height: 1;
           }

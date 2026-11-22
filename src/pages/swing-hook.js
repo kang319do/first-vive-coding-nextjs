@@ -166,6 +166,7 @@ export default function SwingHookPage() {
   const ceremonyRef = useRef(null);
   const selectedCharacterRef = useRef(0);
   const audioRef = useRef(null);
+  const resetLevelFnRef = useRef(null);
   const [hud, setHud] = useState({
     level: 0,
     progress: 0,
@@ -816,6 +817,7 @@ export default function SwingHookPage() {
       }
     }
 
+    resetLevelFnRef.current = resetLevel;
     resizeCanvas();
     resetLevel(loadProgress(), false);
     window.addEventListener('resize', resizeCanvas);
@@ -826,6 +828,7 @@ export default function SwingHookPage() {
     frameRef.current = requestAnimationFrame(loop);
 
     return () => {
+      resetLevelFnRef.current = null;
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('keydown', handleKeyDown);
       canvas.removeEventListener('pointerdown', handlePointerDown);
@@ -859,7 +862,19 @@ export default function SwingHookPage() {
         </header>
 
         <div className="canvasFrame">
-          <canvas ref={canvasRef} className="swingCanvas" />
+          <canvas
+            ref={canvasRef}
+            className="swingCanvas"
+            onContextMenu={(e) => e.preventDefault()}
+          />
+          <button
+            type="button"
+            className="restartBtn"
+            onClick={() => resetLevelFnRef.current?.(levelRef.current, false)}
+            aria-label="스테이지 다시 시작"
+          >
+            ↻ 다시
+          </button>
           <details className="heroDock">
             <summary>
               <i style={{ background: characters[selectedCharacterRef.current]?.suit ?? characters[0].suit }} />
@@ -942,9 +957,9 @@ export default function SwingHookPage() {
             </div>
           </details>
           <div className="helpPanel">
-            <strong>Hold</strong>
-            <span>Hold to grab nearest hook. Release to fly.</span>
-            <em>Our pads stay: boost, float, long, wall.</em>
+            <strong>화면을 꾹 눌러 스윙</strong>
+            <span>꾹 눌러 줄 걸기 · 떼면 점프</span>
+            <em>패드: 부스트 · 플로트 · 롱 · 월</em>
           </div>
         </div>
       </div>
@@ -1040,7 +1055,28 @@ export default function SwingHookPage() {
           height: 100%;
           display: block;
           touch-action: none;
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-touch-callout: none;
           cursor: crosshair;
+        }
+
+        .restartBtn {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          z-index: 6;
+          min-height: 38px;
+          padding: 0 12px;
+          border: 1px solid rgba(255, 255, 255, 0.24);
+          border-radius: 8px;
+          background: rgba(15, 23, 42, 0.78);
+          color: #ffffff;
+          font-size: 12px;
+          font-weight: 900;
+          cursor: pointer;
+          backdrop-filter: blur(10px);
+          touch-action: manipulation;
         }
 
         .heroDock {
@@ -1225,41 +1261,87 @@ export default function SwingHookPage() {
 
         @media (max-width: 760px) {
           .swingPage {
-            padding: 12px;
+            height: calc(100svh - var(--site-nav-height));
+            min-height: 0;
+            padding: 8px;
+            overflow: hidden;
+          }
+
+          .swingShell {
+            height: 100%;
+            grid-template-rows: auto minmax(0, 1fr);
+            gap: 8px;
           }
 
           .swingHud {
-            display: grid;
-            padding: 14px;
+            min-height: 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            gap: 6px;
+          }
+
+          .swingHud > div:first-child span {
+            display: none;
           }
 
           .swingHud h1 {
-            font-size: 30px;
+            margin: 0;
+            font-size: 18px;
           }
 
           .hudStats {
             justify-content: start;
+            gap: 5px;
+          }
+
+          .hudStats strong,
+          .hudStats span {
+            min-height: 26px;
+            padding: 0 8px;
+            font-size: 11px;
+          }
+
+          .hudStats span:nth-child(n + 7) {
+            display: none;
           }
 
           .canvasFrame {
-            height: calc(100vh - var(--site-nav-height) - 170px);
-            min-height: 430px;
+            height: 100%;
+            min-height: 0;
           }
 
           .helpPanel {
-            right: 10px;
             left: 10px;
-            bottom: 62px;
+            bottom: 12px;
+            max-width: calc(100% - 148px);
+            padding: 8px 10px;
+          }
+
+          .helpPanel strong {
+            font-size: 12px;
+          }
+
+          .helpPanel span {
+            font-size: 10px;
+          }
+
+          .helpPanel em {
+            display: none;
           }
 
           .heroDock {
-            right: 10px;
-            left: 10px;
-            max-width: none;
+            max-width: calc(100% - 104px);
           }
 
           .heroDock button {
             flex: 1 1 96px;
+          }
+
+          .stageRail {
+            width: min(280px, calc(100% - 20px));
           }
         }
       `}</style>

@@ -1,5 +1,6 @@
 import '@/styles/globals.css';
 import { isMenuGroupActive, navigationMenus } from '@/config/navigation';
+import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
@@ -7,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 export default function App({ Component, pageProps }) {
   const router = useRouter();
   const navRef = useRef(null);
+  const lastPointerTypeRef = useRef('mouse');
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const activeGroup =
@@ -47,6 +49,12 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
+      <Head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+        />
+      </Head>
       <header className="siteHeader">
         <nav className="siteNav" aria-label="주 메뉴" ref={navRef}>
           <ul className="topMenuList">
@@ -58,16 +66,40 @@ export default function App({ Component, pageProps }) {
                 <li
                   key={group.id}
                   className={`topMenuItem${isOpen ? ' isOpen' : ''}`}
-                  onMouseEnter={() => setOpenMenuId(group.id)}
-                  onMouseLeave={() => setOpenMenuId((current) => (current === group.id ? null : current))}
+                  onMouseEnter={() => {
+                    if (lastPointerTypeRef.current !== 'touch') {
+                      setOpenMenuId(group.id);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (lastPointerTypeRef.current !== 'touch') {
+                      setOpenMenuId((current) => (current === group.id ? null : current));
+                    }
+                  }}
                 >
                   <div className="topMenuTriggerGroup">
                     <Link
                       href={group.href}
                       className={`topMenuLink${isGroupActive ? ' active' : ''}${group.accent ? ` accent-${group.accent}` : ''}`}
                       aria-current={router.pathname === group.href ? 'page' : undefined}
-                      onFocus={() => setOpenMenuId(group.id)}
-                      onClick={() => setOpenMenuId(null)}
+                      aria-expanded={isOpen}
+                      aria-haspopup="true"
+                      onPointerDown={(event) => {
+                        lastPointerTypeRef.current = event.pointerType || 'mouse';
+                      }}
+                      onFocus={() => {
+                        if (lastPointerTypeRef.current !== 'touch') {
+                          setOpenMenuId(group.id);
+                        }
+                      }}
+                      onClick={(event) => {
+                        if (lastPointerTypeRef.current === 'touch' && !isOpen) {
+                          event.preventDefault();
+                          setOpenMenuId(group.id);
+                          return;
+                        }
+                        setOpenMenuId(null);
+                      }}
                     >
                       <span>{group.label}</span>
                       <svg

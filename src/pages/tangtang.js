@@ -1,7 +1,67 @@
 import { useEffect, useRef, useState } from 'react';
+import bmStyles from '@/styles/TangtangBlackMarket.module.css';
 
 const world = { width: 2600, height: 1700 };
 const stageSeconds = 70;
+const SECRET_CODE = '123456789';
+const BLACK_MARKET_KEY = 'tangtang-black-market-v1';
+
+const DEFAULT_BLACK_MARKET = {
+  gold: 5,
+  owned: {},
+  equipped: {},
+};
+
+const BLACK_MARKET_ITEMS = [
+  {
+    id: 'instantAwaken',
+    name: '즉시 무기 각성',
+    icon: '⚡',
+    price: 1,
+    tag: '시작 패시브',
+    description: '전투 시작과 동시에 선택한 무기가 5강 각성 상태로 출발합니다.',
+  },
+  {
+    id: 'hyperFire',
+    name: '광폭 연사 · 화력 2.5배',
+    icon: '🔥',
+    price: 2,
+    tag: '공격 패시브',
+    description: '모든 공격 피해 2.5배, 연사 속도 2배, 치명타 확률 +35%로 폭주합니다.',
+  },
+  {
+    id: 'megaMagnet',
+    name: '전장 자석 · XP 3배',
+    icon: '🧲',
+    price: 2,
+    tag: '성장 패시브',
+    description: '전장 전체의 경험치 보석을 끌어당기며 경험치 획득량이 3배가 됩니다.',
+  },
+  {
+    id: 'omegaDrone',
+    name: '암시장 오메가 드론',
+    icon: '🛸',
+    price: 3,
+    tag: '자동 보조 무기',
+    description: '주위를 도는 금지된 위성 드론이 가장 가까운 적에게 초고속 관통 플라즈마를 연사합니다.',
+  },
+  {
+    id: 'timeSlow',
+    name: '시간 왜곡장',
+    icon: '❄️',
+    price: 4,
+    tag: '제어 패시브',
+    description: '모든 적의 이동 속도가 55% 느려지고 플레이어 이동 속도가 45% 빨라집니다.',
+  },
+  {
+    id: 'immortal',
+    name: '불사신 실드',
+    icon: '👑',
+    price: 5,
+    tag: '무적 패시브',
+    description: '적과 부딪혀도 HP가 전혀 줄지 않는 완전 무적 오라를 두릅니다.',
+  },
+];
 
 const stages = [
   {
@@ -66,12 +126,12 @@ const weapons = [
     name: '블래스터',
     detail: '가장 가까운 적을 빠르게 추적',
     color: '#38bdf8',
-    cooldown: 0.34,
-    damage: 18,
+    cooldown: 0.36,
+    damage: 22,
     speed: 680,
     radius: 7,
     life: 0.95,
-    pierce: 1,
+    pierce: 2,
   },
   {
     id: 'shotgun',
@@ -80,11 +140,11 @@ const weapons = [
     name: '산탄총',
     detail: '부채꼴로 여러 발을 발사',
     color: '#fb7185',
-    cooldown: 0.68,
-    damage: 13,
+    cooldown: 0.72,
+    damage: 12,
     speed: 610,
     radius: 6,
-    life: 0.62,
+    life: 0.58,
     pierce: 1,
     count: 5,
     spread: 0.48,
@@ -96,8 +156,8 @@ const weapons = [
     name: '레일건',
     detail: '느리지만 강한 관통 한 방',
     color: '#f8fafc',
-    cooldown: 0.92,
-    damage: 42,
+    cooldown: 0.88,
+    damage: 52,
     speed: 920,
     radius: 5,
     life: 0.85,
@@ -110,25 +170,25 @@ const weapons = [
     name: '부메랑',
     detail: '넓게 회전하며 관통 피해',
     color: '#facc15',
-    cooldown: 0.7,
-    damage: 25,
-    speed: 430,
+    cooldown: 0.64,
+    damage: 30,
+    speed: 450,
     radius: 12,
-    life: 1.22,
-    pierce: 3,
+    life: 1.18,
+    pierce: 4,
   },
   {
     id: 'shockwave',
     displayName: '광역 충격파',
     displayDetail: '주변 전체를 터뜨리는 광역기',
-    name: '오비탈 칼날',
-    detail: '몸 주변을 도는 방어 무기',
+    name: '광역 충격파',
+    detail: '주변 전체를 터뜨리는 광역기',
     color: '#a78bfa',
-    cooldown: 1.05,
-    damage: 46,
+    cooldown: 1.08,
+    damage: 44,
     radius: 44,
     life: 0.34,
-    blast: 132,
+    blast: 128,
   },
   {
     id: 'flame',
@@ -137,10 +197,10 @@ const weapons = [
     name: '화염방사기',
     detail: '짧은 사거리의 지속 화염',
     color: '#f97316',
-    cooldown: 0.12,
-    damage: 8,
+    cooldown: 0.14,
+    damage: 7.5,
     speed: 330,
-    radius: 16,
+    radius: 15,
     life: 0.38,
     pierce: 2,
   },
@@ -152,12 +212,12 @@ const weapons = [
     detail: '피해를 주고 적을 느리게 만듦',
     color: '#7dd3fc',
     cooldown: 0.48,
-    damage: 15,
-    speed: 540,
+    damage: 20,
+    speed: 550,
     radius: 9,
-    life: 0.98,
+    life: 0.96,
     pierce: 2,
-    slow: 1.4,
+    slow: 1.2,
   },
   {
     id: 'mine',
@@ -166,11 +226,25 @@ const weapons = [
     name: '지뢰',
     detail: '발밑에 폭발 함정을 설치',
     color: '#86efac',
-    cooldown: 0.82,
-    damage: 54,
+    cooldown: 0.95,
+    damage: 56,
     radius: 10,
     life: 4.2,
-    blast: 92,
+    blast: 90,
+  },
+  {
+    id: 'bat',
+    displayName: '배트',
+    displayDetail: '2초마다 초강력 근접 강타 (큰 적 2방)',
+    name: '배트',
+    detail: '2초마다 초강력 근접 강타 (큰 적 2방)',
+    color: '#f59e0b',
+    cooldown: 2,
+    damage: 175,
+    radius: 118,
+    life: 0.28,
+    arc: Math.PI * 0.96,
+    knockback: 165,
   },
 ];
 
@@ -212,7 +286,9 @@ function getStage(game) {
   return stages[game.stageIndex];
 }
 
-function createGame(startStage = 0) {
+function createGame(startStage = 0, bmEquipped = {}) {
+  const bm = bmEquipped && typeof bmEquipped === 'object' ? { ...bmEquipped } : {};
+  const maxHp = bm.immortal ? 999 : 100;
   return {
     running: false,
     pausedForUpgrade: false,
@@ -228,24 +304,27 @@ function createGame(startStage = 0) {
     startStage,
     stageFlash: 0,
     awakenFlash: 0,
+    bm,
+    droneCooldown: 0,
+    goldKillCounter: 0,
     player: {
       x: world.width / 2,
       y: world.height / 2,
       radius: 18,
-      hp: 100,
-      maxHp: 100,
-      speed: 245,
-      damage: 1,
-      fireRate: 1,
-      magnet: 110,
+      hp: maxHp,
+      maxHp,
+      speed: bm.timeSlow ? Math.round(245 * 1.45) : 245,
+      damage: bm.hyperFire ? 2.5 : 1,
+      fireRate: bm.hyperFire ? 2 : 1,
+      magnet: bm.megaMagnet ? 2400 : 110,
       pierce: 1,
-      critChance: 0.05,
+      critChance: bm.hyperFire ? 0.4 : 0.05,
       critDamage: 2,
       armor: 0,
       regen: 0,
       area: 1,
       bulletSize: 1,
-      xpGain: 1,
+      xpGain: bm.megaMagnet ? 3 : 1,
       invincibleBonus: 0,
       weaponIndex: 0,
       cooldown: 0,
@@ -402,7 +481,7 @@ function getPlayerDamage(player, baseDamage) {
 function getWeaponBoost(game, weapon) {
   const level = game.weaponLevels[weapon.id] ?? 0;
   const awakened = Boolean(game.awakenedWeapons[weapon.id]);
-  return 1 + level * 0.14 + (awakened ? 1.35 : 0);
+  return 1 + level * 0.12 + (awakened ? 0.35 : 0);
 }
 
 function queueSound(game, type) {
@@ -418,7 +497,7 @@ function fireWeapon(game) {
   const awakened = Boolean(game.awakenedWeapons[weapon.id]);
 
   if (weapon.id === 'shockwave') {
-    const ringCount = awakened ? 3 : 1;
+    const ringCount = awakened ? 2 : 1;
     for (let ring = 0; ring < ringCount; ring += 1) {
       game.bullets.push({
         x: player.x,
@@ -426,48 +505,88 @@ function fireWeapon(game) {
         vx: 0,
         vy: 0,
         radius: weapon.radius * player.area,
-        damage: getPlayerDamage(player, weapon.damage * boost * (ring === 0 ? 1 : 0.7)),
-        life: weapon.life + ring * 0.12,
-        maxLife: weapon.life + ring * 0.12,
+        damage: getPlayerDamage(player, weapon.damage * boost * (ring === 0 ? 1 : 0.55)),
+        life: weapon.life + ring * 0.1,
+        maxLife: weapon.life + ring * 0.1,
         pierce: 99,
         color: ring === 0 ? '#fef3c7' : weapon.color,
         spin: 0,
         type: weapon.id,
-        blast: weapon.blast * player.area * (awakened ? 1.85 + ring * 0.3 : 1),
+        blast: weapon.blast * player.area * (awakened ? 1.25 + ring * 0.14 : 1),
         hitIds: new Set(),
       });
     }
-    game.shake = awakened ? 15 : 7;
-    addParticles(game, player.x, player.y, weapon.color, awakened ? 48 : 18);
+    game.shake = awakened ? 10 : 7;
+    addParticles(game, player.x, player.y, weapon.color, awakened ? 30 : 18);
     queueSound(game, 'boom');
     return;
   }
 
   if (weapon.id === 'mine') {
-    const mineCount = awakened ? 7 : 1;
+    const mineCount = awakened ? 3 : 1;
     for (let i = 0; i < mineCount; i += 1) {
       const angle = (Math.PI * 2 * i) / mineCount + game.time;
-      const offset = awakened && i > 0 ? 74 : 0;
+      const offset = awakened && i > 0 ? 58 : 0;
       game.bullets.push({
         x: player.x + Math.cos(angle) * offset,
         y: player.y + Math.sin(angle) * offset,
         vx: 0,
         vy: 0,
-        radius: weapon.radius * player.bulletSize * (awakened ? 1.22 : 1),
+        radius: weapon.radius * player.bulletSize * (awakened ? 1.1 : 1),
         damage: getPlayerDamage(player, weapon.damage * boost),
-        life: weapon.life + (awakened ? 1.8 : 0),
+        life: weapon.life + (awakened ? 0.8 : 0),
         pierce: 1,
         color: awakened ? '#bbf7d0' : weapon.color,
         spin: 0,
         type: weapon.id,
-        blast: weapon.blast * player.area * (awakened ? 1.65 : 1),
+        blast: weapon.blast * player.area * (awakened ? 1.22 : 1),
         armed: 0.18,
       });
     }
     if (awakened) {
-      addParticles(game, player.x, player.y, weapon.color, 24);
+      addParticles(game, player.x, player.y, weapon.color, 16);
       queueSound(game, 'boom');
     }
+    return;
+  }
+
+  if (weapon.id === 'bat') {
+    const nearestForBat = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    const swingAngle = nearestForBat
+      ? Math.atan2(nearestForBat.y - player.y, nearestForBat.x - player.x)
+      : game.time * 2;
+    const swingLife = awakened ? 0.29 : weapon.life;
+
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: weapon.radius * player.area * (awakened ? 1.18 : 1),
+      damage: getPlayerDamage(player, weapon.damage * boost),
+      life: swingLife,
+      maxLife: swingLife,
+      pierce: 999,
+      color: awakened ? '#fb7185' : weapon.color,
+      spin: 0,
+      angle: swingAngle,
+      arc: awakened ? Math.PI * 1.45 : weapon.arc,
+      knockback: weapon.knockback * (awakened ? 1.2 : 1),
+      type: 'bat',
+      awakened,
+      hitIds: new Set(),
+    });
+    game.shake = Math.max(game.shake, awakened ? 7 : 4);
+    addParticles(
+      game,
+      player.x + Math.cos(swingAngle) * 42,
+      player.y + Math.sin(swingAngle) * 42,
+      awakened ? '#facc15' : weapon.color,
+      awakened ? 16 : 10,
+    );
+    queueSound(game, 'bat');
     return;
   }
 
@@ -479,41 +598,40 @@ function fireWeapon(game) {
 
   const baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
   const count =
-    awakened && weapon.id === 'shotgun' ? 18 :
-    awakened && weapon.id === 'blaster' ? 5 :
-    awakened && weapon.id === 'railgun' ? 3 :
-    awakened && weapon.id === 'boomer' ? 6 :
-    awakened && weapon.id === 'flame' ? 12 :
-    awakened && weapon.id === 'frost' ? 10 :
+    awakened && weapon.id === 'shotgun' ? 8 :
+    awakened && weapon.id === 'blaster' ? 3 :
+    awakened && weapon.id === 'railgun' ? 2 :
+    awakened && weapon.id === 'boomer' ? 3 :
+    awakened && weapon.id === 'flame' ? 4 :
+    awakened && weapon.id === 'frost' ? 4 :
     weapon.count ?? 1;
   const spread =
-    awakened && weapon.id === 'shotgun' ? Math.PI * 2 :
-    awakened && weapon.id === 'flame' ? Math.PI * 2 :
-    awakened && weapon.id === 'frost' ? Math.PI * 2 :
-    (weapon.spread ?? 0) * (awakened && weapon.id === 'shotgun' ? 1.18 : 1);
+    awakened && weapon.id === 'shotgun' ? 1.05 :
+    awakened && weapon.id === 'blaster' ? 0.24 :
+    awakened && weapon.id === 'boomer' ? 0.55 :
+    awakened && weapon.id === 'flame' ? 0.72 :
+    awakened && weapon.id === 'frost' ? 0.85 :
+    (weapon.spread ?? 0);
 
   for (let i = 0; i < count; i += 1) {
     const centerOffset = count === 1 ? 0 : i / (count - 1) - 0.5;
-    const radialAngle = (Math.PI * 2 * i) / count + game.time * 0.35;
-    const angle =
-      awakened && ['shotgun', 'flame', 'frost', 'boomer'].includes(weapon.id) ? radialAngle :
-      baseAngle + centerOffset * spread;
-    const sideOffset = awakened && weapon.id === 'railgun' ? (i - 1) * 18 : 0;
+    const angle = baseAngle + centerOffset * spread;
+    const sideOffset = awakened && weapon.id === 'railgun' ? (i - 0.5) * 16 : 0;
     const sideAngle = angle + Math.PI / 2;
 
     game.bullets.push({
       x: player.x + Math.cos(sideAngle) * sideOffset,
       y: player.y + Math.sin(sideAngle) * sideOffset,
-      vx: Math.cos(angle) * weapon.speed * (awakened && weapon.id === 'railgun' ? 1.22 : 1),
-      vy: Math.sin(angle) * weapon.speed * (awakened && weapon.id === 'railgun' ? 1.22 : 1),
-      radius: weapon.radius * player.bulletSize * (weapon.id === 'flame' ? player.area : 1) * (awakened ? 1.45 : 1),
+      vx: Math.cos(angle) * weapon.speed * (awakened && weapon.id === 'railgun' ? 1.1 : 1),
+      vy: Math.sin(angle) * weapon.speed * (awakened && weapon.id === 'railgun' ? 1.1 : 1),
+      radius: weapon.radius * player.bulletSize * (weapon.id === 'flame' ? player.area : 1) * (awakened ? 1.16 : 1),
       damage: getPlayerDamage(player, weapon.damage * boost),
-      life: weapon.life * (awakened ? 1.28 : 1),
-      pierce: weapon.pierce + player.pierce - 1 + (awakened ? 5 : 0),
+      life: weapon.life * (awakened ? 1.1 : 1),
+      pierce: weapon.pierce + player.pierce - 1 + (awakened ? 2 : 0),
       color: awakened ? '#fef3c7' : weapon.color,
       spin: 0,
       type: weapon.id,
-      slow: (weapon.slow ?? 0) * (awakened && weapon.id === 'frost' ? 2.4 : 1),
+      slow: (weapon.slow ?? 0) * (awakened && weapon.id === 'frost' ? 1.35 : 1),
       awakened,
     });
   }
@@ -548,7 +666,7 @@ function updateOrbit(game, delta) {
   }
 }
 
-function updateGame(game, input, canvas, delta) {
+function updateGame(game, input, canvas, delta, onEarnGold) {
   if (!game.running || game.pausedForUpgrade || game.over) return;
 
   game.time += delta;
@@ -599,6 +717,38 @@ function updateGame(game, input, canvas, delta) {
     player.cooldown = (weapon.cooldown ?? 0.4) / player.fireRate;
   }
 
+  if (game.bm?.omegaDrone) {
+    game.droneCooldown = (game.droneCooldown ?? 0) - delta;
+    if (game.droneCooldown <= 0 && game.enemies.length > 0) {
+      const droneAngle = game.time * 3.2;
+      const droneX = player.x + Math.cos(droneAngle) * 64;
+      const droneY = player.y + Math.sin(droneAngle) * 64;
+      const target = game.enemies
+        .map((enemy) => ({ enemy, dist: distance({ x: droneX, y: droneY }, enemy) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+      if (target) {
+        const shotAngle = Math.atan2(target.y - droneY, target.x - droneX);
+        game.bullets.push({
+          x: droneX,
+          y: droneY,
+          vx: Math.cos(shotAngle) * 860,
+          vy: Math.sin(shotAngle) * 860,
+          radius: 8 * player.bulletSize,
+          damage: getPlayerDamage(player, 36),
+          life: 1.05,
+          pierce: 4 + player.pierce,
+          color: '#e879f9',
+          spin: 0,
+          type: 'blaster',
+          slow: 0.4,
+          awakened: true,
+        });
+        addParticles(game, droneX, droneY, '#e879f9', 4);
+      }
+      game.droneCooldown = 0.22 / Math.max(1, player.fireRate * 0.65);
+    }
+  }
+
   updateOrbit(game, delta);
 
   game.bullets = game.bullets.filter((bullet) => {
@@ -607,6 +757,40 @@ function updateGame(game, input, canvas, delta) {
     bullet.life -= delta;
     bullet.spin += delta * 14;
     bullet.armed = Math.max(0, (bullet.armed ?? 0) - delta);
+
+    if (bullet.type === 'bat') {
+      bullet.x = player.x;
+      bullet.y = player.y;
+      const isFullSpin = bullet.arc >= Math.PI * 1.99;
+
+      game.enemies.forEach((enemy) => {
+        if (bullet.hitIds.has(enemy)) return;
+        const distToEnemy = distance(player, enemy);
+        if (distToEnemy > bullet.radius + enemy.radius) return;
+
+        const dirToEnemy = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+        if (!isFullSpin) {
+          const rawDiff = dirToEnemy - bullet.angle;
+          const angleDiff = Math.abs(Math.atan2(Math.sin(rawDiff), Math.cos(rawDiff)));
+          if (angleDiff > bullet.arc * 0.54) return;
+        }
+
+        bullet.hitIds.add(enemy);
+        const batHitDamage = enemy.elite
+          ? Math.max(bullet.damage, Math.ceil(enemy.maxHp * 0.5))
+          : bullet.damage;
+        enemy.hp -= batHitDamage;
+        enemy.slow = Math.max(enemy.slow ?? 0, bullet.awakened ? 0.9 : 0.45);
+        const push = bullet.knockback * (enemy.elite ? 0.35 : 1);
+        enemy.x = clamp(enemy.x + Math.cos(dirToEnemy) * push, 30, world.width - 30);
+        enemy.y = clamp(enemy.y + Math.sin(dirToEnemy) * push, 30, world.height - 30);
+        game.shake = Math.max(game.shake, bullet.awakened ? 8 : 5);
+        addParticles(game, enemy.x, enemy.y, bullet.awakened ? '#facc15' : bullet.color, bullet.awakened ? 12 : 7);
+        if (Math.random() < 0.35) queueSound(game, 'hit');
+      });
+
+      return bullet.life > 0;
+    }
 
     if (bullet.type === 'shockwave') {
       const progress = 1 - bullet.life / (bullet.maxLife ?? weapons.find((weapon) => weapon.id === 'shockwave')?.life ?? 0.34);
@@ -649,15 +833,15 @@ function updateGame(game, input, canvas, delta) {
         addParticles(game, enemy.x, enemy.y, bullet.color, bullet.awakened ? 12 : bullet.type === 'flame' ? 2 : 5);
         if (bullet.awakened && ['railgun', 'boomer'].includes(bullet.type)) {
           game.enemies.forEach((nearby) => {
-            if (nearby !== enemy && distance(enemy, nearby) < 76) {
-              nearby.hp -= bullet.damage * 0.28;
+            if (nearby !== enemy && distance(enemy, nearby) < 52) {
+              nearby.hp -= bullet.damage * 0.18;
               addParticles(game, nearby.x, nearby.y, bullet.color, 3);
             }
           });
         }
         if (bullet.awakened && bullet.type === 'frost') {
           game.enemies.forEach((nearby) => {
-            if (distance(enemy, nearby) < 118) nearby.slow = Math.max(nearby.slow ?? 0, 1.8);
+            if (distance(enemy, nearby) < 78) nearby.slow = Math.max(nearby.slow ?? 0, 1.1);
           });
         }
         if (Math.random() < 0.18) queueSound(game, 'hit');
@@ -670,13 +854,20 @@ function updateGame(game, input, canvas, delta) {
 
   game.enemies = game.enemies.filter((enemy) => {
     const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-    const slowFactor = enemy.slow > 0 ? 0.45 : 1;
+    const baseSlow = enemy.slow > 0 ? 0.45 : 1;
+    const bmSlow = game.bm?.timeSlow ? 0.45 : 1;
+    const slowFactor = baseSlow * bmSlow;
     enemy.slow = Math.max(0, (enemy.slow ?? 0) - delta);
     enemy.x += Math.cos(angle) * enemy.speed * slowFactor * delta;
     enemy.y += Math.sin(angle) * enemy.speed * slowFactor * delta;
 
     if (distance(player, enemy) < player.radius + enemy.radius) {
-      if (player.invincible <= 0) {
+      if (game.bm?.immortal) {
+        if (player.invincible <= 0) {
+          player.invincible = 0.25;
+          addParticles(game, player.x, player.y, '#e879f9', 8);
+        }
+      } else if (player.invincible <= 0) {
         player.hp = Math.max(0, player.hp - Math.max(1, enemy.damage - player.armor));
         player.invincible = 0.55 + player.invincibleBonus;
         game.shake = 11;
@@ -693,6 +884,15 @@ function updateGame(game, input, canvas, delta) {
 
     game.kills += 1;
     game.score += enemy.elite ? 120 : 35;
+    if (enemy.elite) {
+      onEarnGold?.(3);
+    } else {
+      game.goldKillCounter = (game.goldKillCounter ?? 0) + 1;
+      if (game.goldKillCounter >= 5) {
+        game.goldKillCounter -= 5;
+        onEarnGold?.(1);
+      }
+    }
     game.gems.push({
       x: enemy.x,
       y: enemy.y,
@@ -795,6 +995,49 @@ function drawGame(context, game, canvas) {
     context.fillStyle = bullet.color;
     context.shadowColor = bullet.color;
     context.shadowBlur = bullet.awakened ? 34 : 16;
+    if (bullet.type === 'bat') {
+      const progress = clamp(1 - bullet.life / (bullet.maxLife || 0.24), 0, 1);
+      const isFullSpin = bullet.arc >= Math.PI * 1.99;
+      const startAngle = isFullSpin ? bullet.angle : bullet.angle - bullet.arc / 2;
+      const endAngle = startAngle + bullet.arc * progress;
+      const alpha = clamp(bullet.life / (bullet.maxLife || 0.24) + 0.2, 0, 1);
+
+      context.rotate(-bullet.spin);
+      context.globalAlpha = alpha * 0.28;
+      context.fillStyle = bullet.awakened ? '#f43f5e' : '#f59e0b';
+      context.beginPath();
+      context.moveTo(0, 0);
+      context.arc(0, 0, bullet.radius, startAngle, endAngle);
+      context.closePath();
+      context.fill();
+
+      context.globalAlpha = alpha * 0.92;
+      context.strokeStyle = bullet.awakened ? '#fef08a' : '#fde68a';
+      context.lineWidth = bullet.awakened ? 11 : 7;
+      context.lineCap = 'round';
+      context.beginPath();
+      context.arc(0, 0, bullet.radius * 0.92, Math.max(startAngle, endAngle - 1.35), endAngle);
+      context.stroke();
+
+      // Baseball bat silhouette sweeping along endAngle
+      context.save();
+      context.rotate(endAngle);
+      context.globalAlpha = 1;
+      context.fillStyle = bullet.awakened ? '#7f1d1d' : '#78350f';
+      context.fillRect(14, -4, bullet.radius * 0.34, 8);
+      context.fillStyle = bullet.awakened ? '#facc15' : '#d97706';
+      context.beginPath();
+      context.roundRect(14 + bullet.radius * 0.3, -8, bullet.radius * 0.56, 16, 8);
+      context.fill();
+      context.strokeStyle = '#fef3c7';
+      context.lineWidth = 2;
+      context.stroke();
+      context.restore();
+
+      context.restore();
+      return;
+    }
+
     if (bullet.awakened && bullet.type !== 'shockwave') {
       context.strokeStyle = '#facc15';
       context.lineWidth = 3;
@@ -881,9 +1124,45 @@ function drawGame(context, game, canvas) {
     }
   }
 
+  if (game.bm?.omegaDrone) {
+    const droneAngle = game.time * 3.2;
+    const droneX = player.x + Math.cos(droneAngle) * 64;
+    const droneY = player.y + Math.sin(droneAngle) * 64;
+    context.save();
+    context.strokeStyle = 'rgba(232, 121, 249, 0.25)';
+    context.lineWidth = 2;
+    context.setLineDash([5, 6]);
+    context.beginPath();
+    context.arc(player.x, player.y, 64, 0, Math.PI * 2);
+    context.stroke();
+    context.setLineDash([]);
+    context.fillStyle = '#e879f9';
+    context.shadowColor = '#c026d3';
+    context.shadowBlur = 18;
+    context.beginPath();
+    context.arc(droneX, droneY, 10, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(droneX, droneY, 4, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
   context.fillStyle = player.invincible > 0 ? '#fef08a' : '#60a5fa';
   context.strokeStyle = '#eff6ff';
   context.lineWidth = 4;
+  if (game.bm?.immortal) {
+    context.save();
+    context.strokeStyle = '#ec4899';
+    context.lineWidth = 3.5;
+    context.shadowColor = '#a855f7';
+    context.shadowBlur = 16;
+    context.beginPath();
+    context.arc(player.x, player.y, 28 + Math.sin(game.time * 6) * 3, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
   if (game.awakenedWeapons[weapons[player.weaponIndex]?.id]) {
     context.strokeStyle = '#facc15';
     context.lineWidth = 3;
@@ -963,8 +1242,82 @@ export default function TangtangPage() {
   const [floatingStick, setFloatingStick] = useState(null);
   const [fixedStickOffset, setFixedStickOffset] = useState({ x: 0, y: 0 });
   const [selectedStage, setSelectedStage] = useState(0);
+  const [selectedWeapon, setSelectedWeapon] = useState(0);
   const [hud, setHud] = useState(() => gameRef.current);
   const [version, setVersion] = useState(0);
+  const bmStateRef = useRef(DEFAULT_BLACK_MARKET);
+  const [bmState, setBmState] = useState(DEFAULT_BLACK_MARKET);
+  const blackMarketOpenRef = useRef(false);
+  const [blackMarketOpen, setBlackMarketOpen] = useState(false);
+  const secretProgressRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(BLACK_MARKET_KEY) || '{}');
+      const loaded = {
+        gold: Number.isFinite(Number(saved.gold)) ? Math.max(0, Number(saved.gold)) : DEFAULT_BLACK_MARKET.gold,
+        owned: saved.owned && typeof saved.owned === 'object' ? saved.owned : {},
+        equipped: saved.equipped && typeof saved.equipped === 'object' ? saved.equipped : {},
+      };
+      bmStateRef.current = loaded;
+      setBmState(loaded);
+    } catch {
+      bmStateRef.current = DEFAULT_BLACK_MARKET;
+    }
+  }, []);
+
+  function updateBlackMarket(updater) {
+    setBmState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      bmStateRef.current = next;
+      try {
+        window.localStorage.setItem(BLACK_MARKET_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage write failure.
+      }
+      return next;
+    });
+  }
+
+  function earnBlackMarketGold(amount) {
+    if (!amount || amount <= 0) return;
+    const next = {
+      ...bmStateRef.current,
+      gold: bmStateRef.current.gold + amount,
+    };
+    bmStateRef.current = next;
+    setBmState(next);
+    try {
+      window.localStorage.setItem(BLACK_MARKET_KEY, JSON.stringify(next));
+    } catch {
+      // Ignore storage write failure.
+    }
+  }
+
+  function closeBlackMarket() {
+    blackMarketOpenRef.current = false;
+    setBlackMarketOpen(false);
+  }
+
+  function buyBlackMarketItem(item) {
+    if (bmStateRef.current.owned[item.id] || bmStateRef.current.gold < item.price) return;
+    playSound('buy');
+    updateBlackMarket((prev) => ({
+      ...prev,
+      gold: prev.gold - item.price,
+      owned: { ...prev.owned, [item.id]: true },
+      equipped: { ...prev.equipped, [item.id]: true },
+    }));
+  }
+
+  function toggleBlackMarketItem(itemId) {
+    if (!bmStateRef.current.owned[itemId]) return;
+    playSound('switch');
+    updateBlackMarket((prev) => ({
+      ...prev,
+      equipped: { ...prev.equipped, [itemId]: !prev.equipped[itemId] },
+    }));
+  }
 
   function getAudioContext() {
     if (typeof window === 'undefined') return null;
@@ -993,7 +1346,10 @@ export default function TangtangPage() {
       upgrade: [440, 720, 0.12, 'sine', 0.055],
       awake: [180, 1100, 0.7, 'sawtooth', 0.12],
       boom: [80, 36, 0.34, 'sine', 0.11],
+      bat: [310, 95, 0.14, 'triangle', 0.085],
       switch: [360, 540, 0.08, 'triangle', 0.045],
+      buy: [760, 1320, 0.18, 'sine', 0.085],
+      blackMarket: [190, 560, 0.42, 'sawtooth', 0.095],
     }[type] ?? [300, 180, 0.1, 'sine', 0.04];
     const [start, end, duration, wave, volume] = settings;
 
@@ -1014,13 +1370,26 @@ export default function TangtangPage() {
     game.sounds.splice(0, 5).forEach(playSound);
   }
 
-  function resetGame(stageIndex = selectedStage) {
+  function resetGame(stageIndex = selectedStage, weaponIndex = selectedWeapon) {
     getAudioContext();
-    gameRef.current = createGame(stageIndex);
-    gameRef.current.running = true;
+    closeBlackMarket();
+    const equippedBm = bmStateRef.current.equipped;
+    const nextGame = createGame(stageIndex, equippedBm);
+    nextGame.player.weaponIndex = weaponIndex;
+    if (equippedBm.instantAwaken) {
+      const chosenWeapon = weapons[weaponIndex];
+      if (chosenWeapon) {
+        nextGame.weaponLevels[chosenWeapon.id] = 5;
+        nextGame.awakenedWeapons[chosenWeapon.id] = true;
+        nextGame.awakenFlash = 1.6;
+      }
+    }
+    nextGame.running = true;
+    gameRef.current = nextGame;
     queueSound(gameRef.current, 'level');
     setSelectedStage(stageIndex);
-    setHud({ ...gameRef.current });
+    setSelectedWeapon(weaponIndex);
+    setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
     setVersion((current) => current + 1);
   }
 
@@ -1031,21 +1400,19 @@ export default function TangtangPage() {
   }
 
   function setWeapon(index) {
+    if (gameRef.current.running) return;
     getAudioContext();
+    setSelectedWeapon(index);
     gameRef.current.player.weaponIndex = index;
     gameRef.current.player.cooldown = 0;
     queueSound(gameRef.current, 'switch');
     setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
   }
 
-  function selectWeaponByOffset(offset) {
-    const currentIndex = gameRef.current.player.weaponIndex;
-    const nextIndex = (currentIndex + offset + weapons.length) % weapons.length;
-    setWeapon(nextIndex);
-  }
-
   function isGameUiPointer(event) {
-    return Boolean(event.target.closest('button, .startOverlay, .upgradeOverlay, .mobileGameHud'));
+    return Boolean(
+      event.target.closest('button, .startOverlay, .upgradeOverlay, .mobileGameHud, [data-ui="black-market"]'),
+    );
   }
 
   function updateMouseMove(event) {
@@ -1133,7 +1500,7 @@ export default function TangtangPage() {
       if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
       const delta = Math.min((timestamp - lastTimeRef.current) / 1000, 0.033);
       lastTimeRef.current = timestamp;
-      updateGame(gameRef.current, inputRef.current, canvas, delta);
+      updateGame(gameRef.current, inputRef.current, canvas, delta, earnBlackMarketGold);
       drainSounds(gameRef.current);
       drawGame(context, gameRef.current, canvas);
       setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
@@ -1141,12 +1508,44 @@ export default function TangtangPage() {
     }
 
     function handleKeyDown(event) {
+      if (blackMarketOpenRef.current) {
+        if (event.key === 'Escape') {
+          closeBlackMarket();
+        }
+        return;
+      }
+
       const key = event.key.toLowerCase();
+
+      // Secret Lobby Easter Egg: press 123456789 in order while in lobby (!running)
+      if (!gameRef.current.running && !event.repeat) {
+        const digit =
+          /^Digit[1-9]$/.test(event.code) ? event.code.slice(5) :
+          /^Numpad[1-9]$/.test(event.code) ? event.code.slice(6) :
+          /^[1-9]$/.test(key) ? key : '';
+        if (digit) {
+          if (digit === SECRET_CODE[secretProgressRef.current]) {
+            secretProgressRef.current += 1;
+            if (secretProgressRef.current >= SECRET_CODE.length) {
+              secretProgressRef.current = 0;
+              blackMarketOpenRef.current = true;
+              setBlackMarketOpen(true);
+              playSound('blackMarket');
+              return;
+            }
+          } else {
+            secretProgressRef.current = digit === '1' ? 1 : 0;
+          }
+        }
+      }
+
       if (['arrowup', 'w'].includes(key)) inputRef.current.up = true;
       if (['arrowdown', 's'].includes(key)) inputRef.current.down = true;
       if (['arrowleft', 'a'].includes(key)) inputRef.current.left = true;
       if (['arrowright', 'd'].includes(key)) inputRef.current.right = true;
-      if (Number(key) >= 1 && Number(key) <= weapons.length) setWeapon(Number(key) - 1);
+      if (!gameRef.current.running && Number(key) >= 1 && Number(key) <= weapons.length) {
+        setWeapon(Number(key) - 1);
+      }
     }
 
     function handleKeyUp(event) {
@@ -1214,8 +1613,10 @@ export default function TangtangPage() {
                 disabled={hud.running}
                 onClick={() => {
                   setSelectedStage(index);
-                  gameRef.current = createGame(index);
-                  setHud({ ...gameRef.current });
+                  const nextGame = createGame(index);
+                  nextGame.player.weaponIndex = selectedWeapon;
+                  gameRef.current = nextGame;
+                  setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
                 }}
               >
                 <span>{item.level}</span>
@@ -1296,13 +1697,16 @@ export default function TangtangPage() {
               <button
                 key={weapon.id}
                 type="button"
-                className={`${player.weaponIndex === index ? 'active' : ''} ${hud.awakenedWeapons[weapon.id] ? 'awakened' : ''}`}
+                className={`${player.weaponIndex === index ? 'active' : ''} ${hud.awakenedWeapons[weapon.id] ? 'awakened' : ''} ${hud.running && player.weaponIndex !== index ? 'lockedWeapon' : ''}`}
+                disabled={hud.running && player.weaponIndex !== index}
                 onClick={() => setWeapon(index)}
               >
                 <span style={{ background: weapon.color }}>{index + 1}</span>
                 <strong>{weapon.displayName ?? weapon.name}</strong>
                 <em>
-                  {hud.awakenedWeapons[weapon.id] ? 'AWAKEN' : `LV ${hud.weaponLevels[weapon.id] ?? 0}/5`} · {weapon.displayDetail ?? weapon.detail}
+                  {hud.running && player.weaponIndex !== index
+                    ? '전투 중 변경 불가'
+                    : `${hud.awakenedWeapons[weapon.id] ? 'AWAKEN' : `LV ${hud.weaponLevels[weapon.id] ?? 0}/5`} · ${weapon.displayDetail ?? weapon.detail}`}
                 </em>
               </button>
             ))}
@@ -1364,7 +1768,7 @@ export default function TangtangPage() {
           {!hud.running && !hud.over && (
             <div className="startOverlay">
               <strong>{stages[selectedStage].name} 진입</strong>
-              <p>화면을 드래그하거나 조이스틱(PC: WASD/방향키)으로 이동하세요.</p>
+              <p>처음 선택한 무기 1개로 끝까지 싸웁니다(전투 중 변경 불가). 화면 드래그·조이스틱·WASD로 이동하세요.</p>
               <div className="mobileStagePicker" aria-label="스테이지 선택">
                 {stages.map((item, index) => (
                   <button
@@ -1377,7 +1781,22 @@ export default function TangtangPage() {
                   </button>
                 ))}
               </div>
-              <button type="button" onClick={() => resetGame(selectedStage)}>시작</button>
+              <div className="startWeaponPicker" aria-label="시작 무기 선택">
+                {weapons.map((weapon, index) => (
+                  <button
+                    key={weapon.id}
+                    type="button"
+                    className={selectedWeapon === index ? 'active' : ''}
+                    onClick={() => setWeapon(index)}
+                  >
+                    <i style={{ background: weapon.color }} />
+                    <span>{weapon.name}</span>
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={() => resetGame(selectedStage, selectedWeapon)}>
+                {weapons[selectedWeapon].name}(으)로 시작
+              </button>
             </div>
           )}
           {hud.pausedForUpgrade && (
@@ -1397,7 +1816,103 @@ export default function TangtangPage() {
             <div className="startOverlay">
               <strong>작전 종료</strong>
               <p>{minutes}:{seconds} 생존, {hud.kills} 처치, 점수 {hud.score}</p>
-              <button type="button" onClick={() => resetGame()}>다시 도전</button>
+              <div className="startWeaponPicker" aria-label="다음 판 무기 선택">
+                {weapons.map((weapon, index) => (
+                  <button
+                    key={weapon.id}
+                    type="button"
+                    className={selectedWeapon === index ? 'active' : ''}
+                    onClick={() => setWeapon(index)}
+                  >
+                    <i style={{ background: weapon.color }} />
+                    <span>{weapon.name}</span>
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={() => resetGame(selectedStage, selectedWeapon)}>
+                {weapons[selectedWeapon].name}(으)로 다시 도전
+              </button>
+            </div>
+          )}
+          {blackMarketOpen && (
+            <div
+              className={bmStyles.overlay}
+              data-ui="black-market"
+              role="dialog"
+              aria-modal="true"
+              aria-label="탕탕 서바이벌 비밀 블랙마켓"
+            >
+              <div className={bmStyles.modal}>
+                <div className={bmStyles.header}>
+                  <div>
+                    <h2 className={bmStyles.title}>🕶️ BLACK MARKET · 비밀 암시장</h2>
+                    <p className={bmStyles.subtitle}>
+                      로비 비밀 코드를 해제했습니다! 금단의 능력을 1~5 골드로 구매하고 켜거나 끌 수 있습니다. (적 5처치마다 +1골드 · 엘리트 +3골드)
+                    </p>
+                  </div>
+                  <div className={bmStyles.headerRight}>
+                    <span className={bmStyles.goldBadge}>🪙 {bmState.gold} 골드</span>
+                    <button type="button" className={bmStyles.closeBtn} onClick={closeBlackMarket}>
+                      닫기 ✕
+                    </button>
+                  </div>
+                </div>
+
+                <div className={bmStyles.grid}>
+                  {BLACK_MARKET_ITEMS.map((item) => {
+                    const isOwned = Boolean(bmState.owned[item.id]);
+                    const isEquipped = Boolean(bmState.equipped[item.id]);
+                    const canAfford = bmState.gold >= item.price;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={isOwned ? `${bmStyles.card} ${bmStyles.cardOwned}` : bmStyles.card}
+                      >
+                        <div className={bmStyles.cardTop}>
+                          <div className={bmStyles.cardTitle}>
+                            <span className={bmStyles.cardIcon}>{item.icon}</span>
+                            <div>
+                              <strong>{item.name}</strong>
+                              <span>{item.tag}</span>
+                            </div>
+                          </div>
+                          <span className={bmStyles.priceTag}>
+                            {isOwned ? '해금됨' : `🪙 ${item.price} 골드`}
+                          </span>
+                        </div>
+
+                        <p className={bmStyles.cardDesc}>{item.description}</p>
+
+                        <div>
+                          {isOwned ? (
+                            <button
+                              type="button"
+                              className={
+                                isEquipped
+                                  ? `${bmStyles.toggleBtn} ${bmStyles.toggleBtnActive}`
+                                  : bmStyles.toggleBtn
+                              }
+                              onClick={() => toggleBlackMarketItem(item.id)}
+                            >
+                              {isEquipped ? '활성화 중 ⚡ (클릭해 끄기)' : '꺼짐 (클릭해 켜기)'}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className={bmStyles.buyBtn}
+                              disabled={!canAfford}
+                              onClick={() => buyBlackMarketItem(item)}
+                            >
+                              {canAfford ? `🪙 ${item.price} 암시장 구매` : `골드 부족 (${bmState.gold}/${item.price})`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1436,18 +1951,12 @@ export default function TangtangPage() {
         />
       </div>
 
-      <div className="mobileWeaponPad" aria-label="무기 변경">
-        <button type="button" onClick={() => selectWeaponByOffset(-1)} aria-label="이전 무기">
-          ‹
-        </button>
+      <div className="mobileWeaponPad" aria-label="장착 중인 무기">
         <div>
-          <strong>{currentWeapon.displayName ?? currentWeapon.name}</strong>
+          <strong>🔒 {currentWeapon.displayName ?? currentWeapon.name}</strong>
           <span>{currentWeaponAwakened ? 'AWAKEN' : `LV ${currentWeaponLevel}/5`} · {cooldownText}</span>
           <i className="mobileCooldown"><b style={{ width: `${cooldownRatio}%` }} /></i>
         </div>
-        <button type="button" onClick={() => selectWeaponByOffset(1)} aria-label="다음 무기">
-          ›
-        </button>
       </div>
 
       <style jsx>{`
@@ -1682,6 +2191,48 @@ export default function TangtangPage() {
           border-color: #c084fc;
           background: linear-gradient(135deg, rgba(88, 28, 135, 0.72), rgba(15, 23, 42, 0.86));
           box-shadow: 0 0 0 2px rgba(192, 132, 252, 0.22), 0 0 24px rgba(168, 85, 247, 0.2);
+        }
+
+        .weaponList button.lockedWeapon,
+        .weaponList button:disabled {
+          opacity: 0.36;
+          cursor: not-allowed;
+        }
+
+        .startWeaponPicker {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 6px;
+          max-width: 440px;
+        }
+
+        .startWeaponPicker button {
+          min-height: 32px;
+          padding: 0 10px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          border: 1px solid rgba(226, 232, 240, 0.25);
+          border-radius: 999px;
+          background: rgba(15, 23, 42, 0.8);
+          color: #e2e8f0;
+          font-size: 12px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .startWeaponPicker button i {
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+
+        .startWeaponPicker button.active {
+          border-color: #facc15;
+          background: #facc15;
+          color: #111827;
         }
 
         .weaponList button span {
@@ -2000,17 +2551,16 @@ export default function TangtangPage() {
           }
 
           .mobileWeaponPad {
-            width: min(214px, calc(100vw - 144px));
-            min-height: 80px;
+            width: min(176px, calc(100vw - 150px));
+            min-height: 68px;
             position: fixed;
             left: 14px;
             bottom: max(16px, env(safe-area-inset-bottom));
             z-index: 20;
             display: grid;
-            grid-template-columns: 36px minmax(0, 1fr) 36px;
+            grid-template-columns: 1fr;
             align-items: center;
-            gap: 6px;
-            padding: 8px;
+            padding: 8px 12px;
             border: 1px solid rgba(226, 232, 240, 0.24);
             border-radius: 10px;
             background: rgba(15, 23, 42, 0.78);

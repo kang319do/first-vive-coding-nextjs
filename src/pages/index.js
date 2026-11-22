@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+
+const pureHallKey = 'jump-map-pure-clear-hall-v1';
 
 const pages = [
   {
@@ -14,7 +17,7 @@ const pages = [
   {
     href: '/jump-map',
     title: 'Jump Map',
-    description: '슬라이딩·공중 대시·블록 쌓기·벽점프로 극악 50스테이지를 돌파하는 파쿠르 게임',
+    description: '슬라이딩·공중 대시·블록 쌓기·벽점프로 극악 70스테이지를 돌파하는 파쿠르 게임',
   },
   {
     href: '/rpg',
@@ -29,11 +32,24 @@ const pages = [
 ];
 
 export default function Home() {
+  const [pureClearHall, setPureClearHall] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(pureHallKey) || '[]');
+      if (Array.isArray(saved)) {
+        setPureClearHall(saved.filter((entry) => entry && typeof entry.name === 'string' && entry.name.trim()));
+      }
+    } catch {
+      setPureClearHall([]);
+    }
+  }, []);
+
   return (
     <section className="homePage">
       <div className="homeIntro">
-        <p>상단 메뉴나 아래 카드를 눌러 원하는 페이지로 이동하세요.</p>
-        <h1>Game Lab</h1>
+        <p>게임·스터디·일상 기능을 하나씩 만들어 채워가는 실험실</p>
+        <h1>GANGYOON!LAB!</h1>
       </div>
 
       <div className="pageGrid">
@@ -44,6 +60,19 @@ export default function Home() {
           </Link>
         ))}
       </div>
+
+      {pureClearHall.length > 0 && (
+        <footer className="lobbyHonorRoll" aria-label="Jump Map 정통 클리어 명단">
+          <span className="lobbyHonorLabel">🏆 Jump Map 정통 클리어</span>
+          <div className="lobbyHonorNames">
+            {pureClearHall.map((entry, idx) => (
+              <span key={`${entry.name}-${entry.clearedAt || idx}`} className="lobbyHonorName">
+                {entry.name}
+              </span>
+            ))}
+          </div>
+        </footer>
+      )}
     </section>
   );
 }

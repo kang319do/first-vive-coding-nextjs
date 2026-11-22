@@ -843,7 +843,7 @@ export default function SwingHookPage() {
       <div className="swingShell">
         <header className="swingHud">
           <div>
-            <span>Game Lab</span>
+            <span>GANGYOON!LAB!</span>
             <h1>Swing Hook</h1>
           </div>
           <div className="hudStats">

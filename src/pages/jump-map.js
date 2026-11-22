@@ -22,14 +22,76 @@ const maxActiveBlocks = 6;
 const grappleRange = 360;
 const grappleDuration = 0.25;
 const grappleCooldownSec = 1.4;
+const blinkDistance = 220;
+const blinkCooldownSec = 0.45;
+const SECRET_CODE = 'abcdefghijklmnopqrstuvwxyz';
+const TOTAL_STAGES = 70;
 const saveKey = 'jump-map-progress-v1';
+const pureHallKey = 'jump-map-pure-clear-hall-v1';
+
+const BLACK_MARKET_ITEMS = [
+  {
+    id: 'infBlocks',
+    name: '무한 황금 블록',
+    icon: '🧱',
+    price: 1,
+    keyHint: '패시브',
+    kind: 'permanent',
+    description: '블록이 절대 줄어들지 않으며 설치한 황금 블록이 20초 동안 유지됩니다.',
+  },
+  {
+    id: 'coinMagnet',
+    name: '코인 자석 · 3배',
+    icon: '🧲',
+    price: 2,
+    keyHint: '패시브',
+    kind: 'permanent',
+    description: '주변 코인이 자동으로 끌려오며 모든 코인 획득량이 3배로 증가합니다.',
+  },
+  {
+    id: 'infJump',
+    name: '무한 공중 점프',
+    icon: '⚡',
+    price: 3,
+    keyHint: '공중 Enter 무한',
+    kind: 'permanent',
+    description: '공중에서 Enter를 횟수 제한 없이 무한으로 점프해 하늘을 날 수 있습니다.',
+  },
+  {
+    id: 'blink',
+    name: '순간이동 블링크',
+    icon: '🚀',
+    price: 4,
+    keyHint: 'T 키',
+    kind: 'permanent',
+    description: 'T 키를 누르면 바라보는 방향으로 벽과 가시를 뚫고 220px 앞으로 순간이동!',
+  },
+  {
+    id: 'godMode',
+    name: '유령 무적 모드',
+    icon: '👻',
+    price: 5,
+    keyHint: '패시브',
+    kind: 'permanent',
+    description: '가시·레이저·회전 톱날에 닿아도 전혀 죽지 않고 통과합니다.',
+  },
+  {
+    id: 'unlockAll',
+    name: '전 스테이지 해금',
+    icon: '👑',
+    price: 5,
+    keyHint: '즉시 발동',
+    kind: 'unlockAll',
+    description: `잠겨 있던 ${TOTAL_STAGES}개 모든 스테이지를 한 번에 해금해 자유롭게 이동합니다.`,
+  },
+];
 
 const SHOP_ITEMS = [
   {
     id: 'doubleJump',
     name: '더블 점프',
     icon: '🪽',
-    price: 60,
+    price: 90,
     keyHint: '공중 Enter',
     kind: 'permanent',
     description: '공중에서 Enter를 한 번 더 눌러 2단 점프로 위기를 탈출합니다.',
@@ -38,7 +100,7 @@ const SHOP_ITEMS = [
     id: 'grappleHook',
     name: '그래플링 후크',
     icon: '🪝',
-    price: 100,
+    price: 150,
     keyHint: 'G 키 / 후크',
     kind: 'permanent',
     description: '앞쪽 위로 갈고리 줄을 발사해 빠르게 날아가며 넓은 절벽을 돌파합니다.',
@@ -47,7 +109,7 @@ const SHOP_ITEMS = [
     id: 'shield',
     name: '가시 방어막',
     icon: '🛡️',
-    price: 75,
+    price: 112,
     keyHint: '자동 발동',
     kind: 'permanent',
     description: '스테이지당 1회(체크포인트 리필) 가시·레이저·톱날 피해를 막아냅니다.',
@@ -56,7 +118,7 @@ const SHOP_ITEMS = [
     id: 'feather',
     name: '저중력 깃털',
     icon: '🪶',
-    price: 90,
+    price: 135,
     keyHint: '패시브',
     kind: 'permanent',
     description: '중력이 16% 줄어 더 멀리, 더 부드럽게 점프하고 착지할 수 있습니다.',
@@ -65,7 +127,7 @@ const SHOP_ITEMS = [
     id: 'blockBag',
     name: '블록 가방 확장',
     icon: '🧱',
-    price: 50,
+    price: 75,
     keyHint: '패시브',
     kind: 'permanent',
     description: '스테이지 시작 블록 +3개 증가, 설치한 블록 유지 시간 +2초 연장!',
@@ -74,7 +136,7 @@ const SHOP_ITEMS = [
     id: 'skipTicket',
     name: '스테이지 스킵권',
     icon: '🎟️',
-    price: 125,
+    price: 188,
     keyHint: '소모품',
     kind: 'consumable',
     description: '어려운 스테이지를 즉시 클리어하고 다음 스테이지로 넘어갑니다.',
@@ -86,7 +148,12 @@ const DEFAULT_SHOP = {
   owned: {},
   equipped: {},
   skipTickets: 0,
+  visitedBlackMarket: false,
 };
+
+function hasBlackMarketItems(owned) {
+  return BLACK_MARKET_ITEMS.some((item) => Boolean(owned?.[item.id]));
+}
 
 const difficultyBands = [
   { name: 'Tutorial', label: '튜토리얼', color: '#38bdf8', from: 0, to: 9, width: 2400, gap: 170, maxBlocks: 6, crumbleMs: 610 },
@@ -94,6 +161,8 @@ const difficultyBands = [
   { name: 'Normal', label: '보통', color: '#facc15', from: 20, to: 29, width: 4100, gap: 238, maxBlocks: 5, crumbleMs: 470 },
   { name: 'Hard', label: '어려움', color: '#fb923c', from: 30, to: 39, width: 5200, gap: 270, maxBlocks: 4, crumbleMs: 400 },
   { name: 'Extreme', label: '극악', color: '#ef4444', from: 40, to: 49, width: 6500, gap: 305, maxBlocks: 4, crumbleMs: 330 },
+  { name: 'Nightmare', label: '악몽', color: '#c084fc', from: 50, to: 59, width: 7400, gap: 325, maxBlocks: 4, crumbleMs: 295 },
+  { name: 'Mythic', label: '신화', color: '#f472b6', from: 60, to: 69, width: 8300, gap: 345, maxBlocks: 4, crumbleMs: 260 },
 ];
 
 function clamp(value, min, max) {
@@ -158,7 +227,7 @@ function isBlinkLaserWarning(hazard, timeSec) {
 function makeStage(index) {
   const band = getBand(index);
   const local = index - band.from;
-  const difficulty = index / 49;
+  const difficulty = index / (TOTAL_STAGES - 1);
   const width = Math.round(band.width + local * 155 + difficulty * 950);
   const floorY = 520;
   const platforms = [
@@ -452,7 +521,7 @@ function makeStage(index) {
   };
 }
 
-const stages = Array.from({ length: 50 }, (_, index) => makeStage(index));
+const stages = Array.from({ length: TOTAL_STAGES }, (_, index) => makeStage(index));
 
 function createPlayer(stageIndex, equipped = {}) {
   const stage = stages[stageIndex];
@@ -476,6 +545,7 @@ function createPlayer(stageIndex, equipped = {}) {
     airJumpsLeft: equipped.doubleJump ? 1 : 0,
     grapple: null,
     grappleCooldown: 0,
+    blinkCooldown: 0,
     shieldActive: Boolean(equipped.shield),
     invulnTimer: 0,
     blocksLeft: maxBlocks,
@@ -497,10 +567,14 @@ export default function JumpMapPage() {
     placeBlockPressed: false,
     interactPressed: false,
     grapplePressed: false,
+    blinkPressed: false,
   });
   const shopStateRef = useRef(DEFAULT_SHOP);
   const shopOpenRef = useRef(false);
   const stageModalOpenRef = useRef(false);
+  const blackMarketOpenRef = useRef(false);
+  const hallModalOpenRef = useRef(false);
+  const secretProgressRef = useRef(0);
   const playerRef = useRef(createPlayer(0, DEFAULT_SHOP.equipped));
   const stageRef = useRef(0);
   const cameraRef = useRef({ x: 0, y: 0 });
@@ -526,6 +600,9 @@ export default function JumpMapPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [shopOpen, setShopOpen] = useState(false);
   const [stageModalOpen, setStageModalOpen] = useState(false);
+  const [blackMarketOpen, setBlackMarketOpen] = useState(false);
+  const [hallModalOpen, setHallModalOpen] = useState(false);
+  const [hallNameDraft, setHallNameDraft] = useState('');
   const [shop, setShop] = useState(DEFAULT_SHOP);
   const [padState, setPadState] = useState({ left: false, right: false, jump: false, slide: false, block: false, hook: false });
   const [hud, setHud] = useState({
@@ -644,6 +721,15 @@ export default function JumpMapPage() {
         tone('sine', 1175, 1175, 0.08, 0.13, 0.06);
         tone('sine', 1568, 1568, 0.16, 0.14, 0.13);
         break;
+      case 'blink':
+        tone('sine', 960, 1800, 0.09, 0.12);
+        tone('triangle', 640, 260, 0.1, 0.1, 0.03);
+        break;
+      case 'blackMarket':
+        tone('sawtooth', 180, 220, 0.16, 0.1, 0);
+        tone('triangle', 277, 330, 0.18, 0.12, 0.12);
+        tone('sine', 440, 660, 0.28, 0.14, 0.24);
+        break;
       default:
         break;
     }
@@ -669,7 +755,9 @@ export default function JumpMapPage() {
 
   function openShop() {
     stageModalOpenRef.current = false;
+    blackMarketOpenRef.current = false;
     setStageModalOpen(false);
+    setBlackMarketOpen(false);
     shopOpenRef.current = true;
     setShopOpen(true);
   }
@@ -681,7 +769,9 @@ export default function JumpMapPage() {
 
   function openStageModal() {
     shopOpenRef.current = false;
+    blackMarketOpenRef.current = false;
     setShopOpen(false);
+    setBlackMarketOpen(false);
     stageModalOpenRef.current = true;
     setStageModalOpen(true);
   }
@@ -689,6 +779,66 @@ export default function JumpMapPage() {
   function closeStageModal() {
     stageModalOpenRef.current = false;
     setStageModalOpen(false);
+  }
+
+  function closeBlackMarket() {
+    blackMarketOpenRef.current = false;
+    setBlackMarketOpen(false);
+  }
+
+  function closeHallModal() {
+    hallModalOpenRef.current = false;
+    setHallModalOpen(false);
+  }
+
+  function handleRegisterHallName(event) {
+    event.preventDefault();
+    const trimmed = hallNameDraft.trim().slice(0, 16);
+    if (!trimmed) return;
+    try {
+      const raw = JSON.parse(window.localStorage.getItem(pureHallKey) || '[]');
+      const list = Array.isArray(raw) ? raw : [];
+      const filtered = list.filter((entry) => entry && entry.name !== trimmed);
+      filtered.push({
+        name: trimmed,
+        clearedAt: new Date().toISOString().slice(0, 10),
+        deaths: deathsRef.current,
+      });
+      window.localStorage.setItem(pureHallKey, JSON.stringify(filtered.slice(-30)));
+    } catch {
+      // Saving Hall of Fame entry is optional if storage is unavailable.
+    }
+    setHallNameDraft('');
+    closeHallModal();
+    playSound('clear');
+    setHud((prev) => ({ ...prev, status: `로비 등록 완료! (${trimmed})` }));
+  }
+
+  function buyBlackMarketItem(item) {
+    if (shopStateRef.current.coins < item.price) return;
+
+    if (item.kind === 'unlockAll') {
+      if (clearedRef.current >= stages.length - 1) return;
+      playSound('buy');
+      clearedRef.current = stages.length - 1;
+      updateShopState((prev) => ({
+        ...prev,
+        coins: prev.coins - item.price,
+        owned: { ...prev.owned, [item.id]: true },
+      }));
+      setHud((prev) => ({ ...prev, cleared: stages.length - 1, status: '전 스테이지 해금!' }));
+      return;
+    }
+
+    if (shopStateRef.current.owned[item.id]) return;
+
+    playSound('buy');
+    updateShopState((prev) => ({
+      ...prev,
+      coins: prev.coins - item.price,
+      owned: { ...prev.owned, [item.id]: true },
+      equipped: { ...prev.equipped, [item.id]: true },
+    }));
   }
 
   function selectStageFromModal(stageIdx) {
@@ -870,12 +1020,14 @@ export default function JumpMapPage() {
     function loadProgress() {
       try {
         const saved = JSON.parse(window.localStorage.getItem(saveKey) || '{}');
-        clearedRef.current = clamp(Number(saved.cleared) || 0, 0, stages.length - 1);
+        clearedRef.current = clamp(Number(saved.cleared) || 0, 0, stages.length);
+        const loadedOwned = saved.owned && typeof saved.owned === 'object' ? saved.owned : {};
         const loadedShop = {
           coins: Math.max(0, Number(saved.coins) || 0),
-          owned: saved.owned && typeof saved.owned === 'object' ? saved.owned : {},
+          owned: loadedOwned,
           equipped: saved.equipped && typeof saved.equipped === 'object' ? saved.equipped : {},
           skipTickets: Math.max(0, Number(saved.skipTickets) || 0),
+          visitedBlackMarket: Boolean(saved.visitedBlackMarket) || hasBlackMarketItems(loadedOwned),
         };
         shopStateRef.current = loadedShop;
         setShop(loadedShop);
@@ -895,6 +1047,7 @@ export default function JumpMapPage() {
           owned: s.owned,
           equipped: s.equipped,
           skipTickets: s.skipTickets,
+          visitedBlackMarket: Boolean(s.visitedBlackMarket),
         }));
       } catch {
         // Saving is optional; the game should still play without localStorage.
@@ -966,6 +1119,13 @@ export default function JumpMapPage() {
 
     function nextStage(fromSkip = false) {
       playSound('clear');
+      const wasFinalStage = stageRef.current === stages.length - 1;
+      const isPureClear =
+        wasFinalStage &&
+        !fromSkip &&
+        !shopStateRef.current.visitedBlackMarket &&
+        !hasBlackMarketItems(shopStateRef.current.owned);
+
       const cleared = stageRef.current + 1;
       clearedRef.current = Math.max(clearedRef.current, cleared);
       const clearReward = fromSkip ? 0 : 5 + Math.floor(stageRef.current / 10) * 3;
@@ -982,6 +1142,17 @@ export default function JumpMapPage() {
             ? `All Clear! +${clearReward}코인`
             : `Clear! +${clearReward}코인`,
       );
+
+      if (isPureClear) {
+        shopOpenRef.current = false;
+        stageModalOpenRef.current = false;
+        blackMarketOpenRef.current = false;
+        setShopOpen(false);
+        setStageModalOpen(false);
+        setBlackMarketOpen(false);
+        hallModalOpenRef.current = true;
+        setHallModalOpen(true);
+      }
     }
 
     function getPlayerHeight(player) {
@@ -1034,10 +1205,13 @@ export default function JumpMapPage() {
     }
 
     function tryPlaceBlock(player, solids, now) {
-      if (player.blocksLeft <= 0) return;
+      const hasInfBlocks = Boolean(shopStateRef.current.equipped.infBlocks);
+      if (!hasInfBlocks && player.blocksLeft <= 0) return;
 
       const height = getPlayerHeight(player);
-      const lifetime = blockLifetimeMs + (shopStateRef.current.equipped.blockBag ? 2000 : 0);
+      const lifetime = hasInfBlocks
+        ? 20000
+        : blockLifetimeMs + (shopStateRef.current.equipped.blockBag ? 2000 : 0);
       const newBlock = player.grounded
         ? {
             x: Math.round(player.x + player.facing * 52 - 18),
@@ -1045,6 +1219,7 @@ export default function JumpMapPage() {
             width: blockWidth,
             height: blockHeight,
             kind: 'playerBlock',
+            golden: hasInfBlocks,
             expiresAt: now + lifetime,
             duration: lifetime,
             id: `pb-${now}-${Math.random()}`,
@@ -1055,6 +1230,7 @@ export default function JumpMapPage() {
             width: blockWidth,
             height: blockHeight,
             kind: 'playerBlock',
+            golden: hasInfBlocks,
             expiresAt: now + lifetime,
             duration: lifetime,
             id: `pb-${now}-${Math.random()}`,
@@ -1076,7 +1252,9 @@ export default function JumpMapPage() {
         placedBlocksRef.current.shift();
       }
 
-      player.blocksLeft -= 1;
+      if (!hasInfBlocks) {
+        player.blocksLeft -= 1;
+      }
       playSound('block');
 
       // Mid-air catch: softly stop falling so block-stacking upwards feels super snappy!
@@ -1139,7 +1317,14 @@ export default function JumpMapPage() {
     }
 
     function update(delta) {
-      if (shopOpenRef.current || stageModalOpenRef.current) return;
+      if (
+        shopOpenRef.current ||
+        stageModalOpenRef.current ||
+        blackMarketOpenRef.current ||
+        hallModalOpenRef.current
+      ) {
+        return;
+      }
 
       const stage = stages[stageRef.current];
       const player = playerRef.current;
@@ -1149,6 +1334,7 @@ export default function JumpMapPage() {
 
       if (player.invulnTimer > 0) player.invulnTimer = Math.max(0, player.invulnTimer - delta);
       if (player.grappleCooldown > 0) player.grappleCooldown = Math.max(0, player.grappleCooldown - delta);
+      if (player.blinkCooldown > 0) player.blinkCooldown = Math.max(0, player.blinkCooldown - delta);
 
       // Remove expired placed blocks & summoned bridges
       placedBlocksRef.current = placedBlocksRef.current.filter((block) => now < block.expiresAt);
@@ -1241,6 +1427,23 @@ export default function JumpMapPage() {
       if (input.grapplePressed) {
         tryGrapple(player, solids);
         input.grapplePressed = false;
+      }
+
+      // Black Market Blink teleport trigger (T key)
+      if (input.blinkPressed) {
+        if (equipped.blink && player.blinkCooldown <= 0) {
+          const curH = getPlayerHeight(player);
+          trailsRef.current.push({ x: player.x, y: player.y, w: playerWidth, h: curH, color: '#ec4899', alpha: 0.9 });
+          player.x = clamp(player.x + player.facing * blinkDistance, 0, stage.width - playerWidth);
+          player.y = Math.max(20, player.y - 24);
+          player.vy = Math.min(player.vy, -180);
+          player.blinkCooldown = blinkCooldownSec;
+          player.invulnTimer = Math.max(player.invulnTimer, 0.25);
+          trailsRef.current.push({ x: player.x, y: player.y, w: playerWidth, h: curH, color: '#a855f7', alpha: 0.9 });
+          playSound('blink');
+          updateHud('순간이동!');
+        }
+        input.blinkPressed = false;
       }
 
       // Slide / Air Dash trigger
@@ -1384,8 +1587,10 @@ export default function JumpMapPage() {
           player.canDash = true;
           player.airJumpsLeft = equipped.doubleJump ? 1 : 0;
           playSound('wallJump');
-        } else if (player.airJumpsLeft > 0) {
-          player.airJumpsLeft -= 1;
+        } else if (equipped.infJump || player.airJumpsLeft > 0) {
+          if (!equipped.infJump) {
+            player.airJumpsLeft -= 1;
+          }
           player.vy = -jumpPower * 0.94;
           player.grapple = null;
           trailsRef.current.push({
@@ -1393,11 +1598,11 @@ export default function JumpMapPage() {
             y: player.y + curHeight - 6,
             w: playerWidth + 16,
             h: 8,
-            color: '#22d3ee',
+            color: equipped.infJump ? '#a855f7' : '#22d3ee',
             alpha: 0.9,
           });
           playSound('doubleJump');
-          updateHud('더블 점프!');
+          updateHud(equipped.infJump ? '무한 점프!' : '더블 점프!');
         }
         input.jumpPressed = false;
       }
@@ -1409,11 +1614,19 @@ export default function JumpMapPage() {
       const finalHeight = getPlayerHeight(player);
       const playerBox = { x: player.x, y: player.y, width: playerWidth, height: finalHeight };
 
-      // Collect items (+1 block charge & +1 shop coin!)
+      // Collect items (+1 block charge & +1 shop coin, or 3x with Black Market coin magnet!)
+      const coinValue = equipped.coinMagnet ? 3 : 1;
       stage.items.forEach((item) => {
-        if (!collectedRef.current.has(item.id) && intersects(playerBox, item)) {
+        if (collectedRef.current.has(item.id)) return;
+        const magnetHit =
+          equipped.coinMagnet &&
+          Math.hypot(
+            player.x + playerWidth / 2 - (item.x + item.width / 2),
+            player.y + finalHeight / 2 - (item.y + item.height / 2),
+          ) < 220;
+        if (magnetHit || intersects(playerBox, item)) {
           collectedRef.current.add(item.id);
-          addCoins(1);
+          addCoins(coinValue);
           playSound('coin');
           if (player.blocksLeft < player.maxBlocks + 3) {
             player.blocksLeft += 1;
@@ -1440,9 +1653,9 @@ export default function JumpMapPage() {
         }
       });
 
-      // Hazard checks (with blinkLaser ON/OFF + switch disable + spike shield + movingBlade live position)
+      // Hazard checks (with blinkLaser ON/OFF + switch disable + godMode + spike shield + movingBlade)
       const lasersDisabled = now < laserDisabledUntilRef.current;
-      const hitHazard = player.invulnTimer <= 0 && stage.hazards.some((hazard) => {
+      const hitHazard = !equipped.godMode && player.invulnTimer <= 0 && stage.hazards.some((hazard) => {
         if (hazard.kind === 'blinkLaser' && (lasersDisabled || !isBlinkLaserActive(hazard, timeSec))) {
           return false;
         }
@@ -1524,7 +1737,15 @@ export default function JumpMapPage() {
 
       // Sky gradient darkens slightly with difficulty band!
       const sky = context.createLinearGradient(0, 0, 0, height);
-      if (stage.index >= 40) {
+      if (stage.index >= 60) {
+        sky.addColorStop(0, '#14041c');
+        sky.addColorStop(0.55, '#831843');
+        sky.addColorStop(1, '#fbcfe8');
+      } else if (stage.index >= 50) {
+        sky.addColorStop(0, '#0f0524');
+        sky.addColorStop(0.55, '#581c87');
+        sky.addColorStop(1, '#e9d5ff');
+      } else if (stage.index >= 40) {
         sky.addColorStop(0, '#1f0710');
         sky.addColorStop(0.55, '#7f1d1d');
         sky.addColorStop(1, '#fecaca');
@@ -1624,12 +1845,12 @@ export default function JumpMapPage() {
 
         context.save();
         context.globalAlpha = blinking ? 0.45 : 0.95;
-        drawRect(block, '#38bdf8', camera, 6);
-        context.strokeStyle = '#e0f2fe';
+        drawRect(block, block.golden ? '#f59e0b' : '#38bdf8', camera, 6);
+        context.strokeStyle = block.golden ? '#fef08a' : '#e0f2fe';
         context.lineWidth = 2;
         context.strokeRect(bx + 1, by + 1, block.width - 2, block.height - 2);
         // Lifetime progress bar inside block
-        context.fillStyle = '#0369a1';
+        context.fillStyle = block.golden ? '#78350f' : '#0369a1';
         context.fillRect(bx + 6, by + block.height - 6, (block.width - 12) * remaining, 3);
         context.restore();
       });
@@ -1973,8 +2194,14 @@ export default function JumpMapPage() {
       const eyeX = player.facing === 1 ? px + 14 : px + 4;
       context.fillRect(eyeX, py + (player.sliding ? 5 : 9), 10, 6);
 
-      // Protective glowing shield ring when Spike Shield is active!
-      if (player.shieldActive) {
+      // Protective glowing shield ring or Black Market godMode crimson aura!
+      if (shopStateRef.current.equipped.godMode) {
+        context.strokeStyle = 'rgba(244, 63, 94, 0.92)';
+        context.lineWidth = 2.5;
+        context.beginPath();
+        context.arc(px + playerWidth / 2, py + pHeight / 2, Math.max(playerWidth, pHeight) * 0.72, 0, Math.PI * 2);
+        context.stroke();
+      } else if (player.shieldActive) {
         context.strokeStyle = 'rgba(56, 189, 248, 0.9)';
         context.lineWidth = 2.5;
         context.beginPath();
@@ -2017,17 +2244,58 @@ export default function JumpMapPage() {
     }
 
     function setKey(event, pressed) {
-      if (shopOpenRef.current || stageModalOpenRef.current) {
+      if (
+        shopOpenRef.current ||
+        stageModalOpenRef.current ||
+        blackMarketOpenRef.current ||
+        hallModalOpenRef.current
+      ) {
         if (pressed && event.key === 'Escape') {
           shopOpenRef.current = false;
           stageModalOpenRef.current = false;
+          blackMarketOpenRef.current = false;
+          hallModalOpenRef.current = false;
           setShopOpen(false);
           setStageModalOpen(false);
+          setBlackMarketOpen(false);
+          setHallModalOpen(false);
         }
         return;
       }
 
       const key = event.key.toLowerCase();
+
+      // Secret Easter Egg: press a-z in exact order to open Black Market!
+      if (pressed && !event.repeat) {
+        const codeLetter =
+          /^Key[A-Z]$/.test(event.code) ? event.code.slice(3).toLowerCase() :
+          /^[a-z]$/.test(key) ? key : '';
+        if (codeLetter) {
+          if (codeLetter === SECRET_CODE[secretProgressRef.current]) {
+            secretProgressRef.current += 1;
+            if (secretProgressRef.current >= SECRET_CODE.length) {
+              secretProgressRef.current = 0;
+              if (!shopStateRef.current.visitedBlackMarket) {
+                const markedShop = { ...shopStateRef.current, visitedBlackMarket: true };
+                shopStateRef.current = markedShop;
+                setShop(markedShop);
+                saveProgress(stageRef.current, markedShop);
+              }
+              shopOpenRef.current = false;
+              stageModalOpenRef.current = false;
+              blackMarketOpenRef.current = true;
+              setShopOpen(false);
+              setStageModalOpen(false);
+              setBlackMarketOpen(true);
+              playSound('blackMarket');
+              return;
+            }
+          } else {
+            secretProgressRef.current = codeLetter === 'a' ? 1 : 0;
+          }
+        }
+      }
+
       if (['arrowleft', 'a'].includes(key)) {
         event.preventDefault();
         inputRef.current.left = pressed;
@@ -2053,6 +2321,10 @@ export default function JumpMapPage() {
       if (pressed && !event.repeat && key === 'g') {
         event.preventDefault();
         inputRef.current.grapplePressed = true;
+      }
+      if (pressed && !event.repeat && key === 't') {
+        event.preventDefault();
+        inputRef.current.blinkPressed = true;
       }
       if (pressed && !event.repeat && ['e', 'f', 'b'].includes(key)) {
         event.preventDefault();
@@ -2095,7 +2367,7 @@ export default function JumpMapPage() {
       <div className={styles.jumpShell}>
         <header className={styles.jumpHud}>
           <div>
-            <span className={styles.brandTag}>Game Lab</span>
+            <span className={styles.brandTag}>GANGYOON!LAB!</span>
             <h1>Jump Map</h1>
           </div>
           <div className={styles.stats}>
@@ -2104,7 +2376,7 @@ export default function JumpMapPage() {
             <span className={styles.statBlockBadge}>블록 {hud.blocksLeft}/{hud.maxBlocks}</span>
             <span className={styles.statCoinBadge}>🪙 {shop.coins} 코인</span>
             <button type="button" className={styles.stageOpenBtn} onClick={openStageModal}>
-              🗺️ 스테이지 ({hud.cleared}/50)
+              🗺️ 스테이지 ({hud.cleared}/{stages.length})
             </button>
             <button type="button" className={styles.shopOpenBtn} onClick={openShop}>
               🛒 상점
@@ -2116,6 +2388,15 @@ export default function JumpMapPage() {
               aria-label={soundEnabled ? '소리 끄기' : '소리 켜기'}
             >
               {soundEnabled ? '🔊' : '🔇'}
+            </button>
+            <button
+              type="button"
+              className={styles.stageOpenBtn}
+              onClick={() => resetStageFnRef.current?.(stageRef.current, false)}
+              aria-label="스테이지 재시작"
+              title="현재 스테이지 다시 시작 (R)"
+            >
+              ↻ 다시
             </button>
             <span className={styles.statBadge}>사망 {hud.deaths}</span>
             <span className={styles.statBadge}>{hud.status}</span>
@@ -2154,7 +2435,7 @@ export default function JumpMapPage() {
                 cursor: 'pointer',
               }}
             >
-              🗺️ 스테이지 {hud.stage + 1}/50
+              🗺️ 스테이지 {hud.stage + 1}/{stages.length}
             </span>
           </button>
 
@@ -2172,14 +2453,6 @@ export default function JumpMapPage() {
             </div>
 
             <div className={styles.mobileActionPad}>
-              <button
-                type="button"
-                className={styles.mobileResetBtn}
-                onClick={() => resetStageFnRef.current?.(stageRef.current, false)}
-                aria-label="스테이지 재시작"
-              >
-                ↻
-              </button>
               {shop.equipped.grappleHook ? (
                 <button
                   type="button"
@@ -2339,13 +2612,138 @@ export default function JumpMapPage() {
             </div>
           )}
 
+          {blackMarketOpen && (
+            <div className={styles.blackMarketOverlay} role="dialog" aria-modal="true" aria-label="비밀 블랙마켓">
+              <div className={styles.blackMarketModal}>
+                <div className={styles.shopHeader}>
+                  <div>
+                    <h2 className={styles.blackMarketTitle}>🕶️ BLACK MARKET · 비밀 암시장</h2>
+                    <p className={styles.blackMarketSub}>
+                      비밀 코드를 발견하셨습니다! 금단의 최강 능력들을 1~5 코인 특가로 구매하세요.
+                    </p>
+                  </div>
+                  <div className={styles.shopHeaderRight}>
+                    <span className={styles.statCoinBadge}>🪙 {shop.coins} 코인</span>
+                    <button type="button" className={styles.shopCloseBtn} onClick={closeBlackMarket}>
+                      닫기 ✕
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.shopGrid}>
+                  {BLACK_MARKET_ITEMS.map((item) => {
+                    const isOwned = Boolean(shop.owned[item.id]);
+                    const isEquipped = Boolean(shop.equipped[item.id]);
+                    const canAfford = shop.coins >= item.price;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={
+                          isOwned ? `${styles.blackCard} ${styles.blackCardOwned}` : styles.blackCard
+                        }
+                      >
+                        <div className={styles.shopCardTop}>
+                          <div className={styles.shopCardTitle}>
+                            <span className={styles.shopCardIcon}>{item.icon}</span>
+                            <div>
+                              <strong>{item.name}</strong>
+                              <span>{item.keyHint}</span>
+                            </div>
+                          </div>
+                          <span className={styles.blackPriceTag}>
+                            {isOwned ? '해금됨' : `🪙 ${item.price} 코인`}
+                          </span>
+                        </div>
+
+                        <p className={styles.shopCardDesc}>{item.description}</p>
+
+                        <div className={styles.shopCardActions}>
+                          {item.kind === 'unlockAll' ? (
+                            <button
+                              type="button"
+                              className={styles.blackBuyBtn}
+                              disabled={hud.cleared >= stages.length - 1 || !canAfford}
+                              onClick={() => buyBlackMarketItem(item)}
+                            >
+                              {hud.cleared >= stages.length - 1
+                                ? `${stages.length}단계 전체 해금 완료 ✓`
+                                : canAfford
+                                  ? `🪙 ${item.price} 즉시 해금`
+                                  : `코인 부족 (${shop.coins}/${item.price})`}
+                            </button>
+                          ) : isOwned ? (
+                            <button
+                              type="button"
+                              className={
+                                isEquipped
+                                  ? `${styles.shopToggleBtn} ${styles.blackToggleActive}`
+                                  : styles.shopToggleBtn
+                              }
+                              onClick={() => toggleEquipItem(item.id)}
+                            >
+                              {isEquipped ? '활성화 중 ⚡ (클릭해 끄기)' : '꺼짐 (클릭해 켜기)'}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className={styles.blackBuyBtn}
+                              disabled={!canAfford}
+                              onClick={() => buyBlackMarketItem(item)}
+                            >
+                              {canAfford ? `🪙 ${item.price} 암시장 구매` : `코인 부족 (${shop.coins}/${item.price})`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {hallModalOpen && (
+            <div className={styles.shopOverlay} role="dialog" aria-modal="true" aria-label="정통 클리어 이름 등록">
+              <div className={styles.hallModal}>
+                <h2>🏆 정통 올클리어 달성!</h2>
+                <p>
+                  블랙마켓을 한 번도 가지 않고 {stages.length}스테이지를 끝까지 클리어했습니다!
+                  <br />
+                  이름을 남기면 GANGYOON!LAB! 로비에 작게 기록됩니다.
+                </p>
+                <form className={styles.hallForm} onSubmit={handleRegisterHallName}>
+                  <input
+                    type="text"
+                    className={styles.hallInput}
+                    value={hallNameDraft}
+                    onChange={(e) => setHallNameDraft(e.target.value)}
+                    placeholder="이름 또는 닉네임 (최대 16자)"
+                    maxLength={16}
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className={styles.hallSubmitBtn}
+                    disabled={!hallNameDraft.trim()}
+                  >
+                    등록
+                  </button>
+                </form>
+                <button type="button" className={styles.shopCloseBtn} onClick={closeHallModal}>
+                  나중에 하기
+                </button>
+              </div>
+            </div>
+          )}
+
           {shopOpen && (
             <div className={styles.shopOverlay} role="dialog" aria-modal="true" aria-label="점프맵 상점">
               <div className={styles.shopModal}>
                 <div className={styles.shopHeader}>
                   <div>
                     <h2>🛒 점프맵 아이템 상점</h2>
-                    <p>맵 코인(+1)과 스테이지 클리어 보너스(+5~17)로 능력을 구매하세요!</p>
+                    <p>맵 코인(+1)과 스테이지 클리어 보너스(+5~23)로 능력을 구매하세요!</p>
                   </div>
                   <div className={styles.shopHeaderRight}>
                     <span className={styles.statCoinBadge}>🪙 {shop.coins} 코인</span>

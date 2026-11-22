@@ -974,37 +974,52 @@ export default function BouncePage() {
           </div>
         </div>
 
-        <div className={styles.mapSelectorBar} aria-label="맵 선택">
-          {maps.map((map, idx) => {
-            const isLocked = idx > unlockedLevel;
-            const isCleared = idx < clearedCount;
-            const isActive = idx === level;
-            const chipClasses = [
-              styles.mapChip,
-              isCleared ? styles.mapChipCleared : '',
-              isActive ? styles.mapChipActive : '',
-              isLocked ? styles.mapChipLocked : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
+        <div className={styles.mapBarRow}>
+          <div className={styles.mapSelectorBar} aria-label="맵 선택">
+            {maps.map((map, idx) => {
+              const isLocked = idx > unlockedLevel;
+              const isCleared = idx < clearedCount;
+              const isActive = idx === level;
+              const chipClasses = [
+                styles.mapChip,
+                isCleared ? styles.mapChipCleared : '',
+                isActive ? styles.mapChipActive : '',
+                isLocked ? styles.mapChipLocked : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
 
-            return (
-              <button
-                key={map.name}
-                type="button"
-                disabled={isLocked}
-                className={chipClasses}
-                title={isLocked ? `MAP ${idx}를 먼저 깨야 열립니다` : map.name}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  selectMap(idx);
-                }}
-              >
-                {isLocked ? `🔒 M${idx + 1}` : isCleared ? `M${idx + 1} ✓` : `M${idx + 1}`}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={map.name}
+                  type="button"
+                  disabled={isLocked}
+                  className={chipClasses}
+                  title={isLocked ? `MAP ${idx}를 먼저 깨야 열립니다` : map.name}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectMap(idx);
+                  }}
+                >
+                  {isLocked ? `🔒 M${idx + 1}` : isCleared ? `M${idx + 1} ✓` : `M${idx + 1}`}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            className={styles.topResetChip}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              resetBallFnRef.current?.();
+            }}
+            aria-label="다시 시작"
+            title="현재 맵 처음부터 다시 시작"
+          >
+            ↻ 다시
+          </button>
         </div>
       </div>
 
@@ -1140,18 +1155,6 @@ export default function BouncePage() {
           onContextMenu={(e) => e.preventDefault()}
         >
           ◀ 왼쪽
-        </button>
-        <button
-          type="button"
-          className={styles.touchResetBtn}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            resetBallFnRef.current?.();
-          }}
-          aria-label="다시 시작"
-        >
-          ↻
         </button>
         <button
           type="button"

@@ -14,6 +14,8 @@ export default function App({ Component, pageProps }) {
   const activeGroup =
     navigationMenus.find((group) => isMenuGroupActive(group, router.pathname)) ?? navigationMenus[0];
   const activeItem = activeGroup?.items.find((item) => item.href === router.pathname);
+  const pageTitle =
+    activeItem && activeItem.href !== '/' ? `${activeItem.label} · GANGYOON!LAB!` : 'GANGYOON!LAB!';
 
   useEffect(() => {
     const handleRouteStart = () => {
@@ -50,6 +52,7 @@ export default function App({ Component, pageProps }) {
   return (
     <>
       <Head>
+        <title>{pageTitle}</title>
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
@@ -57,7 +60,22 @@ export default function App({ Component, pageProps }) {
       </Head>
       <header className="siteHeader">
         <nav className="siteNav" aria-label="주 메뉴" ref={navRef}>
-          <ul className="topMenuList">
+          <div className="siteNavLeft">
+            <Link
+              href="/"
+              className="siteBrand"
+              aria-label="GANGYOON!LAB! 홈"
+              onClick={() => setOpenMenuId(null)}
+            >
+              <span className="siteBrandMark" aria-hidden="true">G</span>
+              <span className="siteBrandText">
+                GANGYOON<span className="siteBrandBang">!</span>
+                <span className="siteBrandAccent">LAB</span>
+                <span className="siteBrandBang">!</span>
+              </span>
+            </Link>
+
+            <ul className="topMenuList">
             {navigationMenus.map((group) => {
               const isGroupActive = isMenuGroupActive(group, router.pathname);
               const isOpen = openMenuId === group.id;
@@ -146,7 +164,8 @@ export default function App({ Component, pageProps }) {
                 </li>
               );
             })}
-          </ul>
+            </ul>
+          </div>
 
           {activeGroup && (
             <div className="siteCurrentPath" aria-label="현재 위치">

@@ -58,6 +58,59 @@ a {
   gap: 20px;
 }
 
+.siteNavLeft {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.siteBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 10px 5px 6px;
+  border-radius: 11px;
+  transition: background 160ms ease, transform 160ms ease;
+  flex-shrink: 0;
+}
+
+.siteBrand:hover {
+  background: #f1f5f9;
+}
+
+.siteBrandMark {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #111827 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.24);
+}
+
+.siteBrandText {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.siteBrandBang {
+  color: #f59e0b;
+}
+
+.siteBrandAccent {
+  color: #2563eb;
+}
+
 .topMenuList {
   height: 100%;
   margin: 0;
@@ -306,20 +359,77 @@ a {
   line-height: 1.6;
 }
 
+.lobbyHonorRoll {
+  width: min(960px, 100%);
+  margin: 28px auto 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lobbyHonorLabel {
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.lobbyHonorNames {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lobbyHonorName {
+  padding: 2px 8px;
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  border-radius: 999px;
+  background: rgba(254, 243, 199, 0.55);
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+}
+
 @media (max-width: 720px) {
   .siteNav {
     width: min(100% - 20px, 1120px);
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .siteNavLeft {
+    gap: 8px;
+  }
+
+  .siteBrand {
+    gap: 6px;
+    padding: 4px 4px 4px 2px;
+  }
+
+  .siteBrandMark {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+  }
+
+  .siteBrandText {
+    font-size: 14px;
+    letter-spacing: 0.02em;
   }
 
   .topMenuList {
-    gap: 6px;
+    gap: 5px;
   }
 
   .topMenuLink {
     min-height: 36px;
-    padding: 0 12px;
-    font-size: 14px;
+    padding: 0 10px;
+    font-size: 13px;
   }
 
   .subMenuWrap {

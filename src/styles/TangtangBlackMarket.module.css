@@ -208,3 +208,855 @@
     padding: 14px;
   }
 }
+
+.pickerLabel {
+  font-size: 11px;
+  font-weight: 900;
+  color: #93c5fd;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.heroPicker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: min(470px, 100%);
+  margin: 0 auto;
+}
+
+.heroPicker .heroBtn {
+  min-height: 52px;
+  padding: 6px 8px;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 7px;
+  border: 1px solid rgba(226, 232, 240, 0.24);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #e2e8f0;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, transform 140ms ease, background 140ms ease;
+}
+
+.heroPicker .heroBtn:hover {
+  border-color: rgba(250, 204, 21, 0.65);
+  background: rgba(30, 41, 59, 0.94);
+}
+
+.heroPicker .heroBtnActive {
+  border-color: #facc15;
+  background: rgba(250, 204, 21, 0.22);
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.34);
+}
+
+.heroIcon {
+  width: 26px;
+  height: 26px;
+  grid-row: span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.heroName {
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heroRole {
+  font-size: 10px;
+  font-weight: 800;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heroPerkNote {
+  max-width: 470px;
+  margin: 0 auto;
+  padding: 6px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fde68a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.bossBarWrap {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 28px));
+  z-index: 12;
+  padding: 10px 14px;
+  border: 2px solid rgba(248, 113, 113, 0.75);
+  border-radius: 12px;
+  background: rgba(15, 6, 18, 0.88);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 22px rgba(239, 68, 68, 0.35);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
+.bossBarHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.bossBarName {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fecaca;
+}
+
+.bossBarHp {
+  font-size: 12px;
+  font-weight: 900;
+  color: #fde68a;
+}
+
+.bossTrack {
+  height: 12px;
+  display: block;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.92);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.bossFill {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #dc2626 0%, #f97316 65%, #facc15 100%);
+  transition: width 90ms linear;
+}
+
+.abilitySection {
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.72);
+  display: grid;
+  gap: 8px;
+}
+
+.abilityHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #93c5fd;
+}
+
+.abilityGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.abilityChip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 5px 7px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.78);
+  font-size: 11px;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.abilityChipAwaken {
+  border-color: rgba(250, 204, 21, 0.78);
+  background: linear-gradient(135deg, rgba(126, 34, 206, 0.55), rgba(15, 23, 42, 0.88));
+  color: #fef08a;
+}
+
+.abilityChip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.abilityChip em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 900;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.abilityChipAwaken em {
+  color: #facc15;
+}
+
+.upgradeSub {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fde68a;
+}
+
+.upgradeBadge {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.upgradeBadgeAwaken {
+  background: linear-gradient(135deg, #7e22ce, #db2777);
+  color: #fef08a;
+}
+
+/* === Lobby Modal / Pre-Game Command Window === */
+.lobbyOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  background: rgba(8, 13, 28, 0.84);
+  backdrop-filter: blur(8px);
+}
+
+.lobbyWindow {
+  width: min(640px, 100%);
+  max-height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 16px;
+  border: 2px solid rgba(148, 163, 184, 0.32);
+  border-radius: 16px;
+  background: linear-gradient(165deg, rgba(15, 23, 42, 0.97), rgba(17, 24, 39, 0.97));
+  color: #f8fafc;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+}
+
+.lobbyTopBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lobbyTitleWrap h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.lobbyTitleWrap p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #93c5fd;
+}
+
+.lobbyCoinBadge {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid rgba(250, 204, 21, 0.55);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.14);
+  color: #fef08a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.lobbyTabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.lobbyTab {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.78);
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.lobbyTab:hover {
+  border-color: rgba(250, 204, 21, 0.55);
+  color: #ffffff;
+}
+
+.lobbyTabActive {
+  border-color: #facc15;
+  background: #facc15;
+  color: #0f172a;
+}
+
+.lobbyBody {
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding-right: 2px;
+}
+
+.lobbySectionTitle {
+  font-size: 11px;
+  font-weight: 900;
+  color: #93c5fd;
+  letter-spacing: 0.03em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lobbyStageRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.lobbyStageBtn {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 9px;
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lobbyStageBtnActive {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.22);
+  color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.24);
+}
+
+.petGrid,
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.petCard,
+.metaCard {
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.78);
+  text-align: left;
+}
+
+.petCardEquipped {
+  border-color: #22c55e;
+  background: rgba(20, 83, 45, 0.36);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.22);
+}
+
+.petHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.petTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.petIcon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 19px;
+  flex-shrink: 0;
+}
+
+.petTitle strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.petTitle span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #93c5fd;
+}
+
+.petLvTag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.85);
+  color: #fde68a;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.petDesc {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.petActions {
+  display: flex;
+  gap: 6px;
+}
+
+.petBtnPrimary {
+  flex: 1;
+  min-height: 33px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #facc15;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.petBtnPrimary:disabled {
+  background: #334155;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.petBtnEquip {
+  flex: 1;
+  min-height: 33px;
+  padding: 0 10px;
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.petBtnEquipped {
+  border-color: #22c55e;
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.petBtnLevelUp {
+  min-height: 33px;
+  padding: 0 10px;
+  border: 1px solid rgba(250, 204, 21, 0.55);
+  border-radius: 8px;
+  background: rgba(250, 204, 21, 0.16);
+  color: #fef08a;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.petBtnLevelUp:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lobbyFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.lobbySummary {
+  font-size: 11px;
+  font-weight: 800;
+  color: #cbd5e1;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.lobbySummary strong {
+  color: #fde68a;
+  display: block;
+}
+
+.launchBtn {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #facc15, #f59e0b);
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.3);
+}
+
+.lobbySecondaryBtn {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 9px;
+  background: rgba(30, 41, 59, 0.9);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.gachaBox {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(49, 20, 82, 0.62), rgba(15, 23, 42, 0.88));
+}
+
+.gachaHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.gachaHead strong {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fef08a;
+}
+
+.gachaRates {
+  font-size: 10px;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.gachaBtns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gachaBtnSingle {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid rgba(250, 204, 21, 0.65);
+  border-radius: 10px;
+  background: rgba(250, 204, 21, 0.18);
+  color: #fef08a;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.gachaBtnTen {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #a855f7, #ec4899, #f59e0b);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(236, 72, 153, 0.3);
+}
+
+.gachaBtnSingle:disabled,
+.gachaBtnTen:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.gachaResults {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.gachaChip {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 2px solid #94a3b8;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.9);
+  text-align: center;
+}
+
+.gachaChipIcon {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.gachaChipName {
+  font-size: 10px;
+  font-weight: 900;
+  color: #ffffff;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gachaChipTag {
+  font-size: 9px;
+  font-weight: 900;
+  color: #fde047;
+}
+
+.petFilterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.petFilterBtn {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.petFilterBtnActive {
+  border-color: #facc15;
+  background: #facc15;
+  color: #0f172a;
+}
+
+.petCardLocked {
+  opacity: 0.56;
+  filter: grayscale(0.45);
+}
+
+.rarityPill {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+@media (max-width: 720px) {
+  .gachaResults {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.aimToggleBtn {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 999px;
+  background: rgba(14, 116, 144, 0.35);
+  color: #e0f2fe;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.aimToggleBtnAuto {
+  border-color: rgba(148, 163, 184, 0.4);
+  background: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+}
+
+.ultPanelBtn {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: not-allowed;
+  display: grid;
+  gap: 5px;
+  text-align: center;
+}
+
+.ultPanelBtnReady {
+  border-color: #facc15;
+  background: linear-gradient(135deg, #db2777 0%, #9333ea 55%, #f59e0b 100%);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 22px rgba(236, 72, 153, 0.55);
+}
+
+.ultTrack {
+  height: 7px;
+  display: block;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.ultFill {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38bdf8, #a855f7, #facc15);
+  transition: width 90ms linear;
+}
+
+.arenaActionDock {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arenaUltBtn {
+  min-width: 124px;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.84);
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 900;
+  backdrop-filter: blur(8px);
+  cursor: not-allowed;
+}
+
+.arenaUltBtnReady {
+  border-color: #fde047;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6, #f59e0b);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(236, 72, 153, 0.65);
+}
+
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  .arenaActionDock {
+    right: 14px;
+    bottom: 142px;
+  }
+
+  .arenaUltBtn {
+    min-width: 96px;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 720px) {
+  .lobbyOverlay {
+    padding: 8px 8px 94px;
+  }
+
+  .lobbyWindow {
+    padding: 12px;
+  }
+
+  .lobbyStageRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .petGrid,
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .lobbyFooter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .launchBtn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  .heroPicker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(340px, 100%);
+  }
+
+  .bossBarWrap {
+    top: 52px;
+    padding: 7px 10px;
+  }
+
+  .bossBarName {
+    font-size: 12px;
+  }
+
+  .bossBarHp {
+    font-size: 11px;
+  }
+}

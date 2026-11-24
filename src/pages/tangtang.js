@@ -1,10 +1,88 @@
 import { useEffect, useRef, useState } from 'react';
 import bmStyles from '@/styles/TangtangBlackMarket.module.css';
+import { PETS, PET_RARITIES, PET_RARITY_ORDER, rollSinglePet } from '@/data/tangtangPets';
 
 const world = { width: 2600, height: 1700 };
 const stageSeconds = 70;
 const SECRET_CODE = '123456789';
 const BLACK_MARKET_KEY = 'tangtang-black-market-v1';
+const LOBBY_META_KEY = 'tangtang-lobby-meta-v1';
+
+const DEFAULT_LOBBY_META = {
+  coins: 120,
+  ownedPets: { corgi: true },
+  petLevels: { corgi: 1 },
+  equippedPet: 'corgi',
+  upgrades: { atk: 0, hp: 0, armor: 0, speed: 0, haste: 0, greed: 0 },
+};
+
+const GACHA_SINGLE_COST = 40;
+const GACHA_TEN_COST = 360;
+
+const META_UPGRADES = [
+  {
+    id: 'atk',
+    icon: '⚔️',
+    name: '영구 공격력',
+    maxLv: 10,
+    baseCost: 30,
+    stepCost: 25,
+    effectText: (lv) => `기본 공격력 +${lv * 8}% (다음 +8%)`,
+  },
+  {
+    id: 'hp',
+    icon: '❤️',
+    name: '영구 최대 체력',
+    maxLv: 10,
+    baseCost: 25,
+    stepCost: 20,
+    effectText: (lv) => `기본 최대 HP +${lv * 15} (다음 +15)`,
+  },
+  {
+    id: 'armor',
+    icon: '🛡️',
+    name: '영구 방어력',
+    maxLv: 10,
+    baseCost: 35,
+    stepCost: 30,
+    effectText: (lv) => `기본 방어력 +${lv} (다음 +1)`,
+  },
+  {
+    id: 'speed',
+    icon: '👟',
+    name: '영구 이동 속도',
+    maxLv: 10,
+    baseCost: 30,
+    stepCost: 25,
+    effectText: (lv) => `기본 이동속도 +${lv * 4}% (다음 +4%)`,
+  },
+  {
+    id: 'haste',
+    icon: '⚡',
+    name: '영구 연사 속도',
+    maxLv: 10,
+    baseCost: 40,
+    stepCost: 35,
+    effectText: (lv) => `기본 연사력 +${lv * 5}% (다음 +5%)`,
+  },
+  {
+    id: 'greed',
+    icon: '💰',
+    name: '코인 · XP 보너스',
+    maxLv: 10,
+    baseCost: 35,
+    stepCost: 30,
+    effectText: (lv) => `코인·경험치 +${lv * 10}% (다음 +10%)`,
+  },
+];
+
+function getMetaUpgradeCost(spec, level) {
+  return spec.baseCost + level * spec.stepCost;
+}
+
+function getPetUpgradeCost(level) {
+  return 40 + level * 35;
+}
 
 const DEFAULT_BLACK_MARKET = {
   gold: 5,
@@ -60,6 +138,198 @@ const BLACK_MARKET_ITEMS = [
     price: 5,
     tag: '무적 패시브',
     description: '적과 부딪혀도 HP가 전혀 줄지 않는 완전 무적 오라를 두릅니다.',
+  },
+  {
+    id: 'unlockGaster',
+    name: '가스터 블래스터 (비밀 무기)',
+    icon: '💀',
+    price: 500,
+    tag: '비밀 무기 해금',
+    description: '금지된 샌즈의 무기 [가스터 블래스터]를 해금합니다. 각성 시 샌즈 패턴 & MISS 회피 · KR 업보 발동!',
+    isWeaponUnlock: true,
+    unlockWeaponId: 'gaster',
+  },
+  {
+    id: 'unlockTrident',
+    name: '삼지창 (비밀 무기)',
+    icon: '🔱',
+    price: 500,
+    tag: '비밀 무기 해금',
+    description: '포세이돈의 금지된 무기 [삼지창]을 해금합니다. 관통 투척 후 고속 회수 + 파도 번개 충격 & 해일 번개 필살기!',
+    isWeaponUnlock: true,
+    unlockWeaponId: 'trident',
+  },
+];
+
+const HEROES = [
+  {
+    id: 'commando',
+    name: '특공대원',
+    icon: '🎖️',
+    role: '밸런스',
+    ultIcon: '🚀',
+    ultName: '융단 폭격',
+    ultSub: 'CARPET BOMBARDMENT',
+    ultQuote: '전 화력 집중 — 궤도 융단 폭격 개시!',
+    ultColor: '#facc15',
+    ultBg: '#172554',
+    perk: 'HP 110 · 공격력 +5% · 방어 +1 (올라운더 밸런스)',
+    body: '#3b82f6',
+    stroke: '#eff6ff',
+    accent: '#facc15',
+    stats: { maxHp: 110, speed: 245, damage: 1.05, fireRate: 1, armor: 1 },
+  },
+  {
+    id: 'ninja',
+    name: '그림자 닌자',
+    icon: '🥷',
+    role: '고속·치명',
+    ultIcon: '⚔️',
+    ultName: '일섬 난무',
+    ultSub: 'PHANTOM BLADE STORM',
+    ultQuote: '눈 깜짝할 사이에... 전부 베어주지.',
+    ultColor: '#f43f5e',
+    ultBg: '#3b0764',
+    perk: '이동속도 +20% · 치명타 +18% · 연사 +10%',
+    body: '#1e293b',
+    stroke: '#f43f5e',
+    accent: '#ef4444',
+    stats: { maxHp: 85, speed: 295, fireRate: 1.1, critChance: 0.23 },
+  },
+  {
+    id: 'titan',
+    name: '강철 타이탄',
+    icon: '🛡️',
+    role: '초탱커',
+    ultIcon: '🌋',
+    ultName: '대지 분쇄',
+    ultSub: 'TITAN EARTHSHAKER',
+    ultQuote: '이 대지째로 산산조각 내주마!!',
+    ultColor: '#34d399',
+    ultBg: '#022c22',
+    perk: 'HP 165 · 방어 +5 · 체력 재생 +1.4/s · 범위 +12%',
+    body: '#0f766e',
+    stroke: '#99f6e4',
+    accent: '#34d399',
+    stats: { maxHp: 165, speed: 215, armor: 5, regen: 1.4, area: 1.12 },
+  },
+  {
+    id: 'pyro',
+    name: '화염 마도사',
+    icon: '🔥',
+    role: '폭딜·광역',
+    ultIcon: '☄️',
+    ultName: '메테오 스톰',
+    ultSub: 'METEOR APOCALYPSE',
+    ultQuote: '하늘을 가르는 종말의 불꽃이여, 떨어져라!',
+    ultColor: '#fb923c',
+    ultBg: '#450a0a',
+    perk: '공격력 +22% · 공격 범위 +22% · 탄환 크기 +15%',
+    body: '#dc2626',
+    stroke: '#fde68a',
+    accent: '#f97316',
+    stats: { maxHp: 95, speed: 240, damage: 1.22, area: 1.22, bulletSize: 1.15 },
+  },
+  {
+    id: 'cyber',
+    name: '사이버 거너',
+    icon: '🤖',
+    role: '속사·관통',
+    ultIcon: '⚡',
+    ultName: '오비탈 레이저',
+    ultSub: 'ORBITAL ANNIHILATION',
+    ultQuote: '전 타겟 락온 완료 — 궤도 주포 발사!',
+    ultColor: '#38bdf8',
+    ultBg: '#082f49',
+    perk: '연사력 +24% · 기본 관통 +1 · 자석 범위 +150',
+    body: '#06b6d4',
+    stroke: '#ecfeff',
+    accent: '#38bdf8',
+    stats: { maxHp: 100, speed: 250, fireRate: 1.24, pierce: 2, magnet: 150 },
+  },
+  {
+    id: 'vampire',
+    name: '블러드 헌터',
+    icon: '🧛',
+    role: '흡혈·성장',
+    ultIcon: '🩸',
+    ultName: '블러드 노바',
+    ultSub: 'CRIMSON ECLIPSE',
+    ultQuote: '붉은 달 아래, 모든 생명을 내게 바쳐라!',
+    ultColor: '#fb7185',
+    ultBg: '#4c0519',
+    perk: '치명 피해 +50% · XP +25% · 8처치마다 HP +4 흡혈',
+    body: '#6b21a8',
+    stroke: '#fda4af',
+    accent: '#f43f5e',
+    stats: { maxHp: 105, speed: 260, critDamage: 2.5, xpGain: 1.25, lifestealKills: 8 },
+  },
+];
+
+const CHAPTER_BOSSES = [
+  {
+    id: 'neon-overlord',
+    name: '네온 오버로드',
+    title: 'CH.1 보스',
+    hp: 9500,
+    radius: 58,
+    damage: 48,
+    speed: 118,
+    damageReduction: 0.15,
+    color: '#0ea5e9',
+    glow: '#38bdf8',
+    bulletColor: '#38bdf8',
+    pattern: 'neonRing',
+    score: 2500,
+    gold: 18,
+  },
+  {
+    id: 'sand-titan',
+    name: '샌드 타이탄',
+    title: 'CH.2 보스',
+    hp: 19000,
+    radius: 64,
+    damage: 60,
+    speed: 115,
+    damageReduction: 0.22,
+    color: '#d97706',
+    glow: '#facc15',
+    bulletColor: '#fb923c',
+    pattern: 'boulderBurst',
+    score: 4200,
+    gold: 24,
+  },
+  {
+    id: 'frost-lich',
+    name: '프로스트 리치',
+    title: 'CH.3 보스',
+    hp: 34000,
+    radius: 62,
+    damage: 74,
+    speed: 126,
+    damageReduction: 0.25,
+    color: '#2563eb',
+    glow: '#7dd3fc',
+    bulletColor: '#7dd3fc',
+    pattern: 'frostSpiral',
+    score: 6500,
+    gold: 30,
+  },
+  {
+    id: 'inferno-lord',
+    name: '인페르노 군주',
+    title: 'FINAL BOSS',
+    hp: 65000,
+    radius: 72,
+    damage: 92,
+    speed: 136,
+    damageReduction: 0.3,
+    color: '#b91c1c',
+    glow: '#fb7185',
+    bulletColor: '#ef4444',
+    pattern: 'hellfire',
+    score: 12000,
+    gold: 45,
   },
 ];
 
@@ -126,12 +396,12 @@ const weapons = [
     name: '블래스터',
     detail: '가장 가까운 적을 빠르게 추적',
     color: '#38bdf8',
-    cooldown: 0.36,
-    damage: 22,
-    speed: 680,
-    radius: 7,
-    life: 0.95,
-    pierce: 2,
+    cooldown: 0.31,
+    damage: 30,
+    speed: 720,
+    radius: 8,
+    life: 0.98,
+    pierce: 3,
   },
   {
     id: 'shotgun',
@@ -140,14 +410,14 @@ const weapons = [
     name: '산탄총',
     detail: '부채꼴로 여러 발을 발사',
     color: '#fb7185',
-    cooldown: 0.72,
-    damage: 12,
-    speed: 610,
-    radius: 6,
-    life: 0.58,
-    pierce: 1,
-    count: 5,
-    spread: 0.48,
+    cooldown: 0.64,
+    damage: 17,
+    speed: 640,
+    radius: 7,
+    life: 0.64,
+    pierce: 2,
+    count: 6,
+    spread: 0.5,
   },
   {
     id: 'railgun',
@@ -156,12 +426,12 @@ const weapons = [
     name: '레일건',
     detail: '느리지만 강한 관통 한 방',
     color: '#f8fafc',
-    cooldown: 0.88,
-    damage: 52,
-    speed: 920,
-    radius: 5,
-    life: 0.85,
-    pierce: 5,
+    cooldown: 0.78,
+    damage: 74,
+    speed: 960,
+    radius: 6,
+    life: 0.9,
+    pierce: 7,
   },
   {
     id: 'boomer',
@@ -170,12 +440,12 @@ const weapons = [
     name: '부메랑',
     detail: '넓게 회전하며 관통 피해',
     color: '#facc15',
-    cooldown: 0.64,
-    damage: 30,
-    speed: 450,
-    radius: 12,
-    life: 1.18,
-    pierce: 4,
+    cooldown: 0.56,
+    damage: 42,
+    speed: 480,
+    radius: 14,
+    life: 1.22,
+    pierce: 5,
   },
   {
     id: 'shockwave',
@@ -184,11 +454,11 @@ const weapons = [
     name: '광역 충격파',
     detail: '주변 전체를 터뜨리는 광역기',
     color: '#a78bfa',
-    cooldown: 1.08,
-    damage: 44,
-    radius: 44,
-    life: 0.34,
-    blast: 128,
+    cooldown: 0.94,
+    damage: 62,
+    radius: 48,
+    life: 0.36,
+    blast: 148,
   },
   {
     id: 'flame',
@@ -197,12 +467,12 @@ const weapons = [
     name: '화염방사기',
     detail: '짧은 사거리의 지속 화염',
     color: '#f97316',
-    cooldown: 0.14,
-    damage: 7.5,
-    speed: 330,
-    radius: 15,
-    life: 0.38,
-    pierce: 2,
+    cooldown: 0.12,
+    damage: 11,
+    speed: 360,
+    radius: 18,
+    life: 0.42,
+    pierce: 3,
   },
   {
     id: 'frost',
@@ -211,13 +481,13 @@ const weapons = [
     name: '냉동탄',
     detail: '피해를 주고 적을 느리게 만듦',
     color: '#7dd3fc',
-    cooldown: 0.48,
-    damage: 20,
-    speed: 550,
-    radius: 9,
-    life: 0.96,
-    pierce: 2,
-    slow: 1.2,
+    cooldown: 0.42,
+    damage: 29,
+    speed: 580,
+    radius: 10,
+    life: 1.0,
+    pierce: 3,
+    slow: 1.5,
   },
   {
     id: 'mine',
@@ -226,112 +496,458 @@ const weapons = [
     name: '지뢰',
     detail: '발밑에 폭발 함정을 설치',
     color: '#86efac',
-    cooldown: 0.95,
-    damage: 56,
-    radius: 10,
-    life: 4.2,
-    blast: 90,
+    cooldown: 0.8,
+    damage: 82,
+    radius: 11,
+    life: 4.5,
+    blast: 108,
   },
   {
     id: 'bat',
     displayName: '배트',
-    displayDetail: '2초마다 초강력 근접 강타 (큰 적 2방)',
+    displayDetail: '1.2초마다 초강력 근접 강타 (큰 적 2방)',
     name: '배트',
-    detail: '2초마다 초강력 근접 강타 (큰 적 2방)',
+    detail: '1.2초마다 초강력 근접 강타 (큰 적 2방)',
     color: '#f59e0b',
-    cooldown: 2,
-    damage: 175,
-    radius: 118,
+    cooldown: 1.2,
+    damage: 225,
+    radius: 132,
     life: 0.28,
-    arc: Math.PI * 0.96,
-    knockback: 165,
+    arc: Math.PI * 1.02,
+    knockback: 185,
+  },
+  {
+    id: 'kunai',
+    displayName: '쿠나이',
+    displayDetail: '가까운 적을 끝까지 유도 추적하는 고속 표창',
+    name: '쿠나이',
+    detail: '가까운 적을 끝까지 유도 추적하는 고속 표창',
+    color: '#38bdf8',
+    cooldown: 0.28,
+    damage: 28,
+    speed: 820,
+    radius: 7,
+    life: 1.05,
+    pierce: 2,
+    homing: true,
+  },
+  {
+    id: 'katana',
+    displayName: '카타나',
+    displayDetail: '앞뒤 양방향으로 날카로운 검기를 동시에 베어냄',
+    name: '카타나',
+    detail: '앞뒤 양방향으로 날카로운 검기를 동시에 베어냄',
+    color: '#f43f5e',
+    cooldown: 0.72,
+    damage: 66,
+    radius: 112,
+    life: 0.22,
+    arc: Math.PI * 0.58,
+    knockback: 45,
+  },
+  {
+    id: 'lightchaser',
+    displayName: '빛의 창',
+    displayDetail: '거대한 황금 초승달 검기를 날려 적을 썰어버림',
+    name: '빛의 창',
+    detail: '거대한 황금 초승달 검기를 날려 적을 썰어버림',
+    color: '#fde047',
+    cooldown: 0.58,
+    damage: 58,
+    speed: 690,
+    radius: 22,
+    life: 0.85,
+    pierce: 6,
+    count: 2,
+    spread: 0.34,
+  },
+  {
+    id: 'gaster',
+    displayName: '가스터 블래스터',
+    displayDetail: '해골 레이저 발사! 각성 시 샌즈 패턴(서클·뼈·푸른 영혼) + MISS 회피 & KR 업보!',
+    name: '가스터 블래스터',
+    detail: '해골 레이저 발사! 각성 시 샌즈 패턴(서클·뼈·푸른 영혼) + MISS 회피 & KR 업보!',
+    color: '#38bdf8',
+    cooldown: 1.15,
+    damage: 92,
+    radius: 34,
+    life: 0.72,
+    chargeTime: 0.26,
+    beamLength: 740,
+    blackMarketUnlockId: 'unlockGaster',
+  },
+  {
+    id: 'trident',
+    displayName: '삼지창',
+    displayDetail: '관통 투척 후 되돌아오며 파도 번개 충격을 터뜨림!',
+    name: '삼지창',
+    detail: '관통 투척 후 되돌아오며 파도 번개 충격을 터뜨림!',
+    color: '#2dd4bf',
+    cooldown: 0.68,
+    damage: 76,
+    speed: 780,
+    radius: 20,
+    life: 1.18,
+    pierce: 99,
+    slow: 0.45,
+    blackMarketUnlockId: 'unlockTrident',
   },
 ];
 
-const upgradePool = [
-  { id: 'damage', name: '화력 +25%', text: '모든 공격 피해 증가' },
-  { id: 'speed', name: '이동 속도 +12%', text: '위험한 포위망을 빠르게 탈출' },
-  { id: 'firerate', name: '연사력 +18%', text: '자동 사격 간격 감소' },
-  { id: 'magnet', name: '자석 +45', text: '경험치 보석 흡수 거리 증가' },
-  { id: 'maxHp', name: '최대 HP +18', text: '체력 회복과 함께 최대치 증가' },
-  { id: 'pierce', name: '관통 +1', text: '탄환이 더 많은 적을 통과' },
+// 14종 무기별 전용 필살기 (컷씬 + 고유 궁극기 패턴!)
+const WEAPON_ULTIMATES = {
+  blaster: {
+    icon: '🔫',
+    name: '하이퍼 플라즈마 난사',
+    sub: 'HYPER PLASMA BARRAGE',
+    quote: '전방위 플라즈마 폭풍 — 전원 소탕 개시!',
+    detail: '360° + 전방 집중 유도 플라즈마 24연발 초고속 난사',
+    accent: '#38bdf8',
+    bg: '#0c2748',
+  },
+  shotgun: {
+    icon: '💥',
+    name: '지옥의 산탄 폭풍',
+    sub: 'HELLFIRE BUCKSHOT',
+    quote: '한 발도 피할 곳은 없다! 전탄 일제 발사!',
+    detail: '조준 방향 24연 초대형 관통 산탄 + 근접 폭발 충격파',
+    accent: '#fb7185',
+    bg: '#4c0519',
+  },
+  railgun: {
+    icon: '⚡',
+    name: '궤도 초전자포',
+    sub: 'ORBITAL HYPER RAILGUN',
+    quote: '최대 출력 충전 완료 — 일직선 증발!',
+    detail: '조준 방향 초고속 관통 레일 빔 9연사 + 직선 초폭발',
+    accent: '#e2e8f0',
+    bg: '#0f172a',
+  },
+  boomer: {
+    icon: '🪃',
+    name: '황금 차크람 회오리',
+    sub: 'GOLDEN CYCLONE STORM',
+    quote: '끝없이 돌아오는 황금 칼날의 폭풍!',
+    detail: '초대형 황금 각성 차크람 12개 360° 왕복 회전 폭풍',
+    accent: '#facc15',
+    bg: '#422006',
+  },
+  shockwave: {
+    icon: '🟣',
+    name: '슈퍼노바 대폭발',
+    sub: 'SUPER NOVA COLLAPSE',
+    quote: '공간째로 무너져라! 슈퍼노바!',
+    detail: '4중 연속 초대형 보라 충격파(최대 440px) + 전원 둔화',
+    accent: '#c084fc',
+    bg: '#2e1065',
+  },
+  flame: {
+    icon: '🔥',
+    name: '인페르노 메테오',
+    sub: 'INFERNO METEOR STORM',
+    quote: '모든 것을 재로 태워버릴 지옥의 불바다!',
+    detail: '초대형 푸른 화염 지대 8개 + 광역 메테오 연쇄 폭발',
+    accent: '#fb923c',
+    bg: '#450a0a',
+  },
+  frost: {
+    icon: '❄️',
+    name: '절대영도 빙결폭풍',
+    sub: 'ABSOLUTE ZERO BLIZZARD',
+    quote: '시간마저 얼어붙어라 — 절대영도!',
+    detail: '전장 전체 3.2초 극강 빙결 + 20연 관통 빙결창 폭풍',
+    accent: '#7dd3fc',
+    bg: '#082f49',
+  },
+  mine: {
+    icon: '💣',
+    name: '융단 지뢰 폭격',
+    sub: 'CARPET MINE ANNIHILATION',
+    quote: '발 디딜 틈 없는 완벽한 폭파 지대!',
+    detail: '유도 상어 미사일 10발 + 주변 12개 즉폭 지뢰 링 투하',
+    accent: '#4ade80',
+    bg: '#052e16',
+  },
+  bat: {
+    icon: '🏏',
+    name: '그랜드 슬램 홈런',
+    sub: 'GRAND SLAM ANNIHILATION',
+    quote: '저 하늘 끝까지 날려주마! 만루 홈런!!',
+    detail: '360° 초대형 황금 풀스윙(340px) + 극대 넉백 & 충격파',
+    accent: '#f59e0b',
+    bg: '#451a03',
+  },
+  kunai: {
+    icon: '🗡️',
+    name: '천본 앵화 수리검',
+    sub: 'THOUSAND KUNAI STORM',
+    quote: '그림자 속에서 쏟아지는 무한의 칼날!',
+    detail: '초고속 자동 유도 관통 쿠나이 24연발 일제 투척',
+    accent: '#93c5fd',
+    bg: '#1e1b4b',
+  },
+  katana: {
+    icon: '⚔️',
+    name: '천지 양단 일섬',
+    sub: 'HEAVEN & EARTH SLASH',
+    quote: '일섬... 이 세계의 모든 것을 베어 가른다.',
+    detail: '360° 홍련 대참격 + 12방향 검기 파동 + 체력 대량 흡혈',
+    accent: '#f43f5e',
+    bg: '#3b0764',
+  },
+  lightchaser: {
+    icon: '✨',
+    name: '성광의 심판 검무',
+    sub: 'DIVINE LIGHT JUDGEMENT',
+    quote: '찬란한 황금빛이 어둠을 심판한다!',
+    detail: '거대 황금 초승달 검기 14연사 + 최대 HP 25% 회복',
+    accent: '#fde047',
+    bg: '#3f2c06',
+  },
+  gaster: {
+    icon: '💀',
+    name: '메갈로바니아 · 배드 타임',
+    sub: 'MEGALOVANIA · BAD TIME',
+    quote: '* 끔찍한 시간을 보내고 싶나?',
+    detail: '8기 회전 가스터 블래스터 서클 + 16연 뼈다귀 탄막 & KR 업보',
+    accent: '#38bdf8',
+    bg: '#020617',
+  },
+  trident: {
+    icon: '🔱',
+    name: '포세이돈의 해일 번개',
+    sub: 'POSEIDON TSUNAMI WRATH',
+    quote: '거친 파도와 천둥이 너희를 삼키리라!',
+    detail: '8방향 황금 삼지창 왕복 투척 + 8연 낙뢰 번개 폭격',
+    accent: '#2dd4bf',
+    bg: '#042f2e',
+  },
+};
+
+// 5종 강화 (패시브 스탯 업그레이드, 각 1~5레벨)
+const PASSIVES = [
+  {
+    id: 'damage',
+    icon: '⚔️',
+    name: '공격력 강화',
+    text: '모든 무기·능력 피해 +18% (치명타 +3%)',
+  },
+  {
+    id: 'firerate',
+    icon: '⚡',
+    name: '연사 · 쿨타임 감소',
+    text: '무기·능력 발사 속도 +14%',
+  },
+  {
+    id: 'speed',
+    icon: '👟',
+    name: '이동 속도 강화',
+    text: '이동 속도 +11% · 회피 무적 +0.06초',
+  },
+  {
+    id: 'vitality',
+    icon: '❤️',
+    name: '체력 · 방어 강화',
+    text: '최대 HP +24 · 회복 +32 · 방어 +2 · 재생 +0.4',
+  },
+  {
+    id: 'utility',
+    icon: '🧲',
+    name: '자석 · 범위 강화',
+    text: '자석 +60 · 공격 범위 +12% · 경험치 +12%',
+  },
 ];
 
-const extraUpgradePool = [
-  { id: 'crit', name: '치명타 +8%', text: '가끔 2배 피해를 터뜨림' },
-  { id: 'critPower', name: '치명 피해 +35%', text: '치명타가 더 강력해짐' },
-  { id: 'armor', name: '방어력 +3', text: '부딪힐 때 받는 피해 감소' },
-  { id: 'regen', name: '재생 +0.9', text: '초당 HP를 조금씩 회복' },
-  { id: 'area', name: '범위 +16%', text: '폭발, 화염, 칼날 범위 증가' },
-  { id: 'bulletSize', name: '탄 크기 +14%', text: '탄환 명중 판정이 넓어짐' },
-  { id: 'xpGain', name: '학습력 +20%', text: '보석 경험치 획득량 증가' },
-  { id: 'invincible', name: '회피 본능 +0.18초', text: '피격 후 무적 시간이 증가' },
-  { id: 'heal', name: '응급 치료', text: '즉시 HP를 크게 회복' },
+// 7종 능력 (로켓 발사기 같은 자동 발동 전투 능력, 각 1~5레벨 · 5레벨 시 각성!)
+const ACTIVE_SKILLS = [
+  {
+    id: 'rocket',
+    icon: '🚀',
+    name: '로켓 발사기',
+    text: '강력한 폭발 로켓을 발사해 주변 적을 광역 폭파',
+    awakenName: '샤크 바주카',
+    awakenText: '5LV 각성! 초대형 상어 미사일 2연사 + 거대 폭발!',
+  },
+  {
+    id: 'guardian',
+    icon: '⚙️',
+    name: '수호자 칼날',
+    text: '주변을 도는 회전 톱날로 접근하는 적을 베고 밀어냄',
+    awakenName: '수호의 방어막',
+    awakenText: '5LV 각성! 황금 톱날 6개가 고속 영구 회전 + 강력 넉백!',
+  },
+  {
+    id: 'lightning',
+    icon: '🌩️',
+    name: '번개 발사기',
+    text: '하늘에서 적에게 자동 번개를 떨어뜨려 강타',
+    awakenName: '천둥 배터리',
+    awakenText: '5LV 각성! 1.15초마다 적 5마리 황금 낙뢰 + 감속!',
+  },
+  {
+    id: 'molotov',
+    icon: '🔥',
+    name: '화염병',
+    text: '적 위치에 불타는 화염 지대를 던져 지속 화상 피해',
+    awakenName: '지옥 불바다',
+    awakenText: '5LV 각성! 초대형 푸른 화염 지대 4개 투척 + 극딜!',
+  },
+  {
+    id: 'drone',
+    icon: '🛸',
+    name: '공격 드론',
+    text: '따라다니는 드론이 가장 가까운 적에게 유도 미사일 연사',
+    awakenName: '디스트로이어',
+    awakenText: '5LV 각성! 쌍둥이 황금 드론의 초고속 유도 미사일 폭격!',
+  },
+  {
+    id: 'soccer',
+    icon: '⚽',
+    name: '반사 축구공',
+    text: '적과 벽에 계속 튕기며 타격하는 고속 축구공 발사',
+    awakenName: '양자 볼',
+    awakenText: '5LV 각성! 4개의 네온 양자 볼이 튕길 때마다 충격파 폭발!',
+  },
+  {
+    id: 'boomerang',
+    icon: '🪃',
+    name: '톱니 차크람',
+    text: '날아갔다가 되돌아오며 적을 왕복 관통 절단',
+    awakenName: '자석 휠',
+    awakenText: '5LV 각성! 초대형 황금 톱니 3개가 넓게 왕복하며 전부 절단!',
+  },
 ];
-
-const allUpgradePool = [...upgradePool, ...extraUpgradePool];
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const randomBetween = (min, max) => min + Math.random() * (max - min);
 
 function getStage(game) {
-  const nextStageIndex = Math.min(stages.length - 1, game.startStage + Math.floor(game.time / stageSeconds));
-  if (nextStageIndex !== game.stageIndex) {
-    game.stageIndex = nextStageIndex;
-    game.stageFlash = 2.4;
-    game.enemies = game.enemies.slice(-28);
-    addParticles(game, game.player.x, game.player.y, stages[nextStageIndex].enemyColors[0], 34);
-  }
-  return stages[game.stageIndex];
+  return stages[clamp(game.stageIndex, 0, stages.length - 1)];
 }
 
-function createGame(startStage = 0, bmEquipped = {}) {
+function createGame(startStage = 0, bmEquipped = {}, heroIndex = 0, lobbyMeta = DEFAULT_LOBBY_META) {
   const bm = bmEquipped && typeof bmEquipped === 'object' ? { ...bmEquipped } : {};
-  const maxHp = bm.immortal ? 999 : 100;
+  const meta = lobbyMeta && typeof lobbyMeta === 'object' ? lobbyMeta : DEFAULT_LOBBY_META;
+  const up = meta.upgrades ?? {};
+  const hero = HEROES[clamp(heroIndex, 0, HEROES.length - 1)] ?? HEROES[0];
+  const hs = hero.stats ?? {};
+  const baseMaxHp = (hs.maxHp ?? 100) + (up.hp ?? 0) * 15;
+  const maxHp = bm.immortal ? 999 : baseMaxHp;
+  const baseSpeed = Math.round((hs.speed ?? 245) * (1 + (up.speed ?? 0) * 0.04));
+  const baseDamage = (hs.damage ?? 1) * (1 + (up.atk ?? 0) * 0.08);
+  const baseFireRate = (hs.fireRate ?? 1) * (1 + (up.haste ?? 0) * 0.05);
+  const baseMagnet = hs.magnet ?? 110;
+  const baseCritChance = hs.critChance ?? 0.05;
+  const baseXpGain = (hs.xpGain ?? 1) * (1 + (up.greed ?? 0) * 0.1);
+  const coinBonus = 1 + (up.greed ?? 0) * 0.1;
+
+  const equippedPetId = meta.equippedPet && meta.ownedPets?.[meta.equippedPet] ? meta.equippedPet : null;
+  const petSpec = equippedPetId ? PETS.find((p) => p.id === equippedPetId) : null;
+  const petLevel = equippedPetId ? clamp(Number(meta.petLevels?.[equippedPetId]) || 1, 1, 5) : 1;
+
   return {
     running: false,
     pausedForUpgrade: false,
     over: false,
     time: 0,
+    chapterTime: 0,
+    bossCycle: 0,
+    bossActive: false,
+    bossFlash: 0,
+    bossClearFlash: 0,
+    bossBannerName: '',
+    bossClearText: '',
     score: 0,
+    runCoins: 0,
     kills: 0,
     level: 1,
     xp: 0,
-    nextXp: 16,
+    nextXp: 40,
     shake: 0,
     stageIndex: startStage,
     startStage,
     stageFlash: 0,
     awakenFlash: 0,
+    awakenBannerCustom: '',
+    abilityAwakenFlash: 0,
+    abilityAwakenName: '',
+    ultFlash: 0,
+    ultImpactFlash: 0,
+    ultBannerName: '',
+    ultCutscene: null,
+    sansPatternIndex: 0,
+    aimMode: 'manual',
     bm,
+    heroIndex: clamp(heroIndex, 0, HEROES.length - 1),
+    pet: petSpec
+      ? {
+          id: petSpec.id,
+          name: petSpec.name,
+          icon: petSpec.icon,
+          rarity: petSpec.rarity,
+          rarityColor: petSpec.rarityColor,
+          powerMult: petSpec.powerMult ?? 1,
+          style: petSpec.style ?? 'lunge',
+          color: petSpec.color,
+          accent: petSpec.accent,
+          level: petLevel,
+          x: world.width / 2 - 44,
+          y: world.height / 2 + 24,
+          cooldown: 0.7,
+          healTimer: 5.5,
+          lungeTimer: 0,
+          lungeVx: 0,
+          lungeVy: 0,
+        }
+      : null,
     droneCooldown: 0,
+    skillTimers: {
+      rocket: 1.2,
+      lightning: 1.5,
+      molotov: 1.8,
+      drone: 0.45,
+      soccer: 1.4,
+      boomerang: 1.6,
+    },
     goldKillCounter: 0,
+    vampireKillCounter: 0,
     player: {
       x: world.width / 2,
       y: world.height / 2,
       radius: 18,
       hp: maxHp,
       maxHp,
-      speed: bm.timeSlow ? Math.round(245 * 1.45) : 245,
-      damage: bm.hyperFire ? 2.5 : 1,
-      fireRate: bm.hyperFire ? 2 : 1,
-      magnet: bm.megaMagnet ? 2400 : 110,
-      pierce: 1,
-      critChance: bm.hyperFire ? 0.4 : 0.05,
-      critDamage: 2,
-      armor: 0,
-      regen: 0,
-      area: 1,
-      bulletSize: 1,
-      xpGain: bm.megaMagnet ? 3 : 1,
+      speed: bm.timeSlow ? Math.round(baseSpeed * 1.45) : baseSpeed,
+      damage: bm.hyperFire ? baseDamage * 2.5 : baseDamage,
+      fireRate: bm.hyperFire ? baseFireRate * 2 : baseFireRate,
+      magnet: bm.megaMagnet ? 2400 : baseMagnet,
+      pierce: hs.pierce ?? 1,
+      critChance: bm.hyperFire ? Math.min(0.9, baseCritChance + 0.35) : baseCritChance,
+      critDamage: hs.critDamage ?? 2,
+      armor: (hs.armor ?? 0) + (up.armor ?? 0),
+      regen: hs.regen ?? 0,
+      area: hs.area ?? 1,
+      bulletSize: hs.bulletSize ?? 1,
+      xpGain: bm.megaMagnet ? baseXpGain * 3 : baseXpGain,
+      coinBonus,
       invincibleBonus: 0,
       weaponIndex: 0,
       cooldown: 0,
       invincible: 0,
+      slowTimer: 0,
+      aimAngle: 0,
+      ultCharge: 100,
+      sansMode: false,
+      sansDodgeCd: 0,
     },
     enemies: [],
     bullets: [],
+    enemyBullets: [],
+    skillProjectiles: [],
+    fireZones: [],
+    lightningEffects: [],
+    floatingTexts: [],
     gems: [],
     particles: [],
     spawnTimer: 0,
@@ -339,27 +955,164 @@ function createGame(startStage = 0, bmEquipped = {}) {
     upgrades: [],
     weaponLevels: weapons.reduce((result, weapon) => ({ ...result, [weapon.id]: 0 }), {}),
     awakenedWeapons: {},
+    passiveLevels: PASSIVES.reduce((result, p) => ({ ...result, [p.id]: 0 }), {}),
+    skillLevels: ACTIVE_SKILLS.reduce((result, sk) => ({ ...result, [sk.id]: 0 }), {}),
+    awakenedSkills: {},
     sounds: [],
   };
+}
+
+function spawnChapterBoss(game, camera) {
+  const stageIdx = clamp(game.stageIndex, 0, CHAPTER_BOSSES.length - 1);
+  const spec = CHAPTER_BOSSES[stageIdx];
+  const cycleScale = 1 + (game.bossCycle ?? 0);
+  const hp = Math.round(spec.hp * cycleScale);
+  const angle = Math.random() * Math.PI * 2;
+  const spawnDist = Math.min(camera.width, camera.height) * 0.42 + 120;
+  const x = clamp(game.player.x + Math.cos(angle) * spawnDist, 100, world.width - 100);
+  const y = clamp(game.player.y + Math.sin(angle) * spawnDist, 100, world.height - 100);
+
+  game.enemies.push({
+    x,
+    y,
+    radius: spec.radius,
+    hp,
+    maxHp: hp,
+    damage: Math.round(spec.damage * (1 + (game.bossCycle ?? 0) * 0.35)),
+    speed: spec.speed,
+    damageReduction: spec.damageReduction ?? 0.2,
+    color: spec.color,
+    glow: spec.glow,
+    bulletColor: spec.bulletColor,
+    pattern: spec.pattern,
+    worth: 95,
+    boss: true,
+    bossName: game.bossCycle > 0 ? `${spec.name} Mk.${game.bossCycle + 1}` : spec.name,
+    bossTitle: spec.title,
+    bossScore: Math.round(spec.score * cycleScale),
+    bossGold: spec.gold,
+    slow: 0,
+    shootTimer: 1.15,
+    dashTimer: 3.1,
+    novaTimer: 4.8,
+    dashWindup: 0,
+    dashActive: 0,
+    dashChain: 0,
+    dashAngle: 0,
+    spiralOffset: 0,
+  });
+
+  game.bossActive = true;
+  game.bossFlash = 2.8;
+  game.bossBannerName = `${spec.title} · ${spec.name}`;
+  game.shake = 18;
+  addParticles(game, x, y, spec.glow, 48);
+  queueSound(game, 'boss');
 }
 
 function getWeaponUpgrade(game) {
   const weapon = weapons[game.player.weaponIndex];
   const level = game.weaponLevels[weapon.id] ?? 0;
   const isAwakened = Boolean(game.awakenedWeapons[weapon.id]);
+  const nextLv = Math.min(level + 1, 5);
 
   return {
     id: `weapon:${weapon.id}`,
-    name: isAwakened ? `${weapon.displayName ?? weapon.name} 각성 강화` : `${weapon.displayName ?? weapon.name} 강화 ${Math.min(level + 1, 5)}/5`,
-    text: isAwakened ? '각성 무기의 화력과 범위를 추가로 강화' : '같은 무기를 5번 강화하면 각성 효과 발동',
+    badge: isAwakened ? '무기 각성 강화' : nextLv === 5 ? '★ 무기 LV 5 각성!' : `무기 LV ${nextLv}/5`,
+    isAwakenPick: !isAwakened && nextLv === 5,
+    name: isAwakened
+      ? `${weapon.displayName ?? weapon.name} 각성 강화`
+      : `${weapon.displayName ?? weapon.name} 강화`,
+    text: isAwakened ? '각성 무기의 화력과 범위를 추가로 강화' : '5레벨 달성 시 무기 각성 발동!',
   };
 }
 
 function pickUpgrades(game) {
-  return [
-    getWeaponUpgrade(game),
-    ...[...allUpgradePool].sort(() => Math.random() - 0.5).slice(0, 2),
-  ];
+  const availableSkills = ACTIVE_SKILLS.filter((sk) => (game.skillLevels?.[sk.id] ?? 0) < 5);
+  const ownedSkills = availableSkills
+    .filter((sk) => (game.skillLevels?.[sk.id] ?? 0) > 0)
+    .sort(() => Math.random() - 0.5);
+  const freshSkills = availableSkills
+    .filter((sk) => (game.skillLevels?.[sk.id] ?? 0) === 0)
+    .sort(() => Math.random() - 0.5);
+
+  const skillOrder =
+    ownedSkills.length > 0 && Math.random() < 0.65
+      ? [ownedSkills[0], ...[...ownedSkills.slice(1), ...freshSkills].sort(() => Math.random() - 0.5)]
+      : [...availableSkills].sort(() => Math.random() - 0.5);
+
+  const availablePassives = PASSIVES.filter((p) => (game.passiveLevels?.[p.id] ?? 0) < 5).sort(
+    () => Math.random() - 0.5,
+  );
+
+  const formatSkillCard = (sk) => {
+    const nextLv = (game.skillLevels?.[sk.id] ?? 0) + 1;
+    const willAwaken = nextLv >= 5;
+    return {
+      id: `skill:${sk.id}`,
+      badge: willAwaken ? `★ 능력 5LV 각성 · ${sk.awakenName}` : `능력 LV ${nextLv}/5`,
+      isAwakenPick: willAwaken,
+      name: `${sk.icon} ${sk.name}`,
+      text: willAwaken ? sk.awakenText : sk.text,
+    };
+  };
+
+  const formatPassiveCard = (p) => {
+    const nextLv = (game.passiveLevels?.[p.id] ?? 0) + 1;
+    return {
+      id: `passive:${p.id}`,
+      badge: `강화 LV ${nextLv}/5`,
+      isAwakenPick: false,
+      name: `${p.icon} ${p.name}`,
+      text: p.text,
+    };
+  };
+
+  const picks = [];
+  const mainWeapon = weapons[game.player.weaponIndex];
+  const weaponAlreadyAwakened = Boolean(game.awakenedWeapons[mainWeapon.id]);
+
+  // Card 1: Main weapon upgrade (or a 2nd Active Skill once main weapon is already awakened 60% of the time)
+  if (!weaponAlreadyAwakened || Math.random() < 0.4 || skillOrder.length < 2) {
+    picks.push(getWeaponUpgrade(game));
+  } else {
+    picks.push(formatSkillCard(skillOrder.shift()));
+  }
+
+  // Card 2: Active Skill (능력 7종)
+  if (skillOrder.length > 0) {
+    picks.push(formatSkillCard(skillOrder.shift()));
+  }
+
+  // Card 3: Passive Upgrade (강화 5종), fallback to another skill
+  if (availablePassives.length > 0) {
+    picks.push(formatPassiveCard(availablePassives.shift()));
+  } else if (skillOrder.length > 0) {
+    picks.push(formatSkillCard(skillOrder.shift()));
+  }
+
+  while (picks.length < 3) {
+    if (skillOrder.length > 0) {
+      picks.push(formatSkillCard(skillOrder.shift()));
+    } else if (availablePassives.length > 0) {
+      picks.push(formatPassiveCard(availablePassives.shift()));
+    } else {
+      picks.push({
+        id: 'bonus:heal',
+        badge: '보너스 효과',
+        isAwakenPick: false,
+        name: '✨ 초월 회복 & 화력',
+        text: '모든 능력·강화 완료! HP 완전 회복 & 화력 +12%',
+      });
+    }
+  }
+
+  return picks;
+}
+
+function applyDamageToEnemy(enemy, rawDamage) {
+  const reduction = enemy.damageReduction ?? 0;
+  enemy.hp -= rawDamage * (1 - reduction);
 }
 
 function spawnEnemy(game, camera) {
@@ -376,23 +1129,111 @@ function spawnEnemy(game, camera) {
 
   const minute = Math.floor(game.time / 60);
   const stageBonus = stage.level - 1;
-  const isRunner = Math.random() < 0.26 + minute * 0.018 + stageBonus * 0.04;
-  const isBrute = Math.random() < 0.08 + minute * 0.012 + stageBonus * 0.025;
-  const baseHp = isBrute ? 60 : isRunner ? 20 : 32;
-  const hp = Math.round((baseHp + minute * 8 + stageBonus * 9) * stage.hpFactor);
   const palette = stage.enemyColors;
+  const roll = Math.random();
+  const latePool = game.time >= 14 || stage.level >= 2;
+
+  let kind = 'normal';
+  if (latePool && roll < 0.085) kind = 'bomber';
+  else if (latePool && roll < 0.165) kind = 'shielder';
+  else if (latePool && roll < 0.24) kind = 'ghost';
+  else if (roll < 0.34) kind = 'shooter';
+  else if (roll < 0.44) kind = 'splitter';
+  else if (roll < 0.52 + minute * 0.012 + stageBonus * 0.02) kind = 'brute';
+  else if (roll < 0.74 + minute * 0.015) kind = 'runner';
+
+  const specs = {
+    normal: {
+      radius: 18,
+      baseHp: 32,
+      damage: 11,
+      speed: 78,
+      color: palette[0],
+      worth: 5,
+    },
+    runner: {
+      radius: 14,
+      baseHp: 20,
+      damage: 10,
+      speed: 116,
+      color: palette[1],
+      worth: 4,
+    },
+    brute: {
+      radius: 27,
+      baseHp: 64,
+      damage: 19,
+      speed: 68,
+      color: palette[2],
+      worth: 9,
+    },
+    shooter: {
+      radius: 17,
+      baseHp: 28,
+      damage: 12,
+      speed: 72,
+      color: '#c084fc',
+      worth: 8,
+      shootTimer: randomBetween(1.4, 2.5),
+    },
+    bomber: {
+      radius: 16,
+      baseHp: 24,
+      damage: 24,
+      speed: 112,
+      color: '#ef4444',
+      worth: 8,
+      blastRadius: 76,
+    },
+    splitter: {
+      radius: 22,
+      baseHp: 44,
+      damage: 13,
+      speed: 72,
+      color: '#10b981',
+      worth: 7,
+    },
+    shielder: {
+      radius: 24,
+      baseHp: 72,
+      damage: 16,
+      speed: 64,
+      color: '#64748b',
+      worth: 11,
+      damageReduction: 0.35,
+    },
+    ghost: {
+      radius: 16,
+      baseHp: 26,
+      damage: 14,
+      speed: 84,
+      color: '#818cf8',
+      worth: 8,
+      phaseTimer: randomBetween(1.6, 2.6),
+      phaseDash: 0,
+    },
+  };
+
+  const s = specs[kind];
+  const hp = Math.round((s.baseHp + minute * 8 + stageBonus * 9) * stage.hpFactor);
 
   game.enemies.push({
     x: clamp(x, 30, world.width - 30),
     y: clamp(y, 30, world.height - 30),
-    radius: isBrute ? 27 : isRunner ? 14 : 18,
+    kind,
+    radius: s.radius,
     hp,
     maxHp: hp,
-    damage: Math.round((isBrute ? 19 : 11) + stageBonus * 3),
-    speed: ((isRunner ? 114 : 77) + minute * 5 + stageBonus * 5) * stage.speedFactor,
-    color: isBrute ? palette[2] : isRunner ? palette[1] : palette[0],
-    worth: isBrute ? 8 + stageBonus : isRunner ? 4 + stageBonus : 5 + stageBonus,
+    damage: Math.round(s.damage + stageBonus * 3),
+    speed: (s.speed + minute * 5 + stageBonus * 5) * stage.speedFactor,
+    color: s.color,
+    worth: s.worth + stageBonus,
     slow: 0,
+    damageReduction: s.damageReduction ?? 0,
+    shootTimer: s.shootTimer ?? 0,
+    blastRadius: s.blastRadius ?? 0,
+    phaseTimer: s.phaseTimer ?? 0,
+    phaseDash: s.phaseDash ?? 0,
   });
 }
 
@@ -428,31 +1269,70 @@ function applyUpgrade(game, id) {
     if (nextLevel >= 5 && !game.awakenedWeapons[weaponId]) {
       game.awakenedWeapons[weaponId] = true;
       game.awakenFlash = 2.4;
+      game.awakenBannerCustom = '';
       game.shake = 16;
       queueSound(game, 'awake');
       addParticles(game, player.x, player.y, weapons.find((weapon) => weapon.id === weaponId)?.color ?? '#facc15', 42);
+      if (weaponId === 'gaster') {
+        applySansAwakening(game);
+      }
     } else {
       queueSound(game, 'upgrade');
     }
-  }
+  } else if (id.startsWith('passive:')) {
+    const pId = id.slice('passive:'.length);
+    const prevLv = game.passiveLevels?.[pId] ?? 0;
+    const nextLv = Math.min(5, prevLv + 1);
+    game.passiveLevels = { ...(game.passiveLevels ?? {}), [pId]: nextLv };
 
-  if (id === 'damage') player.damage *= 1.25;
-  if (id === 'speed') player.speed *= 1.12;
-  if (id === 'firerate') player.fireRate *= 1.18;
-  if (id === 'magnet') player.magnet += 45;
-  if (id === 'pierce') player.pierce += 1;
-  if (id === 'crit') player.critChance = Math.min(0.65, player.critChance + 0.08);
-  if (id === 'critPower') player.critDamage += 0.35;
-  if (id === 'armor') player.armor += 3;
-  if (id === 'regen') player.regen += 0.9;
-  if (id === 'area') player.area *= 1.16;
-  if (id === 'bulletSize') player.bulletSize *= 1.14;
-  if (id === 'xpGain') player.xpGain *= 1.2;
-  if (id === 'invincible') player.invincibleBonus += 0.18;
-  if (id === 'heal') player.hp = Math.min(player.maxHp, player.hp + 55);
-  if (id === 'maxHp') {
-    player.maxHp += 18;
-    player.hp = Math.min(player.maxHp, player.hp + 34);
+    if (pId === 'damage') {
+      player.damage *= 1.18;
+      player.critChance = Math.min(0.85, player.critChance + 0.03);
+    }
+    if (pId === 'firerate') {
+      player.fireRate *= 1.14;
+    }
+    if (pId === 'speed') {
+      player.speed *= 1.11;
+      player.invincibleBonus += 0.06;
+    }
+    if (pId === 'vitality') {
+      player.maxHp += 24;
+      player.hp = Math.min(player.maxHp, player.hp + 32);
+      player.armor += 2;
+      player.regen += 0.4;
+    }
+    if (pId === 'utility') {
+      player.magnet += 60;
+      player.area *= 1.12;
+      player.xpGain *= 1.12;
+    }
+    queueSound(game, 'upgrade');
+  } else if (id.startsWith('skill:')) {
+    const skId = id.slice('skill:'.length);
+    const skill = ACTIVE_SKILLS.find((item) => item.id === skId);
+    const prevLv = game.skillLevels?.[skId] ?? 0;
+    const nextLv = Math.min(5, prevLv + 1);
+    game.skillLevels = { ...(game.skillLevels ?? {}), [skId]: nextLv };
+
+    if (game.skillTimers && skId in game.skillTimers) {
+      game.skillTimers[skId] = Math.min(game.skillTimers[skId], 0.15);
+    }
+
+    if (nextLv >= 5 && !game.awakenedSkills?.[skId]) {
+      game.awakenedSkills = { ...(game.awakenedSkills ?? {}), [skId]: true };
+      game.abilityAwakenFlash = 2.4;
+      game.abilityAwakenName = skill ? `${skill.icon} ${skill.name} → ${skill.awakenName}` : skId;
+      game.shake = 16;
+      queueSound(game, 'awake');
+      addParticles(game, player.x, player.y, '#facc15', 44);
+    } else {
+      queueSound(game, 'upgrade');
+    }
+  } else if (id === 'bonus:heal') {
+    player.hp = player.maxHp;
+    player.damage *= 1.12;
+    queueSound(game, 'upgrade');
   }
 
   game.pausedForUpgrade = false;
@@ -473,6 +1353,55 @@ function addParticles(game, x, y, color, amount = 8) {
   }
 }
 
+function addFloatingText(game, x, y, text, color = '#ffffff', size = 18) {
+  if (!game.floatingTexts) game.floatingTexts = [];
+  if (game.floatingTexts.length > 28) game.floatingTexts.shift();
+  game.floatingTexts.push({
+    x,
+    y,
+    vy: -56,
+    text,
+    color,
+    size,
+    life: 0.92,
+    maxLife: 0.92,
+  });
+}
+
+function applySansAwakening(game) {
+  const player = game.player;
+  if (!player || player.sansMode) return;
+  player.sansMode = true;
+  player.sansDodgeCd = 0;
+  player.speed = Math.round(player.speed * 1.22);
+  player.fireRate *= 1.3;
+  player.critChance = Math.min(0.95, (player.critChance ?? 0.08) + 0.2);
+  game.awakenBannerCustom = '💀 BAD TIME · 샌즈 모드 각성! (MISS 회피 · KR 업보 · 샌즈 패턴)';
+  addFloatingText(game, player.x, player.y - 36, '* BAD TIME...', '#38bdf8', 22);
+  addParticles(game, player.x, player.y, '#38bdf8', 36);
+}
+
+function trySansDodge(game) {
+  const player = game.player;
+  const activeWeapon = weapons[player.weaponIndex];
+  if (!player.sansMode || activeWeapon?.id !== 'gaster') return false;
+  if (player.invincible > 0) return false;
+
+  const canDodge = (player.sansDodgeCd ?? 0) <= 0 || Math.random() < 0.72;
+  if (!canDodge) return false;
+
+  player.sansDodgeCd = 1.5;
+  player.invincible = 0.44;
+  // Classic Sans crisp sidestep!
+  const dodgeDir = (player.aimAngle ?? 0) + (Math.random() < 0.5 ? Math.PI / 2 : -Math.PI / 2);
+  addParticles(game, player.x, player.y, '#38bdf8', 10);
+  player.x = clamp(player.x + Math.cos(dodgeDir) * 32, 24, world.width - 24);
+  player.y = clamp(player.y + Math.sin(dodgeDir) * 32, 24, world.height - 24);
+  addFloatingText(game, player.x, player.y - 26, 'MISS', '#38bdf8', 24);
+  queueSound(game, 'switch');
+  return true;
+}
+
 function getPlayerDamage(player, baseDamage) {
   const isCritical = Math.random() < player.critChance;
   return baseDamage * player.damage * (isCritical ? player.critDamage : 1);
@@ -488,6 +1417,482 @@ function queueSound(game, type) {
   if (game.sounds.length < 8) {
     game.sounds.push(type);
   }
+}
+
+function executeUltimatePayload(game) {
+  const player = game.player;
+  const weapon = weapons[player.weaponIndex] ?? weapons[0];
+  const aim = player.aimAngle ?? 0;
+  const wId = weapon.id;
+
+  // Clear nearby enemy bullets as a clutch lifesaver!
+  game.enemyBullets = (game.enemyBullets ?? []).filter((eb) => distance(player, eb) > 460);
+
+  if (wId === 'gaster') {
+    // 💀 메갈로바니아 · 배드 타임: 8-Blaster Mega Spinning Gaster Circle + 16 Bone Barrage + KR!
+    const ringRadius = 260;
+    for (let i = 0; i < 8; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 8;
+      const sx = clamp(player.x + Math.cos(a) * ringRadius, 40, world.width - 40);
+      const sy = clamp(player.y + Math.sin(a) * ringRadius, 40, world.height - 40);
+      const inward = Math.atan2(player.y - sy, player.x - sx);
+      game.bullets.push({
+        x: sx,
+        y: sy,
+        vx: 0,
+        vy: 0,
+        angle: inward,
+        radius: 44 * player.area,
+        beamLength: 820,
+        charge: 0.14 + i * 0.055,
+        maxCharge: 0.14 + i * 0.055,
+        fired: false,
+        damage: getPlayerDamage(player, 240),
+        life: 1.05 + i * 0.055,
+        maxLife: 1.05 + i * 0.055,
+        pierce: 9999,
+        color: i % 2 === 0 ? '#38bdf8' : '#facc15',
+        spin: 0,
+        type: 'gaster',
+        awakened: true,
+        hitCooldowns: new Map(),
+      });
+    }
+    for (let b = 0; b < 16; b += 1) {
+      const ba = aim + (Math.PI * 2 * b) / 16;
+      const isBlue = b % 2 === 1;
+      game.bullets.push({
+        x: player.x + Math.cos(ba) * 28,
+        y: player.y + Math.sin(ba) * 28,
+        vx: Math.cos(ba) * 760,
+        vy: Math.sin(ba) * 760,
+        radius: 16 * player.area,
+        damage: getPlayerDamage(player, 165),
+        life: 1.15,
+        pierce: 99,
+        slow: isBlue ? 1.8 : 0.6,
+        color: isBlue ? '#38bdf8' : '#f8fafc',
+        blueBone: isBlue,
+        spin: 0,
+        type: 'sansBone',
+        awakened: true,
+        hitIds: new Set(),
+      });
+    }
+    addFloatingText(game, player.x, player.y - 34, '💀 BAD TIME!!', '#38bdf8', 26);
+  } else if (wId === 'trident') {
+    // 🔱 포세이돈의 해일 번개: 8 Golden Returning Tridents 360° + 8 Lightning Strikes!
+    for (let i = 0; i < 8; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 8;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 26,
+        y: player.y + Math.sin(a) * 26,
+        vx: Math.cos(a) * 860,
+        vy: Math.sin(a) * 860,
+        speed: 860,
+        radius: 26 * player.area,
+        damage: getPlayerDamage(player, 210),
+        life: 1.35,
+        maxLife: 1.35,
+        outboundTime: 0.52,
+        returning: false,
+        hitOut: new Set(),
+        hitBack: new Set(),
+        pierce: 999,
+        slow: 1.1,
+        color: '#facc15',
+        spin: 0,
+        type: 'trident',
+        awakened: true,
+      });
+    }
+    const targets = [...game.enemies]
+      .sort((a, b) => distance(player, a) - distance(player, b))
+      .slice(0, 8);
+    targets.forEach((enemy) => {
+      applyDamageToEnemy(enemy, getPlayerDamage(player, 260));
+      enemy.slow = Math.max(enemy.slow ?? 0, 1.5);
+      game.lightningEffects.push({ x: enemy.x, y: enemy.y, color: '#2dd4bf', life: 0.34, maxLife: 0.34 });
+      addParticles(game, enemy.x, enemy.y, '#5eead4', 14);
+    });
+    addFloatingText(game, player.x, player.y - 34, '🔱 POSEIDON WRATH!', '#2dd4bf', 24);
+  } else if (wId === 'blaster') {
+    // 🔫 하이퍼 플라즈마 난사: 24 homing plasma bolts (16 radial + 8 aimed)
+    for (let i = 0; i < 24; i += 1) {
+      const a = i < 16 ? aim + (Math.PI * 2 * i) / 16 : aim + ((i - 16) / 7 - 0.5) * 0.65;
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 920,
+        vy: Math.sin(a) * 920,
+        radius: 11 * player.bulletSize,
+        damage: getPlayerDamage(player, 155),
+        life: 1.15,
+        pierce: 10,
+        color: '#38bdf8',
+        spin: 0,
+        type: 'blaster',
+        homing: true,
+        awakened: true,
+      });
+    }
+  } else if (wId === 'shotgun') {
+    // 💥 지옥의 산탄 폭풍: 24 massive aimed piercing buckshot + close shockwave!
+    for (let i = 0; i < 24; i += 1) {
+      const a = aim + (i / 23 - 0.5) * 1.45;
+      const spd = 760 + (i % 3) * 90;
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * spd,
+        vy: Math.sin(a) * spd,
+        radius: 11 * player.bulletSize,
+        damage: getPlayerDamage(player, 130),
+        life: 0.85,
+        pierce: 8,
+        color: '#fb7185',
+        spin: 0,
+        type: 'shotgun',
+        awakened: true,
+      });
+    }
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 50,
+      damage: getPlayerDamage(player, 240),
+      life: 0.36,
+      maxLife: 0.36,
+      pierce: 999,
+      color: '#fb7185',
+      spin: 0,
+      type: 'shockwave',
+      blast: 260 * player.area,
+      hitIds: new Set(),
+    });
+  } else if (wId === 'railgun') {
+    // ⚡ 궤도 초전자포: 9 ultra-piercing hyper rail beams along aim!
+    for (let i = -4; i <= 4; i += 1) {
+      const a = aim + i * 0.085;
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 1240,
+        vy: Math.sin(a) * 1240,
+        radius: 16 * player.bulletSize,
+        damage: getPlayerDamage(player, 310),
+        life: 1.05,
+        pierce: 30,
+        color: '#f8fafc',
+        spin: 0,
+        type: 'railgun',
+        awakened: true,
+      });
+    }
+  } else if (wId === 'boomer') {
+    // 🪃 황금 차크람 회오리: 12 huge golden returning chakrams 360°!
+    for (let i = 0; i < 12; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 12;
+      game.skillProjectiles.push({
+        kind: 'chakram',
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 620,
+        vy: Math.sin(a) * 620,
+        radius: 22 * player.area,
+        damage: getPlayerDamage(player, 195),
+        life: 1.9,
+        maxLife: 1.9,
+        returning: false,
+        spin: 0,
+        awakened: true,
+      });
+    }
+  } else if (wId === 'shockwave') {
+    // 🟣 슈퍼노바 대폭발: 4 massive staggered purple shockwaves!
+    for (let r = 0; r < 4; r += 1) {
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: 60,
+        damage: getPlayerDamage(player, 260 - r * 28),
+        life: 0.42 + r * 0.14,
+        maxLife: 0.42 + r * 0.14,
+        pierce: 999,
+        color: r % 2 === 0 ? '#c084fc' : '#facc15',
+        spin: 0,
+        type: 'shockwave',
+        blast: (260 + r * 60) * player.area,
+        hitIds: new Set(),
+      });
+    }
+  } else if (wId === 'flame') {
+    // 🔥 인페르노 메테오: 8 huge blue fire zones + instant meteor blasts!
+    for (let i = 0; i < 8; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 8;
+      const dist = 135 + (i % 2) * 85;
+      const mx = clamp(player.x + Math.cos(a) * dist, 60, world.width - 60);
+      const my = clamp(player.y + Math.sin(a) * dist, 60, world.height - 60);
+      game.fireZones.push({
+        x: mx,
+        y: my,
+        radius: 112 * player.area,
+        damage: getPlayerDamage(player, 82),
+        life: 5.8,
+        tick: 0,
+        awakened: true,
+      });
+      game.enemies.forEach((enemy) => {
+        if (distance({ x: mx, y: my }, enemy) < 135 * player.area + enemy.radius) {
+          applyDamageToEnemy(enemy, getPlayerDamage(player, 250));
+        }
+      });
+      addParticles(game, mx, my, '#f97316', 24);
+    }
+  } else if (wId === 'frost') {
+    // ❄️ 절대영도 빙결폭풍: Arena-wide deep freeze + 20 piercing ice lances!
+    game.enemies.forEach((enemy) => {
+      if (distance(player, enemy) < 540 * player.area + enemy.radius) {
+        applyDamageToEnemy(enemy, getPlayerDamage(player, 240));
+        enemy.slow = Math.max(enemy.slow ?? 0, 3.4);
+        addParticles(game, enemy.x, enemy.y, '#7dd3fc', 10);
+      }
+    });
+    for (let i = 0; i < 20; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 20;
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 780,
+        vy: Math.sin(a) * 780,
+        radius: 13 * player.bulletSize,
+        damage: getPlayerDamage(player, 160),
+        life: 1.15,
+        pierce: 12,
+        slow: 2.5,
+        color: '#7dd3fc',
+        spin: 0,
+        type: 'frost',
+        awakened: true,
+      });
+    }
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 70,
+      damage: getPlayerDamage(player, 120),
+      life: 0.48,
+      maxLife: 0.48,
+      pierce: 999,
+      color: '#7dd3fc',
+      spin: 0,
+      type: 'shockwave',
+      blast: 420 * player.area,
+      hitIds: new Set(),
+    });
+  } else if (wId === 'mine') {
+    // 💣 융단 지뢰 폭격: 10 homing rockets + 12 ring mines around player!
+    for (let i = 0; i < 10; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 10;
+      game.skillProjectiles.push({
+        kind: 'rocket',
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 560,
+        vy: Math.sin(a) * 560,
+        radius: 15,
+        blast: 150 * player.area,
+        damage: getPlayerDamage(player, 260),
+        life: 2.2,
+        awakened: true,
+      });
+    }
+    for (let m = 0; m < 12; m += 1) {
+      const a = (Math.PI * 2 * m) / 12;
+      game.bullets.push({
+        x: clamp(player.x + Math.cos(a) * 125, 36, world.width - 36),
+        y: clamp(player.y + Math.sin(a) * 125, 36, world.height - 36),
+        vx: 0,
+        vy: 0,
+        radius: 14,
+        damage: getPlayerDamage(player, 240),
+        life: 6.5,
+        pierce: 1,
+        color: '#4ade80',
+        spin: 0,
+        type: 'mine',
+        blast: 155 * player.area,
+        armed: 0.1,
+        awakened: true,
+      });
+    }
+  } else if (wId === 'bat') {
+    // 🏏 그랜드 슬램 홈런: 360° gigantic golden swing (340px) + 2 shockwaves!
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 340 * player.area,
+      damage: getPlayerDamage(player, 480),
+      life: 0.42,
+      maxLife: 0.42,
+      pierce: 999,
+      color: '#facc15',
+      spin: 0,
+      angle: aim,
+      arc: Math.PI * 2,
+      knockback: 260,
+      type: 'bat',
+      awakened: true,
+      hitIds: new Set(),
+    });
+    for (let r = 0; r < 2; r += 1) {
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: 60,
+        damage: getPlayerDamage(player, 220),
+        life: 0.38 + r * 0.14,
+        maxLife: 0.38 + r * 0.14,
+        pierce: 999,
+        color: r === 0 ? '#facc15' : '#f59e0b',
+        spin: 0,
+        type: 'shockwave',
+        blast: (280 + r * 80) * player.area,
+        hitIds: new Set(),
+      });
+    }
+    addFloatingText(game, player.x, player.y - 36, '⚾ HOME RUN!!', '#facc15', 25);
+  } else if (wId === 'kunai') {
+    // 🗡️ 천본 앵화 수리검: 24 ultra-fast homing piercing kunai!
+    for (let i = 0; i < 24; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 24;
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 940,
+        vy: Math.sin(a) * 940,
+        radius: 13 * player.bulletSize,
+        damage: getPlayerDamage(player, 185),
+        life: 1.25,
+        pierce: 12,
+        color: '#93c5fd',
+        spin: 0,
+        type: 'kunai',
+        homing: true,
+        awakened: true,
+      });
+    }
+  } else if (wId === 'katana') {
+    // ⚔️ 천지 양단 일섬: 360° crimson slash + 12 sword waves + lifesteal!
+    player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.25));
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 290 * player.area,
+      damage: getPlayerDamage(player, 390),
+      life: 0.36,
+      maxLife: 0.36,
+      pierce: 999,
+      color: '#f43f5e',
+      spin: 0,
+      angle: aim,
+      arc: Math.PI * 2,
+      knockback: 160,
+      type: 'bat',
+      awakened: true,
+      hitIds: new Set(),
+    });
+    for (let i = 0; i < 12; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 12;
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 860,
+        vy: Math.sin(a) * 860,
+        radius: 24 * player.area,
+        damage: getPlayerDamage(player, 210),
+        life: 0.95,
+        pierce: 14,
+        color: '#f43f5e',
+        spin: 0,
+        type: 'lightchaser',
+        awakened: true,
+      });
+    }
+  } else {
+    // ✨ 성광의 심판 검무 (lightchaser & fallback): 14 golden crescent waves + 25% HP heal!
+    player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.25));
+    for (let i = 0; i < 14; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 14;
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 840,
+        vy: Math.sin(a) * 840,
+        radius: 28 * player.area,
+        damage: getPlayerDamage(player, 240),
+        life: 1.05,
+        pierce: 18,
+        color: '#fde047',
+        spin: 0,
+        type: 'lightchaser',
+        awakened: true,
+      });
+    }
+  }
+
+  game.ultImpactFlash = 0.38;
+  game.shake = 26;
+  addParticles(game, player.x, player.y, WEAPON_ULTIMATES[wId]?.accent || '#facc15', 52);
+  queueSound(game, 'ultimate');
+}
+
+function triggerUltimate(game) {
+  if (!game.running || game.pausedForUpgrade || game.over) return false;
+  if (game.ultCutscene) return false;
+  const player = game.player;
+  if ((player.ultCharge ?? 0) < 100) return false;
+
+  const weapon = weapons[player.weaponIndex] ?? weapons[0];
+  const ultSpec = WEAPON_ULTIMATES[weapon.id] ?? WEAPON_ULTIMATES.blaster;
+  const isSans = weapon.id === 'gaster';
+
+  player.ultCharge = 0;
+  player.invincible = Math.max(player.invincible, 2.6);
+  game.enemyBullets = (game.enemyBullets ?? []).filter((eb) => distance(player, eb) > 420);
+
+  // Launch epic anime-style WEAPON Ultimate Cutscene!
+  game.ultCutscene = {
+    timer: 1.15,
+    maxTimer: 1.15,
+    impactAt: 0.42,
+    executed: false,
+    weaponId: weapon.id,
+    weaponName: weapon.displayName ?? weapon.name,
+    ultIcon: ultSpec.icon,
+    ultName: ultSpec.name,
+    ultSub: ultSpec.sub,
+    ultQuote: ultSpec.quote,
+    accent: ultSpec.accent,
+    bg: ultSpec.bg,
+    sansMode: isSans,
+  };
+  game.ultBannerName = `${ultSpec.icon} ${ultSpec.name}!`;
+  game.shake = 10;
+  queueSound(game, 'cutscene');
+  return true;
 }
 
 function fireWeapon(game) {
@@ -551,12 +1956,15 @@ function fireWeapon(game) {
   }
 
   if (weapon.id === 'bat') {
-    const nearestForBat = game.enemies
-      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
-      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
-    const swingAngle = nearestForBat
-      ? Math.atan2(nearestForBat.y - player.y, nearestForBat.x - player.x)
-      : game.time * 2;
+    let swingAngle = player.aimAngle ?? 0;
+    if (game.aimMode !== 'manual') {
+      const nearestForBat = game.enemies
+        .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+      swingAngle = nearestForBat
+        ? Math.atan2(nearestForBat.y - player.y, nearestForBat.x - player.x)
+        : game.time * 2;
+    }
     const swingLife = awakened ? 0.29 : weapon.life;
 
     game.bullets.push({
@@ -590,13 +1998,319 @@ function fireWeapon(game) {
     return;
   }
 
-  const nearest = game.enemies
-    .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
-    .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+  if (weapon.id === 'katana') {
+    let baseAngle = player.aimAngle ?? 0;
+    if (game.aimMode !== 'manual') {
+      const nearestForBlade = game.enemies
+        .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+      baseAngle = nearestForBlade
+        ? Math.atan2(nearestForBlade.y - player.y, nearestForBlade.x - player.x)
+        : 0;
+    }
+    const directions = [baseAngle, baseAngle + Math.PI];
 
-  if (!nearest) return;
+    directions.forEach((dirAngle) => {
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: weapon.radius * player.area * (awakened ? 1.22 : 1),
+        damage: getPlayerDamage(player, weapon.damage * boost),
+        life: weapon.life,
+        maxLife: weapon.life,
+        pierce: 999,
+        color: awakened ? '#facc15' : weapon.color,
+        spin: 0,
+        angle: dirAngle,
+        arc: awakened ? Math.PI * 0.72 : weapon.arc,
+        knockback: weapon.knockback,
+        type: 'katana',
+        awakened,
+        hitIds: new Set(),
+      });
 
-  const baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+      // Awakened Katana (요도 무라마사) also launches crimson sword waves!
+      if (awakened) {
+        game.bullets.push({
+          x: player.x + Math.cos(dirAngle) * 26,
+          y: player.y + Math.sin(dirAngle) * 26,
+          vx: Math.cos(dirAngle) * 640,
+          vy: Math.sin(dirAngle) * 640,
+          radius: 20 * player.area,
+          damage: getPlayerDamage(player, weapon.damage * boost * 0.65),
+          life: 0.65,
+          pierce: 6 + player.pierce,
+          color: '#fb7185',
+          spin: 0,
+          type: 'lightchaser',
+          awakened: true,
+        });
+      }
+    });
+
+    game.shake = Math.max(game.shake, awakened ? 6 : 3);
+    queueSound(game, 'bat');
+    return;
+  }
+
+  if (weapon.id === 'gaster') {
+    let baseAngle = player.aimAngle ?? 0;
+    const nearestForSkull = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    if (game.aimMode !== 'manual') {
+      if (!nearestForSkull) return;
+      baseAngle = Math.atan2(nearestForSkull.y - player.y, nearestForSkull.x - player.x);
+    }
+
+    if (awakened) {
+      // 💀 AWAKENED GASTER BLASTER: SANS BOSS PATTERNS (Circle / Bone Zone / Blue Soul Slam)!
+      if (!player.sansMode) applySansAwakening(game);
+      const pattern = (game.sansPatternIndex ?? 0) % 3;
+      game.sansPatternIndex = (game.sansPatternIndex ?? 0) + 1;
+      const anchor =
+        nearestForSkull && distance(player, nearestForSkull) < 380
+          ? { x: nearestForSkull.x, y: nearestForSkull.y }
+          : {
+              x: clamp(player.x + Math.cos(baseAngle) * 180, 90, world.width - 90),
+              y: clamp(player.y + Math.sin(baseAngle) * 180, 90, world.height - 90),
+            };
+
+      if (pattern === 0) {
+        // Pattern 1: Spinning Gaster Blaster Circle Ring (6 skulls firing staggered inward beams!)
+        const count = 6;
+        const ringR = 205;
+        for (let i = 0; i < count; i += 1) {
+          const a = baseAngle + (Math.PI * 2 * i) / count;
+          const sx = clamp(anchor.x + Math.cos(a) * ringR, 40, world.width - 40);
+          const sy = clamp(anchor.y + Math.sin(a) * ringR, 40, world.height - 40);
+          const aimIn = Math.atan2(anchor.y - sy, anchor.x - sx);
+          const stagger = 0.14 + i * 0.06;
+          game.bullets.push({
+            x: sx,
+            y: sy,
+            vx: 0,
+            vy: 0,
+            angle: aimIn,
+            radius: weapon.radius * player.area * 1.18,
+            beamLength: (weapon.beamLength ?? 740) * 1.15,
+            charge: stagger,
+            maxCharge: stagger,
+            fired: false,
+            damage: getPlayerDamage(player, weapon.damage * boost * 0.95),
+            life: weapon.life + 0.12 + i * 0.06,
+            maxLife: weapon.life + 0.12 + i * 0.06,
+            pierce: 9999,
+            color: i % 2 === 0 ? '#38bdf8' : '#facc15',
+            spin: 0,
+            type: 'gaster',
+            awakened: true,
+            hitCooldowns: new Map(),
+          });
+          addParticles(game, sx, sy, '#38bdf8', 8);
+        }
+        addFloatingText(game, anchor.x, anchor.y - 36, '💀 GASTER CIRCLE!', '#38bdf8', 18);
+      } else if (pattern === 1) {
+        // Pattern 2: Undertale Bone Zone Barrage + Twin Flanking Gaster Blasters!
+        for (let b = 0; b < 9; b += 1) {
+          const spreadA = baseAngle + (b / 8 - 0.5) * 1.05;
+          const isBlue = b % 2 === 1;
+          game.bullets.push({
+            x: player.x + Math.cos(spreadA) * 24,
+            y: player.y + Math.sin(spreadA) * 24,
+            vx: Math.cos(spreadA) * (isBlue ? 680 : 760),
+            vy: Math.sin(spreadA) * (isBlue ? 680 : 760),
+            radius: 15 * player.area,
+            damage: getPlayerDamage(player, weapon.damage * boost * 0.85),
+            life: 1.05,
+            pierce: 99,
+            slow: isBlue ? 1.6 : 0.45,
+            color: isBlue ? '#38bdf8' : '#f8fafc',
+            blueBone: isBlue,
+            spin: 0,
+            type: 'sansBone',
+            awakened: true,
+            hitIds: new Set(),
+          });
+        }
+        [-1, 1].forEach((side) => {
+          const perp = baseAngle + Math.PI / 2;
+          const sx = clamp(player.x + Math.cos(baseAngle) * 44 + Math.cos(perp) * side * 74, 40, world.width - 40);
+          const sy = clamp(player.y + Math.sin(baseAngle) * 44 + Math.sin(perp) * side * 74, 40, world.height - 40);
+          game.bullets.push({
+            x: sx,
+            y: sy,
+            vx: 0,
+            vy: 0,
+            angle: baseAngle,
+            radius: weapon.radius * player.area * 1.16,
+            beamLength: (weapon.beamLength ?? 740) * 1.15,
+            charge: 0.2,
+            maxCharge: 0.2,
+            fired: false,
+            damage: getPlayerDamage(player, weapon.damage * boost),
+            life: weapon.life + 0.12,
+            maxLife: weapon.life + 0.12,
+            pierce: 9999,
+            color: '#38bdf8',
+            spin: 0,
+            type: 'gaster',
+            awakened: true,
+            hitCooldowns: new Map(),
+          });
+        });
+        addFloatingText(game, player.x, player.y - 32, '🦴 BONE ZONE!', '#f8fafc', 18);
+      } else {
+        // Pattern 3: Blue Soul Gravity Slam + X-Formation Converging Blasters!
+        const slamR = 240 * player.area;
+        game.enemies.forEach((enemy) => {
+          const d = distance(anchor, enemy);
+          if (d < slamR + enemy.radius) {
+            const pullA = Math.atan2(anchor.y - enemy.y, anchor.x - enemy.x);
+            const pullDist = Math.min(d * 0.55, enemy.boss ? 22 : 95);
+            enemy.x = clamp(enemy.x + Math.cos(pullA) * pullDist, 30, world.width - 30);
+            enemy.y = clamp(enemy.y + Math.sin(pullA) * pullDist, 30, world.height - 30);
+            enemy.slow = Math.max(enemy.slow ?? 0, 1.6);
+            enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 3.4);
+            enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, getPlayerDamage(player, weapon.damage * boost * 0.65));
+            applyDamageToEnemy(enemy, getPlayerDamage(player, weapon.damage * boost * 0.55));
+            addParticles(game, enemy.x, enemy.y, '#38bdf8', 7);
+          }
+        });
+        game.bullets.push({
+          x: anchor.x,
+          y: anchor.y,
+          vx: 0,
+          vy: 0,
+          radius: 40,
+          damage: getPlayerDamage(player, 40),
+          life: 0.34,
+          maxLife: 0.34,
+          pierce: 999,
+          color: '#38bdf8',
+          spin: 0,
+          type: 'shockwave',
+          blast: slamR,
+          hitIds: new Set(),
+        });
+        for (let k = 0; k < 4; k += 1) {
+          const xa = baseAngle + Math.PI / 4 + (Math.PI / 2) * k;
+          const sx = clamp(anchor.x + Math.cos(xa) * 195, 40, world.width - 40);
+          const sy = clamp(anchor.y + Math.sin(xa) * 195, 40, world.height - 40);
+          game.bullets.push({
+            x: sx,
+            y: sy,
+            vx: 0,
+            vy: 0,
+            angle: Math.atan2(anchor.y - sy, anchor.x - sx),
+            radius: weapon.radius * player.area * 1.22,
+            beamLength: (weapon.beamLength ?? 740) * 1.15,
+            charge: 0.22,
+            maxCharge: 0.22,
+            fired: false,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.05),
+            life: weapon.life + 0.14,
+            maxLife: weapon.life + 0.14,
+            pierce: 9999,
+            color: k % 2 === 0 ? '#38bdf8' : '#e879f9',
+            spin: 0,
+            type: 'gaster',
+            awakened: true,
+            hitCooldowns: new Map(),
+          });
+        }
+        addFloatingText(game, anchor.x, anchor.y - 34, '💙 BLUE SOUL SLAM!', '#38bdf8', 19);
+        game.shake = Math.max(game.shake, 10);
+      }
+
+      queueSound(game, 'switch');
+      return;
+    }
+
+    const spawnX = clamp(player.x + Math.cos(baseAngle) * 46, 40, world.width - 40);
+    const spawnY = clamp(player.y + Math.sin(baseAngle) * 46, 40, world.height - 40);
+    game.bullets.push({
+      x: spawnX,
+      y: spawnY,
+      vx: 0,
+      vy: 0,
+      angle: baseAngle,
+      radius: weapon.radius * player.area,
+      beamLength: weapon.beamLength ?? 740,
+      charge: weapon.chargeTime ?? 0.26,
+      maxCharge: weapon.chargeTime ?? 0.26,
+      fired: false,
+      damage: getPlayerDamage(player, weapon.damage * boost),
+      life: weapon.life,
+      maxLife: weapon.life,
+      pierce: 9999,
+      color: '#38bdf8',
+      spin: 0,
+      type: 'gaster',
+      awakened: false,
+      hitCooldowns: new Map(),
+    });
+    addParticles(game, spawnX, spawnY, '#38bdf8', 10);
+    queueSound(game, 'switch');
+    return;
+  }
+
+  if (weapon.id === 'trident') {
+    let baseAngle = player.aimAngle ?? 0;
+    if (game.aimMode !== 'manual') {
+      const nearestForTrident = game.enemies
+        .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+      if (!nearestForTrident) return;
+      baseAngle = Math.atan2(nearestForTrident.y - player.y, nearestForTrident.x - player.x);
+    }
+
+    const tridentCount = awakened ? 3 : 1;
+    const spread = awakened ? 0.52 : 0;
+    const speed = weapon.speed * (awakened ? 1.12 : 1);
+
+    for (let i = 0; i < tridentCount; i += 1) {
+      const offset = tridentCount === 1 ? 0 : i / (tridentCount - 1) - 0.5;
+      const angle = baseAngle + offset * spread;
+      game.bullets.push({
+        x: player.x + Math.cos(angle) * 24,
+        y: player.y + Math.sin(angle) * 24,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        speed,
+        radius: weapon.radius * player.area * (awakened ? 1.24 : 1),
+        damage: getPlayerDamage(player, weapon.damage * boost),
+        life: weapon.life + (awakened ? 0.16 : 0),
+        maxLife: weapon.life + (awakened ? 0.16 : 0),
+        outboundTime: awakened ? 0.48 : 0.42,
+        returning: false,
+        hitOut: new Set(),
+        hitBack: new Set(),
+        pierce: 999,
+        slow: (weapon.slow ?? 0.45) * (awakened ? 1.4 : 1),
+        color: awakened ? '#facc15' : '#2dd4bf',
+        spin: 0,
+        type: 'trident',
+        awakened,
+      });
+    }
+
+    addParticles(game, player.x + Math.cos(baseAngle) * 22, player.y + Math.sin(baseAngle) * 22, awakened ? '#facc15' : '#2dd4bf', awakened ? 14 : 7);
+    if (awakened) game.shake = Math.max(game.shake, 6);
+    queueSound(game, 'trident');
+    return;
+  }
+
+  let baseAngle = player.aimAngle ?? 0;
+  if (game.aimMode !== 'manual') {
+    const nearest = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    if (!nearest) return;
+    baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+  }
   const count =
     awakened && weapon.id === 'shotgun' ? 8 :
     awakened && weapon.id === 'blaster' ? 3 :
@@ -604,6 +2318,8 @@ function fireWeapon(game) {
     awakened && weapon.id === 'boomer' ? 3 :
     awakened && weapon.id === 'flame' ? 4 :
     awakened && weapon.id === 'frost' ? 4 :
+    awakened && weapon.id === 'kunai' ? 2 :
+    awakened && weapon.id === 'lightchaser' ? 3 :
     weapon.count ?? 1;
   const spread =
     awakened && weapon.id === 'shotgun' ? 1.05 :
@@ -611,6 +2327,8 @@ function fireWeapon(game) {
     awakened && weapon.id === 'boomer' ? 0.55 :
     awakened && weapon.id === 'flame' ? 0.72 :
     awakened && weapon.id === 'frost' ? 0.85 :
+    awakened && weapon.id === 'kunai' ? 0.14 :
+    awakened && weapon.id === 'lightchaser' ? 0.56 :
     (weapon.spread ?? 0);
 
   for (let i = 0; i < count; i += 1) {
@@ -624,13 +2342,14 @@ function fireWeapon(game) {
       y: player.y + Math.sin(sideAngle) * sideOffset,
       vx: Math.cos(angle) * weapon.speed * (awakened && weapon.id === 'railgun' ? 1.1 : 1),
       vy: Math.sin(angle) * weapon.speed * (awakened && weapon.id === 'railgun' ? 1.1 : 1),
-      radius: weapon.radius * player.bulletSize * (weapon.id === 'flame' ? player.area : 1) * (awakened ? 1.16 : 1),
+      radius: weapon.radius * player.bulletSize * (weapon.id === 'flame' || weapon.id === 'lightchaser' ? player.area : 1) * (awakened ? 1.16 : 1),
       damage: getPlayerDamage(player, weapon.damage * boost),
       life: weapon.life * (awakened ? 1.1 : 1),
       pierce: weapon.pierce + player.pierce - 1 + (awakened ? 2 : 0),
       color: awakened ? '#fef3c7' : weapon.color,
       spin: 0,
       type: weapon.id,
+      homing: Boolean(weapon.homing),
       slow: (weapon.slow ?? 0) * (awakened && weapon.id === 'frost' ? 1.35 : 1),
       awakened,
     });
@@ -666,15 +2385,45 @@ function updateOrbit(game, delta) {
   }
 }
 
-function updateGame(game, input, canvas, delta, onEarnGold) {
+function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins) {
   if (!game.running || game.pausedForUpgrade || game.over) return;
 
+  let delta = rawDelta;
+  game.ultImpactFlash = Math.max(0, (game.ultImpactFlash ?? 0) - rawDelta);
+  if (game.ultCutscene) {
+    game.ultCutscene.timer -= rawDelta;
+    if (!game.ultCutscene.executed && game.ultCutscene.timer <= game.ultCutscene.impactAt) {
+      game.ultCutscene.executed = true;
+      executeUltimatePayload(game);
+    }
+    if (game.ultCutscene.timer > game.ultCutscene.impactAt) {
+      // Dramatic anime hit-stop slow-motion during cutscene climax!
+      delta = rawDelta * 0.08;
+    }
+    if (game.ultCutscene.timer <= 0) {
+      game.ultCutscene = null;
+    }
+  }
+
   game.time += delta;
-  game.shake = Math.max(0, game.shake - delta * 16);
+  game.shake = Math.max(0, game.shake - rawDelta * 18);
   game.stageFlash = Math.max(0, game.stageFlash - delta);
   game.awakenFlash = Math.max(0, game.awakenFlash - delta);
+  game.abilityAwakenFlash = Math.max(0, (game.abilityAwakenFlash ?? 0) - delta);
+  game.ultFlash = Math.max(0, (game.ultFlash ?? 0) - delta);
+  game.bossFlash = Math.max(0, (game.bossFlash ?? 0) - delta);
+  game.bossClearFlash = Math.max(0, (game.bossClearFlash ?? 0) - delta);
+  game.lightningEffects = (game.lightningEffects ?? [])
+    .map((fx) => ({ ...fx, life: fx.life - delta }))
+    .filter((fx) => fx.life > 0);
+  game.floatingTexts = (game.floatingTexts ?? [])
+    .map((ft) => ({ ...ft, y: ft.y + ft.vy * rawDelta, life: ft.life - rawDelta }))
+    .filter((ft) => ft.life > 0);
   const stage = getStage(game);
   const player = game.player;
+  player.slowTimer = Math.max(0, (player.slowTimer ?? 0) - delta);
+  player.sansDodgeCd = Math.max(0, (player.sansDodgeCd ?? 0) - delta);
+  const playerSpeedFactor = player.slowTimer > 0 ? 0.62 : 1;
   const moveX = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch.x;
   const moveY = (input.down ? 1 : 0) - (input.up ? 1 : 0) + input.touch.y;
   const mouseX = input.mouse.active ? input.mouse.x : 0;
@@ -683,9 +2432,10 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
   const totalMoveY = moveY + mouseY;
   const moveLength = Math.hypot(totalMoveX, totalMoveY) || 1;
 
-  player.x = clamp(player.x + (totalMoveX / moveLength) * player.speed * delta, 24, world.width - 24);
-  player.y = clamp(player.y + (totalMoveY / moveLength) * player.speed * delta, 24, world.height - 24);
+  player.x = clamp(player.x + (totalMoveX / moveLength) * player.speed * playerSpeedFactor * delta, 24, world.width - 24);
+  player.y = clamp(player.y + (totalMoveY / moveLength) * player.speed * playerSpeedFactor * delta, 24, world.height - 24);
   player.invincible = Math.max(0, player.invincible - delta);
+  player.ultCharge = Math.min(100, (player.ultCharge ?? 0) + delta * 3.8);
   if (player.regen > 0 && player.hp > 0) {
     player.hp = Math.min(player.maxHp, player.hp + player.regen * delta);
   }
@@ -697,17 +2447,35 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
     y: clamp(player.y - canvas.height / 2, 0, world.height - canvas.height),
   };
 
+  if (input.aim?.active) {
+    const worldAimX = camera.x + input.aim.x;
+    const worldAimY = camera.y + input.aim.y;
+    player.aimAngle = Math.atan2(worldAimY - player.y, worldAimX - player.x);
+  } else if (Math.hypot(totalMoveX, totalMoveY) > 0.12) {
+    player.aimAngle = Math.atan2(totalMoveY, totalMoveX);
+  }
+
+  if (!game.bossActive) {
+    game.chapterTime = (game.chapterTime ?? 0) + delta;
+    if (game.chapterTime >= stageSeconds) {
+      spawnChapterBoss(game, camera);
+    }
+  }
+
   game.spawnTimer -= delta;
-  const spawnDelay = Math.max(0.1, (0.72 - game.time * 0.004) / stage.spawnFactor);
+  const baseSpawnDelay = Math.max(0.11, (0.72 - game.time * 0.0036) / stage.spawnFactor);
+  const spawnDelay = game.bossActive ? baseSpawnDelay * 2.35 : baseSpawnDelay;
   while (game.spawnTimer <= 0) {
     spawnEnemy(game, camera);
     game.spawnTimer += spawnDelay;
   }
 
-  game.eliteTimer -= delta;
-  if (game.eliteTimer <= 0) {
-    spawnElite(game, camera);
-    game.eliteTimer = Math.max(11, (30 - game.time * 0.05) / stage.spawnFactor);
+  if (!game.bossActive) {
+    game.eliteTimer -= delta;
+    if (game.eliteTimer <= 0) {
+      spawnElite(game, camera);
+      game.eliteTimer = Math.max(11, (30 - game.time * 0.05) / stage.spawnFactor);
+    }
   }
 
   player.cooldown -= delta;
@@ -749,14 +2517,656 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
     }
   }
 
+  // === 7종 액티브 전투 능력 실행 (로켓 발사기, 수호자 칼날, 번개, 화염병, 드론, 축구공, 차크람) ===
+  const skills = game.skillLevels ?? {};
+  const skAwaken = game.awakenedSkills ?? {};
+  const st = game.skillTimers ?? {};
+  const cdRate = Math.max(0.65, player.fireRate);
+
+  // 1. 🚀 로켓 발사기 (LV 5 각성: 샤크 바주카)
+  if ((skills.rocket ?? 0) > 0 && game.enemies.length > 0) {
+    st.rocket = (st.rocket ?? 1.5) - delta * cdRate;
+    if (st.rocket <= 0) {
+      const lv = skills.rocket;
+      const aw = Boolean(skAwaken.rocket);
+      const count = aw ? 2 : 1;
+      const sorted = game.enemies
+        .map((e) => ({ e, d: distance(player, e) }))
+        .sort((a, b) => a.d - b.d);
+      for (let i = 0; i < count; i += 1) {
+        const target = sorted[i]?.e ?? sorted[0]?.e;
+        if (!target) break;
+        const a = Math.atan2(target.y - player.y, target.x - player.x) + (i === 1 ? 0.16 : 0);
+        game.skillProjectiles.push({
+          kind: 'rocket',
+          x: player.x,
+          y: player.y,
+          vx: Math.cos(a) * (aw ? 540 : 450),
+          vy: Math.sin(a) * (aw ? 540 : 450),
+          radius: aw ? 15 : 10,
+          blast: (aw ? 148 : 88 + lv * 10) * player.area,
+          damage: getPlayerDamage(player, aw ? 210 : 68 + lv * 24),
+          life: 2.2,
+          awakened: aw,
+        });
+      }
+      queueSound(game, 'shoot');
+      st.rocket = aw ? 1.55 : Math.max(1.85, 2.8 - lv * 0.2);
+    }
+  }
+
+  // 2. ⚙️ 수호자 칼날 (LV 5 각성: 수호의 방어막)
+  if ((skills.guardian ?? 0) > 0) {
+    const lv = skills.guardian;
+    const aw = Boolean(skAwaken.guardian);
+    const bladeCount = aw ? 6 : 1 + lv;
+    const orbitRadius = (aw ? 104 : 78 + lv * 4) * player.area;
+    const spinSpeed = aw ? 5.8 : 3.6 + lv * 0.3;
+    const bladeDmg = getPlayerDamage(player, aw ? 48 : 20 + lv * 7);
+
+    game.enemies.forEach((enemy) => {
+      enemy.guardianHitCd = Math.max(0, (enemy.guardianHitCd ?? 0) - delta);
+      if (enemy.guardianHitCd > 0) return;
+      for (let b = 0; b < bladeCount; b += 1) {
+        const ba = game.time * spinSpeed + (Math.PI * 2 * b) / bladeCount;
+        const bx = player.x + Math.cos(ba) * orbitRadius;
+        const by = player.y + Math.sin(ba) * orbitRadius;
+        if (distance({ x: bx, y: by }, enemy) < enemy.radius + (aw ? 20 : 15)) {
+          applyDamageToEnemy(enemy, bladeDmg);
+          enemy.guardianHitCd = aw ? 0.18 : 0.28;
+          const pushAngle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+          const pushDist = (aw ? 36 : 22) * (enemy.boss ? 0.1 : enemy.elite ? 0.35 : 1);
+          enemy.x = clamp(enemy.x + Math.cos(pushAngle) * pushDist, 30, world.width - 30);
+          enemy.y = clamp(enemy.y + Math.sin(pushAngle) * pushDist, 30, world.height - 30);
+          addParticles(game, enemy.x, enemy.y, aw ? '#facc15' : '#38bdf8', 5);
+          break;
+        }
+      }
+    });
+  }
+
+  // 3. 🌩️ 번개 발사기 (LV 5 각성: 천둥 배터리)
+  if ((skills.lightning ?? 0) > 0 && game.enemies.length > 0) {
+    st.lightning = (st.lightning ?? 1.8) - delta * cdRate;
+    if (st.lightning <= 0) {
+      const lv = skills.lightning;
+      const aw = Boolean(skAwaken.lightning);
+      const strikes = aw ? 5 : lv;
+      const targets = game.enemies
+        .filter((e) => distance(player, e) < 540)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, strikes);
+      targets.forEach((enemy) => {
+        applyDamageToEnemy(enemy, getPlayerDamage(player, aw ? 145 : 52 + lv * 20));
+        if (aw) enemy.slow = Math.max(enemy.slow ?? 0, 1.4);
+        addParticles(game, enemy.x, enemy.y, aw ? '#facc15' : '#38bdf8', aw ? 14 : 8);
+        game.lightningEffects.push({
+          x: enemy.x,
+          y: enemy.y,
+          color: aw ? '#facc15' : '#38bdf8',
+          life: 0.22,
+          maxLife: 0.22,
+        });
+      });
+      if (targets.length > 0) queueSound(game, 'hit');
+      st.lightning = aw ? 1.15 : Math.max(1.65, 2.5 - lv * 0.2);
+    }
+  }
+
+  // 4. 🔥 화염병 (LV 5 각성: 지옥 불바다)
+  if ((skills.molotov ?? 0) > 0 && game.enemies.length > 0) {
+    st.molotov = (st.molotov ?? 2.0) - delta * cdRate;
+    if (st.molotov <= 0) {
+      const lv = skills.molotov;
+      const aw = Boolean(skAwaken.molotov);
+      const bottles = aw ? 4 : Math.min(3, Math.ceil(lv * 0.75));
+      for (let i = 0; i < bottles; i += 1) {
+        const pick = game.enemies[Math.floor(Math.random() * game.enemies.length)];
+        const distCap = Math.min(260, distance(player, pick));
+        const a = Math.atan2(pick.y - player.y, pick.x - player.x) + (i - (bottles - 1) / 2) * 0.65;
+        game.fireZones.push({
+          x: clamp(player.x + Math.cos(a) * distCap, 50, world.width - 50),
+          y: clamp(player.y + Math.sin(a) * distCap, 50, world.height - 50),
+          radius: (aw ? 86 : 52 + lv * 7) * player.area,
+          damage: getPlayerDamage(player, aw ? 44 : 16 + lv * 6),
+          life: aw ? 4.4 : 3.4,
+          tick: 0,
+          awakened: aw,
+        });
+      }
+      queueSound(game, 'flame');
+      st.molotov = aw ? 2.4 : Math.max(2.6, 3.6 - lv * 0.22);
+    }
+  }
+
+  // 5. 🛸 공격 드론 (LV 5 각성: 디스트로이어)
+  if ((skills.drone ?? 0) > 0 && game.enemies.length > 0) {
+    st.drone = (st.drone ?? 0.5) - delta * cdRate;
+    if (st.drone <= 0) {
+      const lv = skills.drone;
+      const aw = Boolean(skAwaken.drone);
+      const droneCount = aw ? 2 : 1;
+      for (let d = 0; d < droneCount; d += 1) {
+        const da = game.time * 2.4 + d * Math.PI;
+        const dx = player.x + Math.cos(da) * 48;
+        const dy = player.y + Math.sin(da) * 48;
+        const target = game.enemies
+          .map((e) => ({ e, dist: distance({ x: dx, y: dy }, e) }))
+          .sort((a, b) => a.dist - b.dist)[0]?.e;
+        if (!target) continue;
+        const sa = Math.atan2(target.y - dy, target.x - dx);
+        game.skillProjectiles.push({
+          kind: 'droneMissile',
+          x: dx,
+          y: dy,
+          vx: Math.cos(sa) * (aw ? 760 : 620),
+          vy: Math.sin(sa) * (aw ? 760 : 620),
+          radius: aw ? 7 : 5,
+          damage: getPlayerDamage(player, aw ? 56 : 22 + lv * 8),
+          life: 1.15,
+          pierce: aw ? 2 : 1,
+          awakened: aw,
+        });
+      }
+      st.drone = aw ? 0.22 : Math.max(0.32, 0.72 - lv * 0.09);
+    }
+  }
+
+  // 6. ⚽ 반사 축구공 (LV 5 각성: 양자 볼)
+  if ((skills.soccer ?? 0) > 0 && game.enemies.length > 0) {
+    st.soccer = (st.soccer ?? 1.8) - delta * cdRate;
+    if (st.soccer <= 0) {
+      const lv = skills.soccer;
+      const aw = Boolean(skAwaken.soccer);
+      const balls = aw ? 4 : Math.min(3, Math.ceil(lv * 0.75));
+      for (let i = 0; i < balls; i += 1) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = aw ? 560 : 440 + lv * 20;
+        game.skillProjectiles.push({
+          kind: 'soccer',
+          x: player.x,
+          y: player.y,
+          vx: Math.cos(a) * spd,
+          vy: Math.sin(a) * spd,
+          radius: aw ? 14 : 11,
+          damage: getPlayerDamage(player, aw ? 92 : 38 + lv * 14),
+          life: aw ? 4.2 : 3.2,
+          bounces: aw ? 10 : 5 + lv,
+          awakened: aw,
+        });
+      }
+      queueSound(game, 'shoot');
+      st.soccer = aw ? 2.1 : Math.max(2.3, 3.2 - lv * 0.2);
+    }
+  }
+
+  // 7. 🪃 톱니 차크람 (LV 5 각성: 자석 휠)
+  if ((skills.boomerang ?? 0) > 0 && game.enemies.length > 0) {
+    st.boomerang = (st.boomerang ?? 1.7) - delta * cdRate;
+    if (st.boomerang <= 0) {
+      const lv = skills.boomerang;
+      const aw = Boolean(skAwaken.boomerang);
+      const count = aw ? 3 : Math.min(3, Math.ceil(lv * 0.7));
+      const nearest = game.enemies
+        .map((e) => ({ e, dist: distance(player, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      const baseA = nearest ? Math.atan2(nearest.y - player.y, nearest.x - player.x) : 0;
+      for (let i = 0; i < count; i += 1) {
+        const a = baseA + (count === 1 ? 0 : (i / (count - 1) - 0.5) * 0.75);
+        game.skillProjectiles.push({
+          kind: 'chakram',
+          x: player.x,
+          y: player.y,
+          vx: Math.cos(a) * (aw ? 600 : 500),
+          vy: Math.sin(a) * (aw ? 600 : 500),
+          radius: aw ? 22 : 14 + lv,
+          damage: getPlayerDamage(player, aw ? 105 : 44 + lv * 15),
+          life: aw ? 2.4 : 1.9,
+          maxLife: aw ? 2.4 : 1.9,
+          spin: 0,
+          awakened: aw,
+          hitCooldowns: new Map(),
+        });
+      }
+      queueSound(game, 'bat');
+      st.boomerang = aw ? 1.8 : Math.max(2.0, 2.9 - lv * 0.2);
+    }
+  }
+
+  // === Combat Pet AI (50종 펫 · 5등급 파워 스케일링 · 6종 전투 스타일) ===
+  if (game.pet) {
+    const pet = game.pet;
+    const plv = pet.level ?? 1;
+    const pMult = (pet.powerMult ?? 1) * (1 + (plv - 1) * 0.32);
+    const followX = player.x - 44 + Math.cos(game.time * 2.2) * 14;
+    const followY = player.y + 24 + Math.sin(game.time * 3.1) * 10;
+
+    if (pet.lungeTimer > 0) {
+      pet.lungeTimer -= delta;
+      pet.x = clamp(pet.x + pet.lungeVx * delta, 24, world.width - 24);
+      pet.y = clamp(pet.y + pet.lungeVy * delta, 24, world.height - 24);
+    } else {
+      pet.x += (followX - pet.x) * Math.min(1, delta * 5.2);
+      pet.y += (followY - pet.y) * Math.min(1, delta * 5.2);
+    }
+
+    pet.cooldown -= delta;
+    if (pet.style === 'healFire') {
+      pet.healTimer = (pet.healTimer ?? 6) - delta;
+      if (pet.healTimer <= 0 && player.hp > 0) {
+        const healAmt = Math.round((4 + plv * 2) * Math.min(2.2, pet.powerMult ?? 1));
+        player.hp = Math.min(player.maxHp, player.hp + healAmt);
+        addParticles(game, player.x, player.y, '#4ade80', 10);
+        pet.healTimer = 5.8;
+      }
+    }
+
+    if (pet.cooldown <= 0 && game.enemies.length > 0) {
+      const target = game.enemies
+        .map((e) => ({ e, dist: distance(pet, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      if (target && distance(pet, target) < 500) {
+        const a = Math.atan2(target.y - pet.y, target.x - pet.x);
+        const isHighTier = pet.rarity === 'legend' || pet.rarity === 'mythic';
+
+        if (pet.style === 'lunge') {
+          pet.lungeTimer = 0.24;
+          pet.lungeVx = Math.cos(a) * 650;
+          pet.lungeVy = Math.sin(a) * 650;
+          applyDamageToEnemy(target, getPlayerDamage(player, 46 * pMult));
+          target.slow = Math.max(target.slow ?? 0, 0.75);
+          addParticles(game, target.x, target.y, pet.color, isHighTier ? 14 : 9);
+          queueSound(game, 'hit');
+          pet.cooldown = Math.max(0.65, 1.3 - plv * 0.09);
+        } else if (pet.style === 'bolt') {
+          const shots = pet.rarity === 'mythic' ? 3 : pet.rarity === 'legend' ? 2 : 1;
+          for (let i = 0; i < shots; i += 1) {
+            const offset = shots === 1 ? 0 : (i / (shots - 1) - 0.5) * 0.22;
+            const sa = a + offset;
+            game.skillProjectiles.push({
+              kind: 'droneMissile',
+              x: pet.x,
+              y: pet.y,
+              vx: Math.cos(sa) * 780,
+              vy: Math.sin(sa) * 780,
+              radius: isHighTier ? 8 : 6,
+              damage: getPlayerDamage(player, 34 * pMult),
+              life: 1.2,
+              pierce: 2 + Math.floor(plv / 2),
+              awakened: isHighTier || plv >= 5,
+            });
+          }
+          queueSound(game, 'shoot');
+          pet.cooldown = Math.max(0.48, 0.98 - plv * 0.08);
+        } else if (pet.style === 'poison') {
+          game.fireZones.push({
+            x: target.x,
+            y: target.y,
+            radius: (56 + plv * 7) * player.area * (isHighTier ? 1.25 : 1),
+            damage: getPlayerDamage(player, 18 * pMult),
+            life: 3.6,
+            tick: 0,
+            poison: true,
+            awakened: isHighTier,
+          });
+          addParticles(game, target.x, target.y, '#22c55e', 10);
+          pet.cooldown = Math.max(1.65, 2.7 - plv * 0.16);
+        } else if (pet.style === 'healFire') {
+          const fan = pet.rarity === 'mythic' ? 5 : 3;
+          for (let i = 0; i < fan; i += 1) {
+            const fa = a + (i / (fan - 1) - 0.5) * 0.5;
+            game.skillProjectiles.push({
+              kind: 'droneMissile',
+              x: pet.x,
+              y: pet.y,
+              vx: Math.cos(fa) * 680,
+              vy: Math.sin(fa) * 680,
+              radius: isHighTier ? 8 : 6,
+              damage: getPlayerDamage(player, 24 * pMult),
+              life: 1.05,
+              pierce: 2,
+              awakened: isHighTier || plv >= 4,
+            });
+          }
+          queueSound(game, 'flame');
+          pet.cooldown = Math.max(0.75, 1.38 - plv * 0.09);
+        } else if (pet.style === 'lightning') {
+          const strikes = pet.rarity === 'mythic' ? 4 : pet.rarity === 'legend' ? 3 : 2;
+          const targets = game.enemies
+            .filter((e) => distance(pet, e) < 520)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, strikes);
+          targets.forEach((enemy) => {
+            applyDamageToEnemy(enemy, getPlayerDamage(player, 44 * pMult));
+            enemy.slow = Math.max(enemy.slow ?? 0, 0.7);
+            addParticles(game, enemy.x, enemy.y, pet.rarityColor || '#facc15', 10);
+            game.lightningEffects.push({
+              x: enemy.x,
+              y: enemy.y,
+              color: pet.rarityColor || '#38bdf8',
+              life: 0.22,
+              maxLife: 0.22,
+            });
+          });
+          if (targets.length > 0) queueSound(game, 'hit');
+          pet.cooldown = Math.max(0.95, 1.7 - plv * 0.12);
+        } else {
+          // breath: explosive dragon/apex breath!
+          game.skillProjectiles.push({
+            kind: 'rocket',
+            x: pet.x,
+            y: pet.y,
+            vx: Math.cos(a) * 580,
+            vy: Math.sin(a) * 580,
+            radius: isHighTier ? 14 : 11,
+            blast: (92 + plv * 11) * player.area * (pet.rarity === 'mythic' ? 1.25 : 1),
+            damage: getPlayerDamage(player, 58 * pMult),
+            life: 1.85,
+            awakened: isHighTier,
+          });
+          queueSound(game, 'flame');
+          pet.cooldown = Math.max(1.0, 1.78 - plv * 0.13);
+        }
+      }
+    }
+  }
+
+  // Update active fire zones (화염병 불장판 & 🐸 개굴 독 장판)
+  game.fireZones = (game.fireZones ?? []).filter((zone) => {
+    zone.life -= delta;
+    zone.tick -= delta;
+    if (zone.tick <= 0) {
+      zone.tick = 0.26;
+      game.enemies.forEach((enemy) => {
+        if (distance(zone, enemy) < zone.radius + enemy.radius) {
+          applyDamageToEnemy(enemy, zone.damage);
+          if (zone.poison) enemy.slow = Math.max(enemy.slow ?? 0, 0.9);
+          addParticles(
+            game,
+            enemy.x,
+            enemy.y,
+            zone.poison ? '#22c55e' : zone.awakened ? '#38bdf8' : '#f97316',
+            2,
+          );
+        }
+      });
+    }
+    return zone.life > 0;
+  });
+
+  // Update skill projectiles (로켓, 드론 미사일, 반사 축구공, 왕복 차크람)
+  game.skillProjectiles = (game.skillProjectiles ?? []).filter((sp) => {
+    sp.life -= delta;
+    sp.spin = (sp.spin ?? 0) + delta * 18;
+
+    if (sp.kind === 'chakram') {
+      const elapsed = (sp.maxLife ?? 2) - sp.life;
+      if (elapsed > 0.55) {
+        const backA = Math.atan2(player.y - sp.y, player.x - sp.x);
+        const speed = sp.awakened ? 640 : 540;
+        sp.vx += (Math.cos(backA) * speed - sp.vx) * Math.min(1, delta * 5.2);
+        sp.vy += (Math.sin(backA) * speed - sp.vy) * Math.min(1, delta * 5.2);
+        if (elapsed > 0.9 && distance(player, sp) < 28) return false;
+      }
+      sp.x += sp.vx * delta;
+      sp.y += sp.vy * delta;
+      game.enemies.forEach((enemy) => {
+        const lastHit = sp.hitCooldowns.get(enemy) ?? -1;
+        if (game.time - lastHit > 0.24 && distance(sp, enemy) < sp.radius + enemy.radius) {
+          sp.hitCooldowns.set(enemy, game.time);
+          applyDamageToEnemy(enemy, sp.damage);
+          addParticles(game, enemy.x, enemy.y, sp.awakened ? '#facc15' : '#94a3b8', 5);
+        }
+      });
+      return sp.life > 0;
+    }
+
+    if (sp.kind === 'rocket') {
+      // Gentle homing toward nearest enemy
+      const nearest = game.enemies
+        .map((e) => ({ e, dist: distance(sp, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      if (nearest && distance(sp, nearest) < 340) {
+        const desired = Math.atan2(nearest.y - sp.y, nearest.x - sp.x);
+        const spd = Math.hypot(sp.vx, sp.vy);
+        sp.vx += (Math.cos(desired) * spd - sp.vx) * Math.min(1, delta * 4);
+        sp.vy += (Math.sin(desired) * spd - sp.vy) * Math.min(1, delta * 4);
+      }
+      sp.x += sp.vx * delta;
+      sp.y += sp.vy * delta;
+      if (Math.random() < 0.65) {
+        addParticles(game, sp.x, sp.y, sp.awakened ? '#facc15' : '#fb923c', 1);
+      }
+      const hitEnemy = game.enemies.some((e) => distance(sp, e) < sp.radius + e.radius);
+      if (hitEnemy || sp.life <= 0) {
+        game.enemies.forEach((enemy) => {
+          if (distance(sp, enemy) < sp.blast + enemy.radius) {
+            applyDamageToEnemy(enemy, sp.damage);
+            addParticles(game, enemy.x, enemy.y, '#fb923c', 5);
+          }
+        });
+        addParticles(game, sp.x, sp.y, sp.awakened ? '#facc15' : '#ef4444', sp.awakened ? 34 : 22);
+        game.shake = Math.max(game.shake, sp.awakened ? 11 : 7);
+        queueSound(game, 'boom');
+        return false;
+      }
+      return sp.x > 0 && sp.y > 0 && sp.x < world.width && sp.y < world.height;
+    }
+
+    if (sp.kind === 'soccer') {
+      sp.x += sp.vx * delta;
+      sp.y += sp.vy * delta;
+      // Bounce off camera bounds
+      if (sp.x < camera.x + sp.radius || sp.x > camera.x + camera.width - sp.radius) {
+        sp.vx *= -1;
+        sp.x = clamp(sp.x, camera.x + sp.radius, camera.x + camera.width - sp.radius);
+      }
+      if (sp.y < camera.y + sp.radius || sp.y > camera.y + camera.height - sp.radius) {
+        sp.vy *= -1;
+        sp.y = clamp(sp.y, camera.y + sp.radius, camera.y + camera.height - sp.radius);
+      }
+      for (let i = 0; i < game.enemies.length; i += 1) {
+        const enemy = game.enemies[i];
+        if (distance(sp, enemy) < sp.radius + enemy.radius) {
+          applyDamageToEnemy(enemy, sp.damage);
+          if (sp.awakened) {
+            game.enemies.forEach((near) => {
+              if (near !== enemy && distance(enemy, near) < 76) {
+                applyDamageToEnemy(near, sp.damage * 0.45);
+              }
+            });
+            addParticles(game, sp.x, sp.y, '#22d3ee', 10);
+          } else {
+            addParticles(game, sp.x, sp.y, '#ffffff', 6);
+          }
+          const bounceA = Math.atan2(sp.y - enemy.y, sp.x - enemy.x) + randomBetween(-0.4, 0.4);
+          const spd = Math.hypot(sp.vx, sp.vy);
+          sp.vx = Math.cos(bounceA) * spd;
+          sp.vy = Math.sin(bounceA) * spd;
+          sp.bounces -= 1;
+          queueSound(game, 'hit');
+          if (sp.bounces <= 0) return false;
+          break;
+        }
+      }
+      return sp.life > 0;
+    }
+
+    // droneMissile
+    sp.x += sp.vx * delta;
+    sp.y += sp.vy * delta;
+    for (let i = 0; i < game.enemies.length; i += 1) {
+      const enemy = game.enemies[i];
+      if (distance(sp, enemy) < sp.radius + enemy.radius) {
+        applyDamageToEnemy(enemy, sp.damage);
+        sp.pierce -= 1;
+        addParticles(game, enemy.x, enemy.y, sp.awakened ? '#facc15' : '#a855f7', 5);
+        if (sp.pierce <= 0) return false;
+      }
+    }
+    return sp.life > 0 && sp.x > 0 && sp.y > 0 && sp.x < world.width && sp.y < world.height;
+  });
+
   updateOrbit(game, delta);
 
   game.bullets = game.bullets.filter((bullet) => {
+    if (bullet.homing && game.enemies.length > 0) {
+      const target = game.enemies
+        .map((e) => ({ e, dist: distance(bullet, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      if (target && distance(bullet, target) < 420) {
+        const desired = Math.atan2(target.y - bullet.y, target.x - bullet.x);
+        const spd = Math.hypot(bullet.vx, bullet.vy) || 820;
+        bullet.vx += (Math.cos(desired) * spd - bullet.vx) * Math.min(1, delta * 9);
+        bullet.vy += (Math.sin(desired) * spd - bullet.vy) * Math.min(1, delta * 9);
+      }
+    }
+
     bullet.x += bullet.vx * delta;
     bullet.y += bullet.vy * delta;
     bullet.life -= delta;
     bullet.spin += delta * 14;
     bullet.armed = Math.max(0, (bullet.armed ?? 0) - delta);
+
+    if (bullet.type === 'gaster') {
+      if (bullet.charge > 0) {
+        bullet.charge -= delta;
+        if (bullet.charge <= 0 && !bullet.fired) {
+          bullet.fired = true;
+          game.shake = Math.max(game.shake, bullet.awakened ? 12 : 8);
+          queueSound(game, 'gaster');
+          addParticles(game, bullet.x, bullet.y, '#e0f2fe', 16);
+        }
+        return bullet.life > 0;
+      }
+
+      // Active mega laser beam collision (distance from enemy center to beam segment!)
+      const bx1 = bullet.x;
+      const by1 = bullet.y;
+      const dx = Math.cos(bullet.angle);
+      const dy = Math.sin(bullet.angle);
+      const len = bullet.beamLength ?? 740;
+      const halfWidth = bullet.radius * 0.68;
+
+      game.enemies.forEach((enemy) => {
+        const lastHit = bullet.hitCooldowns.get(enemy) ?? -1;
+        if (game.time - lastHit < 0.11) return;
+        const ex = enemy.x - bx1;
+        const ey = enemy.y - by1;
+        const proj = clamp(ex * dx + ey * dy, 0, len);
+        const cx = bx1 + dx * proj;
+        const cy = by1 + dy * proj;
+        if (Math.hypot(enemy.x - cx, enemy.y - cy) < halfWidth + enemy.radius) {
+          bullet.hitCooldowns.set(enemy, game.time);
+          applyDamageToEnemy(enemy, bullet.damage * 0.42);
+          if (bullet.awakened) {
+            // 💀 Sans KR (KARMA): defense-piercing purple damage-over-time!
+            enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 3.2);
+            enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, bullet.damage * 0.72);
+          }
+          addParticles(game, enemy.x, enemy.y, bullet.awakened ? '#e879f9' : '#38bdf8', 5);
+        }
+      });
+
+      return bullet.life > 0;
+    }
+
+    if (bullet.type === 'sansBone') {
+      game.enemies.forEach((enemy) => {
+        if (bullet.hitIds.has(enemy)) return;
+        if (distance(bullet, enemy) < bullet.radius + enemy.radius) {
+          bullet.hitIds.add(enemy);
+          applyDamageToEnemy(enemy, bullet.damage);
+          enemy.slow = Math.max(enemy.slow ?? 0, bullet.slow ?? 0.5);
+          enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 3.0);
+          enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, bullet.damage * 0.65);
+          addParticles(game, enemy.x, enemy.y, bullet.blueBone ? '#38bdf8' : '#e879f9', 6);
+          if (Math.random() < 0.25) queueSound(game, 'hit');
+        }
+      });
+      return bullet.life > 0 && bullet.x > 0 && bullet.y > 0 && bullet.x < world.width && bullet.y < world.height;
+    }
+
+    if (bullet.type === 'trident') {
+      bullet.outboundTime = Math.max(0, (bullet.outboundTime ?? 0) - delta);
+      const hitWall =
+        bullet.x <= 28 ||
+        bullet.y <= 28 ||
+        bullet.x >= world.width - 28 ||
+        bullet.y >= world.height - 28;
+
+      if (!bullet.returning && (bullet.outboundTime <= 0 || hitWall)) {
+        bullet.returning = true;
+        addParticles(game, bullet.x, bullet.y, bullet.awakened ? '#facc15' : '#5eead4', 8);
+      }
+
+      if (bullet.returning) {
+        const backAngle = Math.atan2(player.y - bullet.y, player.x - bullet.x);
+        const returnSpd = (bullet.speed ?? 780) * 1.18;
+        bullet.vx = Math.cos(backAngle) * returnSpd;
+        bullet.vy = Math.sin(backAngle) * returnSpd;
+      }
+
+      if (Math.random() < 0.55) {
+        addParticles(game, bullet.x, bullet.y, bullet.awakened ? '#fef08a' : '#5eead4', 1);
+      }
+
+      const hitSet = bullet.returning ? bullet.hitBack : bullet.hitOut;
+      const splashRadius = (bullet.awakened ? 84 : 56) * player.area;
+
+      game.enemies.forEach((enemy) => {
+        if (hitSet.has(enemy)) return;
+        if (distance(bullet, enemy) < bullet.radius + enemy.radius) {
+          hitSet.add(enemy);
+          applyDamageToEnemy(enemy, bullet.damage);
+          enemy.slow = Math.max(enemy.slow ?? 0, bullet.slow ?? 0.45);
+          addParticles(game, enemy.x, enemy.y, bullet.awakened ? '#facc15' : '#2dd4bf', bullet.awakened ? 10 : 6);
+
+          // Ocean wave & lightning splash!
+          game.enemies.forEach((nearby) => {
+            if (nearby !== enemy && distance(enemy, nearby) < splashRadius) {
+              applyDamageToEnemy(nearby, bullet.damage * (bullet.awakened ? 0.42 : 0.3));
+              nearby.slow = Math.max(nearby.slow ?? 0, (bullet.slow ?? 0.45) * 0.7);
+              addParticles(game, nearby.x, nearby.y, bullet.awakened ? '#fef08a' : '#38bdf8', 3);
+            }
+          });
+          if (Math.random() < 0.28) queueSound(game, 'hit');
+        }
+      });
+
+      if (bullet.returning && distance(bullet, player) < 36) {
+        addParticles(game, player.x, player.y, bullet.awakened ? '#facc15' : '#5eead4', 5);
+        return false;
+      }
+      return bullet.life > 0;
+    }
+
+    if (bullet.type === 'katana') {
+      bullet.x = player.x;
+      bullet.y = player.y;
+
+      game.enemies.forEach((enemy) => {
+        if (bullet.hitIds.has(enemy)) return;
+        const distToEnemy = distance(player, enemy);
+        if (distToEnemy > bullet.radius + enemy.radius) return;
+        const dirToEnemy = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+        const rawDiff = dirToEnemy - bullet.angle;
+        const angleDiff = Math.abs(Math.atan2(Math.sin(rawDiff), Math.cos(rawDiff)));
+        if (angleDiff > bullet.arc * 0.56) return;
+
+        bullet.hitIds.add(enemy);
+        applyDamageToEnemy(enemy, bullet.damage);
+        if (bullet.awakened && player.hp > 0 && Math.random() < 0.35) {
+          player.hp = Math.min(player.maxHp, player.hp + 1);
+        }
+        const push = (bullet.knockback ?? 45) * (enemy.boss ? 0.1 : enemy.elite ? 0.3 : 1);
+        enemy.x = clamp(enemy.x + Math.cos(dirToEnemy) * push, 30, world.width - 30);
+        enemy.y = clamp(enemy.y + Math.sin(dirToEnemy) * push, 30, world.height - 30);
+        addParticles(game, enemy.x, enemy.y, bullet.color, 6);
+      });
+
+      return bullet.life > 0;
+    }
 
     if (bullet.type === 'bat') {
       bullet.x = player.x;
@@ -776,12 +3186,13 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
         }
 
         bullet.hitIds.add(enemy);
-        const batHitDamage = enemy.elite
-          ? Math.max(bullet.damage, Math.ceil(enemy.maxHp * 0.5))
-          : bullet.damage;
-        enemy.hp -= batHitDamage;
+        const batHitDamage =
+          enemy.elite && !enemy.boss
+            ? Math.max(bullet.damage, Math.ceil(enemy.maxHp * 0.5))
+            : bullet.damage;
+        applyDamageToEnemy(enemy, batHitDamage);
         enemy.slow = Math.max(enemy.slow ?? 0, bullet.awakened ? 0.9 : 0.45);
-        const push = bullet.knockback * (enemy.elite ? 0.35 : 1);
+        const push = bullet.knockback * (enemy.boss ? 0.14 : enemy.elite || enemy.kind === 'shielder' ? 0.35 : 1);
         enemy.x = clamp(enemy.x + Math.cos(dirToEnemy) * push, 30, world.width - 30);
         enemy.y = clamp(enemy.y + Math.sin(dirToEnemy) * push, 30, world.height - 30);
         game.shake = Math.max(game.shake, bullet.awakened ? 8 : 5);
@@ -798,7 +3209,7 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
 
       game.enemies.forEach((enemy) => {
         if (!bullet.hitIds.has(enemy) && distance(bullet, enemy) < bullet.radius + enemy.radius) {
-          enemy.hp -= bullet.damage;
+          applyDamageToEnemy(enemy, bullet.damage);
           enemy.slow = Math.max(enemy.slow ?? 0, 0.55);
           bullet.hitIds.add(enemy);
           addParticles(game, enemy.x, enemy.y, bullet.color, 8);
@@ -814,7 +3225,7 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
 
       game.enemies.forEach((enemy) => {
         if (distance(bullet, enemy) < bullet.blast + enemy.radius) {
-          enemy.hp -= bullet.damage;
+          applyDamageToEnemy(enemy, bullet.damage);
           addParticles(game, enemy.x, enemy.y, bullet.color, 6);
         }
       });
@@ -826,7 +3237,7 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
     for (let i = 0; i < game.enemies.length; i += 1) {
       const enemy = game.enemies[i];
       if (distance(bullet, enemy) < bullet.radius + enemy.radius) {
-        enemy.hp -= bullet.damage;
+        applyDamageToEnemy(enemy, bullet.damage);
         enemy.slow = Math.max(enemy.slow ?? 0, bullet.slow ?? 0);
         bullet.pierce -= 1;
         game.shake = 3;
@@ -834,7 +3245,7 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
         if (bullet.awakened && ['railgun', 'boomer'].includes(bullet.type)) {
           game.enemies.forEach((nearby) => {
             if (nearby !== enemy && distance(enemy, nearby) < 52) {
-              nearby.hp -= bullet.damage * 0.18;
+              applyDamageToEnemy(nearby, bullet.damage * 0.18);
               addParticles(game, nearby.x, nearby.y, bullet.color, 3);
             }
           });
@@ -852,14 +3263,274 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
     return bullet.life > 0 && bullet.x > 0 && bullet.y > 0 && bullet.x < world.width && bullet.y < world.height;
   });
 
+  const activeHero = HEROES[game.heroIndex ?? 0];
+  const spawnedChildren = [];
+
   game.enemies = game.enemies.filter((enemy) => {
     const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-    const baseSlow = enemy.slow > 0 ? 0.45 : 1;
-    const bmSlow = game.bm?.timeSlow ? 0.45 : 1;
+    const baseSlow = enemy.slow > 0 ? (enemy.boss ? 0.88 : 0.45) : 1;
+    const bmSlow = game.bm?.timeSlow ? (enemy.boss ? 0.65 : 0.45) : 1;
     const slowFactor = baseSlow * bmSlow;
     enemy.slow = Math.max(0, (enemy.slow ?? 0) - delta);
-    enemy.x += Math.cos(angle) * enemy.speed * slowFactor * delta;
-    enemy.y += Math.sin(angle) * enemy.speed * slowFactor * delta;
+
+    // 💀 Sans KR (KARMA) poison tick — ignores boss damage reduction!
+    if ((enemy.karmaTimer ?? 0) > 0) {
+      enemy.karmaTimer = Math.max(0, enemy.karmaTimer - delta);
+      enemy.hp -= (enemy.karmaDps ?? 35) * delta;
+      if (Math.random() < 0.35) {
+        addParticles(game, enemy.x, enemy.y, '#d946ef', 1);
+      }
+    }
+
+    if (enemy.boss) {
+      const hpPct = enemy.hp / enemy.maxHp;
+      const enraged = hpPct < 0.6;
+      const berserk = hpPct < 0.3;
+      const rageMult = berserk ? 1.75 : enraged ? 1.38 : 1;
+      enemy.dashTimer -= delta * rageMult;
+      enemy.shootTimer -= delta * rageMult;
+      enemy.novaTimer = (enemy.novaTimer ?? 4.8) - delta * rageMult;
+
+      if (enemy.dashWindup > 0) {
+        enemy.dashWindup -= delta;
+        enemy.dashAngle = angle;
+        if (enemy.dashWindup <= 0) {
+          enemy.dashActive = 0.46;
+          queueSound(game, 'boom');
+          addParticles(game, enemy.x, enemy.y, enemy.glow || '#ef4444', 22);
+        }
+      } else if (enemy.dashActive > 0) {
+        enemy.dashActive -= delta;
+        const dashSpeed = (berserk ? 680 : enraged ? 590 : 510) * bmSlow;
+        enemy.x = clamp(enemy.x + Math.cos(enemy.dashAngle) * dashSpeed * delta, 60, world.width - 60);
+        enemy.y = clamp(enemy.y + Math.sin(enemy.dashAngle) * dashSpeed * delta, 60, world.height - 60);
+        if (Math.random() < 0.75) {
+          addParticles(game, enemy.x, enemy.y, berserk ? '#facc15' : enemy.glow || '#f97316', 3);
+        }
+        // End of dash -> emit radial shockwave bullets + optional 2nd chain dash!
+        if (enemy.dashActive <= 0) {
+          const burstN = berserk ? 12 : enraged ? 8 : 6;
+          const burstSpd = 340 * bmSlow;
+          for (let k = 0; k < burstN; k += 1) {
+            const ba = (Math.PI * 2 * k) / burstN + game.time;
+            game.enemyBullets.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(ba) * burstSpd,
+              vy: Math.sin(ba) * burstSpd,
+              radius: 10,
+              damage: Math.round(enemy.damage * 0.72),
+              life: 3.1,
+              color: '#facc15',
+            });
+          }
+          if ((enemy.dashChain ?? 0) > 0) {
+            enemy.dashChain -= 1;
+            enemy.dashWindup = 0.28;
+          }
+        }
+      } else {
+        enemy.x = clamp(enemy.x + Math.cos(angle) * enemy.speed * rageMult * slowFactor * delta, 60, world.width - 60);
+        enemy.y = clamp(enemy.y + Math.sin(angle) * enemy.speed * rageMult * slowFactor * delta, 60, world.height - 60);
+
+        if (enemy.dashTimer <= 0) {
+          enemy.dashAngle = angle;
+          enemy.dashWindup = berserk ? 0.38 : enraged ? 0.48 : 0.62;
+          enemy.dashChain = berserk ? 2 : enraged ? 1 : 0;
+          enemy.dashTimer = berserk ? 2.6 : enraged ? 3.2 : 4.0;
+        }
+      }
+
+      // Periodic Boss Shockwave Nova
+      if (enemy.novaTimer <= 0) {
+        const novaCount = berserk ? 24 : enraged ? 18 : 14;
+        const novaSpd = (berserk ? 410 : 350) * bmSlow;
+        for (let i = 0; i < novaCount; i += 1) {
+          const a = (Math.PI * 2 * i) / novaCount + game.time * 1.1;
+          game.enemyBullets.push({
+            x: enemy.x,
+            y: enemy.y,
+            vx: Math.cos(a) * novaSpd,
+            vy: Math.sin(a) * novaSpd,
+            radius: 11,
+            damage: Math.round(enemy.damage * 0.78),
+            life: 3.8,
+            color: berserk ? '#facc15' : '#ef4444',
+          });
+        }
+        game.shake = Math.max(game.shake, 11);
+        queueSound(game, 'boom');
+        enemy.novaTimer = berserk ? 3.6 : 5.2;
+      }
+
+      if (enemy.shootTimer <= 0 && enemy.dashWindup <= 0) {
+        const bSpeed = (berserk ? 430 : enraged ? 380 : 330) * bmSlow;
+        const bDamage = Math.round(enemy.damage * 0.78);
+        const bColor = enemy.bulletColor || '#ef4444';
+
+        if (enemy.pattern === 'neonRing') {
+          const count = berserk ? 20 : enraged ? 16 : 12;
+          for (let i = 0; i < count; i += 1) {
+            const a = (Math.PI * 2 * i) / count + game.time * 0.9;
+            game.enemyBullets.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(a) * bSpeed,
+              vy: Math.sin(a) * bSpeed,
+              radius: 10,
+              damage: bDamage,
+              life: 3.6,
+              color: bColor,
+            });
+          }
+          // Plus 3-way aimed sniper shot
+          for (let s = -1; s <= 1; s += 1) {
+            const sa = angle + s * 0.16;
+            game.enemyBullets.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(sa) * (bSpeed * 1.28),
+              vy: Math.sin(sa) * (bSpeed * 1.28),
+              radius: 11,
+              damage: bDamage + 6,
+              life: 3.2,
+              color: '#facc15',
+            });
+          }
+          enemy.shootTimer = 1.85;
+        } else if (enemy.pattern === 'boulderBurst') {
+          const count = berserk ? 13 : enraged ? 10 : 8;
+          for (let i = 0; i < count; i += 1) {
+            const spreadOffset = (i / (count - 1) - 0.5) * 1.35;
+            const a = angle + spreadOffset;
+            game.enemyBullets.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(a) * (bSpeed * 1.12),
+              vy: Math.sin(a) * (bSpeed * 1.12),
+              radius: 13,
+              damage: bDamage + 6,
+              life: 3.4,
+              color: bColor,
+            });
+          }
+          if (game.enemies.length < 34) {
+            spawnEnemy(game, camera);
+            if (enraged) spawnEnemy(game, camera);
+          }
+          enemy.shootTimer = 1.65;
+        } else if (enemy.pattern === 'frostSpiral') {
+          enemy.spiralOffset = (enemy.spiralOffset ?? 0) + 0.52;
+          const count = berserk ? 22 : enraged ? 18 : 14;
+          for (let i = 0; i < count; i += 1) {
+            const a = (Math.PI * 2 * i) / count + enemy.spiralOffset;
+            game.enemyBullets.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(a) * bSpeed,
+              vy: Math.sin(a) * bSpeed,
+              radius: 11,
+              damage: bDamage,
+              life: 4.0,
+              color: bColor,
+              chill: true,
+            });
+          }
+          for (let s = -1; s <= 1; s += 1) {
+            const sa = angle + s * 0.14;
+            game.enemyBullets.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(sa) * (bSpeed * 1.32),
+              vy: Math.sin(sa) * (bSpeed * 1.32),
+              radius: 12,
+              damage: bDamage + 6,
+              life: 3.4,
+              color: '#e0f2fe',
+              chill: true,
+            });
+          }
+          enemy.shootTimer = 1.5;
+        } else {
+          // Final Boss: Inferno Lord — massive hellfire ring + 5-way meteor barrage + reinforcements!
+          const ringCount = berserk ? 28 : enraged ? 22 : 16;
+          for (let i = 0; i < ringCount; i += 1) {
+            const a = (Math.PI * 2 * i) / ringCount + game.time * 1.2;
+            game.enemyBullets.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(a) * bSpeed,
+              vy: Math.sin(a) * bSpeed,
+              radius: 11,
+              damage: bDamage,
+              life: 4.0,
+              color: bColor,
+            });
+          }
+          for (let j = -2; j <= 2; j += 1) {
+            const a = angle + j * 0.17;
+            game.enemyBullets.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(a) * (bSpeed * 1.38),
+              vy: Math.sin(a) * (bSpeed * 1.38),
+              radius: 14,
+              damage: bDamage + 12,
+              life: 3.5,
+              color: '#facc15',
+            });
+          }
+          if (game.enemies.length < 32) spawnEnemy(game, camera);
+          enemy.shootTimer = 1.45;
+        }
+        queueSound(game, 'shoot');
+      }
+    } else if (enemy.kind === 'shooter') {
+      const distToPlayer = distance(player, enemy);
+      if (distToPlayer > 235) {
+        enemy.x += Math.cos(angle) * enemy.speed * slowFactor * delta;
+        enemy.y += Math.sin(angle) * enemy.speed * slowFactor * delta;
+      } else if (distToPlayer < 155) {
+        enemy.x = clamp(enemy.x - Math.cos(angle) * enemy.speed * 0.65 * slowFactor * delta, 30, world.width - 30);
+        enemy.y = clamp(enemy.y - Math.sin(angle) * enemy.speed * 0.65 * slowFactor * delta, 30, world.height - 30);
+      }
+      enemy.shootTimer = (enemy.shootTimer ?? 2.4) - delta;
+      if (enemy.shootTimer <= 0 && distToPlayer < 460) {
+        const orbSpeed = 245 * bmSlow;
+        game.enemyBullets.push({
+          x: enemy.x,
+          y: enemy.y,
+          vx: Math.cos(angle) * orbSpeed,
+          vy: Math.sin(angle) * orbSpeed,
+          radius: 7,
+          damage: enemy.damage,
+          life: 2.8,
+          color: '#e879f9',
+        });
+        enemy.shootTimer = 2.6;
+      }
+    } else if (enemy.kind === 'ghost') {
+      enemy.phaseTimer = (enemy.phaseTimer ?? 2.2) - delta;
+      if (enemy.phaseTimer <= 0 && (enemy.phaseDash ?? 0) <= 0) {
+        enemy.phaseDash = 0.36;
+        enemy.phaseTimer = 2.4;
+      }
+      let ghostBoost = 1;
+      if ((enemy.phaseDash ?? 0) > 0) {
+        enemy.phaseDash -= delta;
+        ghostBoost = 2.5;
+        if (Math.random() < 0.45) addParticles(game, enemy.x, enemy.y, '#818cf8', 1);
+      }
+      enemy.x = clamp(enemy.x + Math.cos(angle) * enemy.speed * ghostBoost * slowFactor * delta, 30, world.width - 30);
+      enemy.y = clamp(enemy.y + Math.sin(angle) * enemy.speed * ghostBoost * slowFactor * delta, 30, world.height - 30);
+    } else {
+      enemy.x += Math.cos(angle) * enemy.speed * slowFactor * delta;
+      enemy.y += Math.sin(angle) * enemy.speed * slowFactor * delta;
+    }
+
+    if (enemy.kind === 'bomber' && distance(player, enemy) < player.radius + enemy.radius + 18) {
+      enemy.hp = 0;
+    }
 
     if (distance(player, enemy) < player.radius + enemy.radius) {
       if (game.bm?.immortal) {
@@ -867,6 +3538,8 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
           player.invincible = 0.25;
           addParticles(game, player.x, player.y, '#e879f9', 8);
         }
+      } else if (trySansDodge(game)) {
+        // Dodged with Sans MISS!
       } else if (player.invincible <= 0) {
         player.hp = Math.max(0, player.hp - Math.max(1, enemy.damage - player.armor));
         player.invincible = 0.55 + player.invincibleBonus;
@@ -883,7 +3556,100 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
     if (enemy.hp > 0) return true;
 
     game.kills += 1;
+    player.ultCharge = Math.min(
+      100,
+      (player.ultCharge ?? 0) + (enemy.boss ? 50 : enemy.elite ? 25 : 6),
+    );
+    if (activeHero?.stats?.lifestealKills) {
+      game.vampireKillCounter = (game.vampireKillCounter ?? 0) + 1;
+      if (game.vampireKillCounter >= activeHero.stats.lifestealKills) {
+        game.vampireKillCounter = 0;
+        player.hp = Math.min(player.maxHp, player.hp + 4);
+        addParticles(game, player.x, player.y, '#f43f5e', 6);
+      }
+    }
+
+    if (enemy.boss) {
+      game.bossActive = false;
+      game.enemyBullets = [];
+      game.score += enemy.bossScore ?? 2000;
+      onEarnGold?.(enemy.bossGold ?? 15);
+      const bossCoins = Math.round(120 * (player.coinBonus ?? 1));
+      game.runCoins = (game.runCoins ?? 0) + bossCoins;
+      onEarnLobbyCoins?.(bossCoins);
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.35));
+      for (let g = 0; g < 12; g += 1) {
+        const ga = (Math.PI * 2 * g) / 12;
+        game.gems.push({
+          x: clamp(enemy.x + Math.cos(ga) * 44, 30, world.width - 30),
+          y: clamp(enemy.y + Math.sin(ga) * 44, 30, world.height - 30),
+          radius: 10,
+          value: 14 + game.stageIndex * 5,
+          color: '#facc15',
+        });
+      }
+      addParticles(game, enemy.x, enemy.y, '#facc15', 56);
+      game.shake = 22;
+      queueSound(game, 'bossClear');
+      game.bossClearFlash = 2.8;
+      game.chapterTime = 0;
+
+      if (game.stageIndex < stages.length - 1) {
+        game.stageIndex += 1;
+        game.stageFlash = 2.6;
+        game.bossClearText = `${enemy.bossName} 격파! 다음 챕터 돌입`;
+      } else {
+        game.bossCycle = (game.bossCycle ?? 0) + 1;
+        game.bossClearText = `${enemy.bossName} 격파! 무한 모드 Lv.${game.bossCycle + 1}`;
+      }
+      return false;
+    }
+
+    if (enemy.kind === 'bomber') {
+      const blast = enemy.blastRadius || 76;
+      addParticles(game, enemy.x, enemy.y, '#f97316', 24);
+      queueSound(game, 'boom');
+      if (distance(player, enemy) < blast + player.radius) {
+        if (game.bm?.immortal) {
+          addParticles(game, player.x, player.y, '#e879f9', 8);
+        } else if (trySansDodge(game)) {
+          // Dodged with Sans MISS!
+        } else if (player.invincible <= 0) {
+          player.hp = Math.max(0, player.hp - Math.max(1, enemy.damage - player.armor));
+          player.invincible = 0.55 + player.invincibleBonus;
+          game.shake = 12;
+          queueSound(game, 'hurt');
+          if (player.hp <= 0) {
+            game.over = true;
+            game.running = false;
+          }
+        }
+      }
+    }
+
+    if (enemy.kind === 'splitter' && spawnedChildren.length < 16) {
+      for (let s = 0; s < 2; s += 1) {
+        const offsetAngle = Math.random() * Math.PI * 2;
+        spawnedChildren.push({
+          x: clamp(enemy.x + Math.cos(offsetAngle) * 20, 30, world.width - 30),
+          y: clamp(enemy.y + Math.sin(offsetAngle) * 20, 30, world.height - 30),
+          kind: 'miniSlime',
+          radius: 11,
+          hp: Math.max(12, Math.round(enemy.maxHp * 0.36)),
+          maxHp: Math.max(12, Math.round(enemy.maxHp * 0.36)),
+          damage: Math.max(7, Math.round(enemy.damage * 0.65)),
+          speed: enemy.speed * 1.48,
+          color: '#34d399',
+          worth: 3,
+          slow: 0,
+        });
+      }
+    }
+
     game.score += enemy.elite ? 120 : 35;
+    const coinDrop = Math.max(1, Math.round((enemy.elite ? 15 : 2) * (player.coinBonus ?? 1)));
+    game.runCoins = (game.runCoins ?? 0) + coinDrop;
+    onEarnLobbyCoins?.(coinDrop);
     if (enemy.elite) {
       onEarnGold?.(3);
     } else {
@@ -904,6 +3670,39 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
     return false;
   });
 
+  if (spawnedChildren.length > 0) {
+    game.enemies.push(...spawnedChildren);
+  }
+
+  game.enemyBullets = (game.enemyBullets ?? []).filter((eb) => {
+    eb.x += eb.vx * delta;
+    eb.y += eb.vy * delta;
+    eb.life -= delta;
+    if (distance(player, eb) < player.radius + eb.radius) {
+      if (game.bm?.immortal) {
+        addParticles(game, eb.x, eb.y, '#e879f9', 6);
+        return false;
+      }
+      if (trySansDodge(game)) {
+        return false;
+      }
+      if (player.invincible <= 0) {
+        player.hp = Math.max(0, player.hp - Math.max(1, eb.damage - player.armor));
+        player.invincible = 0.5 + player.invincibleBonus;
+        if (eb.chill) player.slowTimer = Math.max(player.slowTimer ?? 0, 1.5);
+        game.shake = 10;
+        addParticles(game, player.x, player.y, eb.color, 12);
+        queueSound(game, 'hurt');
+        if (player.hp <= 0) {
+          game.over = true;
+          game.running = false;
+        }
+      }
+      return false;
+    }
+    return eb.life > 0 && eb.x > 0 && eb.y > 0 && eb.x < world.width && eb.y < world.height;
+  });
+
   game.gems = game.gems.filter((gem) => {
     const gemDistance = distance(player, gem);
     if (gemDistance < player.magnet) {
@@ -919,7 +3718,13 @@ function updateGame(game, input, canvas, delta, onEarnGold) {
       if (game.xp >= game.nextXp) {
         game.xp -= game.nextXp;
         game.level += 1;
-        game.nextXp = Math.round(game.nextXp * 1.32 + 8);
+        game.nextXp += 40;
+        // Automatic Level-Up 효과업!
+        player.maxHp += 6;
+        player.hp = Math.min(player.maxHp, player.hp + 12);
+        player.damage *= 1.04;
+        player.speed += 2;
+        addParticles(game, player.x, player.y, '#facc15', 26);
         game.pausedForUpgrade = true;
         game.upgrades = pickUpgrades(game);
         queueSound(game, 'level');
@@ -976,6 +3781,21 @@ function drawGame(context, game, canvas) {
     const y = (i * 137 + stage.level * 71) % world.height;
     context.fillRect(x, y, 54 + stage.level * 6, 16 + stage.level * 2);
   }
+
+  (game.fireZones ?? []).forEach((zone) => {
+    context.save();
+    const flicker = 0.85 + Math.sin(game.time * 16 + zone.x) * 0.15;
+    context.globalAlpha = clamp(zone.life * 0.5, 0.2, 0.55);
+    context.fillStyle = zone.poison ? '#22c55e' : zone.awakened ? '#38bdf8' : '#f97316';
+    context.beginPath();
+    context.arc(zone.x, zone.y, zone.radius * flicker, 0, Math.PI * 2);
+    context.fill();
+    context.globalAlpha = 0.72;
+    context.strokeStyle = zone.poison ? '#bbf7d0' : zone.awakened ? '#facc15' : '#ef4444';
+    context.lineWidth = 3;
+    context.stroke();
+    context.restore();
+  });
 
   game.gems.forEach((gem) => {
     context.save();
@@ -1038,6 +3858,305 @@ function drawGame(context, game, canvas) {
       return;
     }
 
+    if (bullet.type === 'gaster') {
+      context.rotate(-bullet.spin + bullet.angle);
+      const isCharging = bullet.charge > 0;
+      const beamLen = bullet.beamLength ?? 740;
+      const beamColor = bullet.awakened ? '#facc15' : '#38bdf8';
+
+      // Laser beam (thin warning line while charging, MASSIVE blinding beam when firing!)
+      if (isCharging) {
+        const chargeRatio = 1 - bullet.charge / (bullet.maxCharge || 0.26);
+        context.save();
+        context.strokeStyle = beamColor;
+        context.globalAlpha = 0.35 + chargeRatio * 0.45;
+        context.lineWidth = 2 + chargeRatio * 4;
+        context.setLineDash([12, 8]);
+        context.beginPath();
+        context.moveTo(20, 0);
+        context.lineTo(beamLen, 0);
+        context.stroke();
+        context.setLineDash([]);
+        context.fillStyle = '#ffffff';
+        context.beginPath();
+        context.arc(16, 0, 4 + chargeRatio * 7, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+      } else {
+        const fade = clamp(bullet.life / Math.max(0.15, (bullet.maxLife || 0.72) - (bullet.maxCharge || 0.26)), 0, 1);
+        const pulse = 0.88 + Math.sin(game.time * 48) * 0.14;
+        const outerW = bullet.radius * 1.45 * pulse * (0.4 + fade * 0.6);
+        const innerW = outerW * 0.56;
+
+        context.save();
+        context.globalAlpha = Math.min(1, fade + 0.15);
+        context.shadowColor = beamColor;
+        context.shadowBlur = 28;
+        context.fillStyle = beamColor;
+        context.beginPath();
+        context.roundRect(14, -outerW / 2, beamLen, outerW, outerW / 2);
+        context.fill();
+
+        context.shadowBlur = 12;
+        context.fillStyle = '#ffffff';
+        context.beginPath();
+        context.roundRect(14, -innerW / 2, beamLen, innerW, innerW / 2);
+        context.fill();
+        context.restore();
+      }
+
+      // Floating Sans-style Gaster Blaster Skull!
+      const jawOpen = isCharging ? 2 : 7;
+      context.save();
+      context.shadowColor = beamColor;
+      context.shadowBlur = 14;
+
+      // Upper cranium
+      context.fillStyle = '#f8fafc';
+      context.strokeStyle = '#0f172a';
+      context.lineWidth = 2.5;
+      context.beginPath();
+      context.moveTo(-22, -14);
+      context.lineTo(4, -18);
+      context.lineTo(22, -7 - jawOpen * 0.3);
+      context.lineTo(14, -2 - jawOpen * 0.3);
+      context.lineTo(-14, -2);
+      context.closePath();
+      context.fill();
+      context.stroke();
+
+      // Lower jaw (opens wide when firing!)
+      context.beginPath();
+      context.moveTo(-22, 14);
+      context.lineTo(4, 18);
+      context.lineTo(22, 7 + jawOpen * 0.3);
+      context.lineTo(14, 2 + jawOpen * 0.3);
+      context.lineTo(-14, 2);
+      context.closePath();
+      context.fill();
+      context.stroke();
+
+      // Skull center dome
+      context.beginPath();
+      context.arc(-8, 0, 14, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+
+      // Dark eye sockets + Glowing Sans Cyan Eye!
+      context.shadowBlur = 0;
+      context.fillStyle = '#0f172a';
+      context.beginPath();
+      context.ellipse(1, -6, 4.5, 3, -0.25, 0, Math.PI * 2);
+      context.ellipse(1, 6, 4.5, 3, 0.25, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = beamColor;
+      context.shadowColor = beamColor;
+      context.shadowBlur = 10;
+      context.beginPath();
+      context.arc(2, -6, 2.3, 0, Math.PI * 2);
+      context.arc(2, 6, 2.3, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'katana') {
+      const progress = clamp(1 - bullet.life / (bullet.maxLife || 0.22), 0, 1);
+      const startAngle = bullet.angle - bullet.arc / 2;
+      const endAngle = startAngle + bullet.arc * progress;
+      const alpha = clamp(bullet.life / (bullet.maxLife || 0.22) + 0.15, 0, 1);
+
+      context.rotate(-bullet.spin);
+      context.globalAlpha = alpha * 0.3;
+      context.fillStyle = bullet.awakened ? '#facc15' : '#f43f5e';
+      context.beginPath();
+      context.moveTo(0, 0);
+      context.arc(0, 0, bullet.radius, startAngle, endAngle);
+      context.closePath();
+      context.fill();
+
+      context.globalAlpha = alpha;
+      context.strokeStyle = bullet.awakened ? '#fef08a' : '#fecdd3';
+      context.lineWidth = bullet.awakened ? 9 : 6;
+      context.lineCap = 'round';
+      context.beginPath();
+      context.arc(0, 0, bullet.radius * 0.9, startAngle, endAngle);
+      context.stroke();
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'kunai') {
+      context.rotate(-bullet.spin + Math.atan2(bullet.vy, bullet.vx));
+      context.fillStyle = bullet.awakened ? '#fef08a' : '#e2e8f0';
+      context.beginPath();
+      context.moveTo(14, 0);
+      context.lineTo(-4, -5);
+      context.lineTo(-10, 0);
+      context.lineTo(-4, 5);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = '#38bdf8';
+      context.lineWidth = 1.5;
+      context.stroke();
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'lightchaser') {
+      context.rotate(-bullet.spin + Math.atan2(bullet.vy, bullet.vx));
+      context.strokeStyle = bullet.color;
+      context.lineWidth = bullet.awakened ? 8 : 6;
+      context.lineCap = 'round';
+      context.beginPath();
+      context.arc(-6, 0, bullet.radius, -1.05, 1.05);
+      context.stroke();
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2.5;
+      context.beginPath();
+      context.arc(-4, 0, bullet.radius * 0.85, -0.85, 0.85);
+      context.stroke();
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'trident') {
+      const flightAngle = Math.atan2(bullet.vy, bullet.vx);
+      const scale = bullet.awakened ? 1.24 : 1.0;
+      context.rotate(-bullet.spin + flightAngle);
+      context.scale(scale, scale);
+
+      // Ocean / Poseidon lightning wake behind the trident
+      context.globalAlpha = bullet.returning ? 0.55 : 0.38;
+      context.strokeStyle = bullet.awakened ? '#facc15' : '#38bdf8';
+      context.lineWidth = 10;
+      context.lineCap = 'round';
+      context.beginPath();
+      context.moveTo(-42, 0);
+      context.lineTo(14, 0);
+      context.stroke();
+
+      // Subtle glowing aura around the prongs
+      context.globalAlpha = 0.25;
+      context.fillStyle = bullet.awakened ? '#fef08a' : '#5eead4';
+      context.beginPath();
+      context.ellipse(16, 0, 20, 15, 0, 0, Math.PI * 2);
+      context.fill();
+      context.globalAlpha = 1;
+
+      const shaftColor = bullet.awakened ? '#f59e0b' : '#0d9488';
+      const bladeColor = bullet.awakened ? '#fef08a' : '#5eead4';
+      const edgeColor = '#ffffff';
+
+      // Main shaft
+      context.strokeStyle = shaftColor;
+      context.lineWidth = 4.5;
+      context.lineCap = 'round';
+      context.beginPath();
+      context.moveTo(-34, 0);
+      context.lineTo(12, 0);
+      context.stroke();
+
+      // Shaft highlight
+      context.strokeStyle = edgeColor;
+      context.lineWidth = 1.4;
+      context.beginPath();
+      context.moveTo(-30, -1);
+      context.lineTo(10, -1);
+      context.stroke();
+
+      // Pommel gem at tail
+      context.fillStyle = bullet.awakened ? '#ef4444' : '#38bdf8';
+      context.beginPath();
+      context.arc(-35, 0, 3.5, 0, Math.PI * 2);
+      context.fill();
+
+      // Crossbar guard
+      context.strokeStyle = bladeColor;
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(10, -12);
+      context.quadraticCurveTo(15, 0, 10, 12);
+      context.stroke();
+
+      // Center main prong (longest spear tip)
+      context.fillStyle = bladeColor;
+      context.beginPath();
+      context.moveTo(32, 0);
+      context.lineTo(18, -4.5);
+      context.lineTo(20, 0);
+      context.lineTo(18, 4.5);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = bladeColor;
+      context.lineWidth = 3.2;
+      context.beginPath();
+      context.moveTo(10, 0);
+      context.lineTo(25, 0);
+      context.stroke();
+
+      // Top & bottom curved outer prongs with barbs
+      [-1, 1].forEach((dir) => {
+        context.strokeStyle = bladeColor;
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(10, dir * 11);
+        context.quadraticCurveTo(18, dir * 12, 26, dir * 8);
+        context.stroke();
+
+        context.fillStyle = edgeColor;
+        context.beginPath();
+        context.moveTo(28, dir * 7.5);
+        context.lineTo(20, dir * 6);
+        context.lineTo(21, dir * 11);
+        context.closePath();
+        context.fill();
+      });
+
+      // Center crest gem
+      context.fillStyle = bullet.awakened ? '#38bdf8' : '#fef08a';
+      context.beginPath();
+      context.arc(12, 0, 2.8, 0, Math.PI * 2);
+      context.fill();
+
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'sansBone') {
+      // Classic Undertale Sans White / Glowing Blue Bone!
+      context.rotate(bullet.spin * 0.55);
+      const boneColor = bullet.blueBone ? '#38bdf8' : '#f8fafc';
+      const glowColor = bullet.blueBone ? '#0ea5e9' : '#e879f9';
+      context.shadowColor = glowColor;
+      context.shadowBlur = bullet.blueBone ? 16 : 9;
+      context.fillStyle = boneColor;
+      context.strokeStyle = '#0f172a';
+      context.lineWidth = 2;
+
+      // Bone shaft
+      context.beginPath();
+      context.roundRect(-18, -3.6, 36, 7.2, 3);
+      context.fill();
+      context.stroke();
+
+      // Double-knob bone ends
+      [-17, 17].forEach((bx) => {
+        context.beginPath();
+        context.arc(bx, -4.5, 4.8, 0, Math.PI * 2);
+        context.arc(bx, 4.5, 4.8, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+      });
+
+      context.shadowBlur = 0;
+      context.restore();
+      return;
+    }
+
     if (bullet.awakened && bullet.type !== 'shockwave') {
       context.strokeStyle = '#facc15';
       context.lineWidth = 3;
@@ -1088,23 +4207,227 @@ function drawGame(context, game, canvas) {
     context.restore();
   });
 
-  game.enemies.forEach((enemy) => {
-    const hpRatio = enemy.hp / enemy.maxHp;
-    context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
-    context.strokeStyle = enemy.elite ? '#f5d0fe' : '#111827';
-    context.lineWidth = enemy.elite ? 5 : 3;
+  (game.enemyBullets ?? []).forEach((eb) => {
+    context.save();
+    context.fillStyle = eb.color;
+    context.shadowColor = eb.color;
+    context.shadowBlur = 14;
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 2.5;
     context.beginPath();
-    context.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+    context.arc(eb.x, eb.y, eb.radius, 0, Math.PI * 2);
     context.fill();
     context.stroke();
-    context.fillStyle = '#ffffff';
-    context.beginPath();
-    context.arc(enemy.x - enemy.radius * 0.28, enemy.y - enemy.radius * 0.16, enemy.radius * 0.13, 0, Math.PI * 2);
-    context.arc(enemy.x + enemy.radius * 0.28, enemy.y - enemy.radius * 0.16, enemy.radius * 0.13, 0, Math.PI * 2);
-    context.fill();
+    context.restore();
+  });
+
+  game.enemies.forEach((enemy) => {
+    const hpRatio = clamp(enemy.hp / enemy.maxHp, 0, 1);
+
+    if (enemy.boss) {
+      const enraged = enemy.hp < enemy.maxHp * 0.5;
+      context.save();
+      if (enemy.dashWindup > 0) {
+        context.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+        context.lineWidth = 5;
+        context.setLineDash([12, 8]);
+        context.beginPath();
+        context.moveTo(enemy.x, enemy.y);
+        context.lineTo(enemy.x + Math.cos(enemy.dashAngle) * 320, enemy.y + Math.sin(enemy.dashAngle) * 320);
+        context.stroke();
+        context.setLineDash([]);
+      }
+
+      context.strokeStyle = enraged ? '#facc15' : enemy.glow || '#f87171';
+      context.lineWidth = enraged ? 6 : 4;
+      context.globalAlpha = 0.55 + Math.sin(game.time * 8) * 0.25;
+      context.beginPath();
+      context.arc(enemy.x, enemy.y, enemy.radius + 12 + Math.sin(game.time * 6) * 4, 0, Math.PI * 2);
+      context.stroke();
+      context.globalAlpha = 1;
+
+      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
+      context.strokeStyle = enraged ? '#fef08a' : '#ffffff';
+      context.lineWidth = 5;
+      context.shadowColor = enemy.glow || '#ef4444';
+      context.shadowBlur = 24;
+      context.beginPath();
+      context.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+
+      // Boss horns / crown
+      context.fillStyle = enraged ? '#facc15' : '#fef3c7';
+      context.beginPath();
+      context.moveTo(enemy.x - enemy.radius * 0.65, enemy.y - enemy.radius * 0.65);
+      context.lineTo(enemy.x - enemy.radius * 0.38, enemy.y - enemy.radius * 1.24);
+      context.lineTo(enemy.x - enemy.radius * 0.14, enemy.y - enemy.radius * 0.88);
+      context.lineTo(enemy.x, enemy.y - enemy.radius * 1.32);
+      context.lineTo(enemy.x + enemy.radius * 0.14, enemy.y - enemy.radius * 0.88);
+      context.lineTo(enemy.x + enemy.radius * 0.38, enemy.y - enemy.radius * 1.24);
+      context.lineTo(enemy.x + enemy.radius * 0.65, enemy.y - enemy.radius * 0.65);
+      context.closePath();
+      context.fill();
+
+      // Angry glowing eyes
+      context.fillStyle = enraged ? '#fef08a' : '#ffffff';
+      context.beginPath();
+      context.arc(enemy.x - enemy.radius * 0.3, enemy.y - enemy.radius * 0.12, enemy.radius * 0.14, 0, Math.PI * 2);
+      context.arc(enemy.x + enemy.radius * 0.3, enemy.y - enemy.radius * 0.12, enemy.radius * 0.14, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#dc2626';
+      context.beginPath();
+      context.arc(enemy.x - enemy.radius * 0.3, enemy.y - enemy.radius * 0.12, enemy.radius * 0.07, 0, Math.PI * 2);
+      context.arc(enemy.x + enemy.radius * 0.3, enemy.y - enemy.radius * 0.12, enemy.radius * 0.07, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = '#111827';
+      context.fillRect(enemy.x - enemy.radius, enemy.y + enemy.radius + 10, enemy.radius * 2, 8);
+      context.fillStyle = enraged ? '#facc15' : '#ef4444';
+      context.fillRect(enemy.x - enemy.radius, enemy.y + enemy.radius + 10, enemy.radius * 2 * hpRatio, 8);
+      context.restore();
+      return;
+    }
+
+    context.save();
+    if (enemy.kind === 'shooter') {
+      context.translate(enemy.x, enemy.y);
+      context.rotate(game.time * 1.4);
+      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
+      context.strokeStyle = '#f5d0fe';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(0, -enemy.radius);
+      context.lineTo(enemy.radius, 0);
+      context.lineTo(0, enemy.radius);
+      context.lineTo(-enemy.radius, 0);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(0, 0, enemy.radius * 0.34, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    } else if (enemy.kind === 'bomber') {
+      const pulse = 0.85 + Math.sin(game.time * 14) * 0.15;
+      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : '#1f2937';
+      context.strokeStyle = '#ef4444';
+      context.lineWidth = 3.5;
+      context.beginPath();
+      context.arc(enemy.x, enemy.y, enemy.radius * pulse, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      // Lit fuse & spark
+      context.strokeStyle = '#fbbf24';
+      context.lineWidth = 2.5;
+      context.beginPath();
+      context.moveTo(enemy.x, enemy.y - enemy.radius);
+      context.lineTo(enemy.x + 6, enemy.y - enemy.radius - 9);
+      context.stroke();
+      context.fillStyle = '#fde047';
+      context.beginPath();
+      context.arc(enemy.x + 7, enemy.y - enemy.radius - 10, 4, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#ef4444';
+      context.beginPath();
+      context.arc(enemy.x, enemy.y, enemy.radius * 0.36, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    } else if (enemy.kind === 'splitter' || enemy.kind === 'miniSlime') {
+      context.globalAlpha = 0.88;
+      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
+      context.strokeStyle = '#a7f3d0';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.ellipse(
+        enemy.x,
+        enemy.y,
+        enemy.radius * (1 + Math.sin(game.time * 7) * 0.08),
+        enemy.radius * (1 - Math.sin(game.time * 7) * 0.08),
+        0,
+        0,
+        Math.PI * 2,
+      );
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#ecfdf5';
+      context.beginPath();
+      context.arc(enemy.x - enemy.radius * 0.3, enemy.y - enemy.radius * 0.2, enemy.radius * 0.18, 0, Math.PI * 2);
+      context.arc(enemy.x + enemy.radius * 0.25, enemy.y + enemy.radius * 0.15, enemy.radius * 0.14, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    } else if (enemy.kind === 'shielder') {
+      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
+      context.strokeStyle = '#e2e8f0';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.roundRect(enemy.x - enemy.radius, enemy.y - enemy.radius, enemy.radius * 2, enemy.radius * 2, 7);
+      context.fill();
+      context.stroke();
+      // Glowing front shield arc
+      const toPlayer = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+      context.strokeStyle = '#38bdf8';
+      context.lineWidth = 5;
+      context.beginPath();
+      context.arc(enemy.x, enemy.y, enemy.radius + 5, toPlayer - 0.85, toPlayer + 0.85);
+      context.stroke();
+      context.fillStyle = '#38bdf8';
+      context.fillRect(enemy.x - 8, enemy.y - 5, 16, 4);
+      context.restore();
+    } else if (enemy.kind === 'ghost') {
+      context.globalAlpha = (enemy.phaseDash ?? 0) > 0 ? 0.48 : 0.78;
+      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
+      context.strokeStyle = '#e0e7ff';
+      context.lineWidth = 2.5;
+      context.beginPath();
+      context.arc(enemy.x, enemy.y - 2, enemy.radius, Math.PI, 0);
+      context.lineTo(enemy.x + enemy.radius, enemy.y + enemy.radius * 0.85);
+      context.lineTo(enemy.x + enemy.radius * 0.35, enemy.y + enemy.radius * 0.45);
+      context.lineTo(enemy.x, enemy.y + enemy.radius * 0.9);
+      context.lineTo(enemy.x - enemy.radius * 0.35, enemy.y + enemy.radius * 0.45);
+      context.lineTo(enemy.x - enemy.radius, enemy.y + enemy.radius * 0.85);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#fef08a';
+      context.beginPath();
+      context.arc(enemy.x - 5, enemy.y - 4, 3, 0, Math.PI * 2);
+      context.arc(enemy.x + 5, enemy.y - 4, 3, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    } else {
+      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
+      context.strokeStyle = enemy.elite ? '#f5d0fe' : '#111827';
+      context.lineWidth = enemy.elite ? 5 : 3;
+      context.beginPath();
+      context.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(enemy.x - enemy.radius * 0.28, enemy.y - enemy.radius * 0.16, enemy.radius * 0.13, 0, Math.PI * 2);
+      context.arc(enemy.x + enemy.radius * 0.28, enemy.y - enemy.radius * 0.16, enemy.radius * 0.13, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    if ((enemy.karmaTimer ?? 0) > 0) {
+      context.save();
+      context.strokeStyle = '#d946ef';
+      context.lineWidth = 2.5;
+      context.shadowColor = '#c026d3';
+      context.shadowBlur = 12;
+      context.beginPath();
+      context.arc(enemy.x, enemy.y, enemy.radius + 5, 0, Math.PI * 2);
+      context.stroke();
+      context.restore();
+    }
+
     context.fillStyle = '#111827';
     context.fillRect(enemy.x - enemy.radius, enemy.y + enemy.radius + 8, enemy.radius * 2, 5);
-    context.fillStyle = '#22c55e';
+    context.fillStyle = (enemy.karmaTimer ?? 0) > 0 ? '#d946ef' : '#22c55e';
     context.fillRect(enemy.x - enemy.radius, enemy.y + enemy.radius + 8, enemy.radius * 2 * hpRatio, 5);
   });
 
@@ -1149,8 +4472,9 @@ function drawGame(context, game, canvas) {
     context.restore();
   }
 
-  context.fillStyle = player.invincible > 0 ? '#fef08a' : '#60a5fa';
-  context.strokeStyle = '#eff6ff';
+  const hero = HEROES[game.heroIndex ?? 0] ?? HEROES[0];
+  context.fillStyle = player.invincible > 0 ? '#fef08a' : hero.body;
+  context.strokeStyle = hero.stroke;
   context.lineWidth = 4;
   if (game.bm?.immortal) {
     context.save();
@@ -1171,16 +4495,288 @@ function drawGame(context, game, canvas) {
     context.arc(player.x, player.y, 34 + Math.sin(game.time * 8) * 4, 0, Math.PI * 2);
     context.stroke();
     context.globalAlpha = 1;
-    context.strokeStyle = '#eff6ff';
+    context.strokeStyle = hero.stroke;
     context.lineWidth = 4;
   }
   context.beginPath();
   context.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
   context.fill();
   context.stroke();
-  context.fillStyle = '#1e293b';
-  context.fillRect(player.x - 6, player.y - 8, 4, 4);
-  context.fillRect(player.x + 3, player.y - 8, 4, 4);
+
+  // Distinct character accessories & eyes
+  if (hero.id === 'commando') {
+    context.fillStyle = hero.accent;
+    context.fillRect(player.x - 16, player.y - 13, 32, 5);
+  } else if (hero.id === 'ninja') {
+    context.fillStyle = hero.accent;
+    context.fillRect(player.x - 17, player.y - 11, 34, 6);
+    context.beginPath();
+    context.moveTo(player.x + 15, player.y - 9);
+    context.lineTo(player.x + 28, player.y - 15 + Math.sin(game.time * 12) * 3);
+    context.lineTo(player.x + 24, player.y - 4);
+    context.closePath();
+    context.fill();
+  } else if (hero.id === 'titan') {
+    context.fillStyle = '#0f172a';
+    context.fillRect(player.x - 13, player.y - 9, 26, 7);
+    context.fillStyle = hero.accent;
+    context.fillRect(player.x - 10, player.y - 7, 20, 3);
+  } else if (hero.id === 'pyro') {
+    context.fillStyle = '#facc15';
+    context.beginPath();
+    context.moveTo(player.x - 12, player.y - 14);
+    context.lineTo(player.x - 6, player.y - 25);
+    context.lineTo(player.x, player.y - 17);
+    context.lineTo(player.x + 6, player.y - 25);
+    context.lineTo(player.x + 12, player.y - 14);
+    context.closePath();
+    context.fill();
+  } else if (hero.id === 'cyber') {
+    context.fillStyle = '#0f172a';
+    context.fillRect(player.x - 13, player.y - 10, 26, 8);
+    context.fillStyle = '#38bdf8';
+    context.fillRect(player.x - 10, player.y - 8, 20, 4);
+  } else if (hero.id === 'vampire') {
+    context.fillStyle = '#9f1239';
+    context.beginPath();
+    context.moveTo(player.x - 17, player.y + 4);
+    context.lineTo(player.x - 24, player.y - 10);
+    context.lineTo(player.x - 10, player.y - 4);
+    context.moveTo(player.x + 17, player.y + 4);
+    context.lineTo(player.x + 24, player.y - 10);
+    context.lineTo(player.x + 10, player.y - 4);
+    context.fill();
+  }
+
+  if (hero.id !== 'titan' && hero.id !== 'cyber') {
+    context.fillStyle = hero.id === 'vampire' ? '#fda4af' : hero.id === 'ninja' ? '#fef08a' : '#1e293b';
+    context.fillRect(player.x - 6, player.y - 5, 4, 4);
+    context.fillRect(player.x + 3, player.y - 5, 4, 4);
+  }
+
+  // 💀 Sans Glowing Cyan/Yellow Left Eye Flame when Awakened Gaster Blaster is equipped!
+  if (player.sansMode && weapon?.id === 'gaster') {
+    const eyeFlash = Math.sin(game.time * 24) > 0 ? '#38bdf8' : '#facc15';
+    context.save();
+    context.shadowColor = eyeFlash;
+    context.shadowBlur = 18;
+    context.fillStyle = eyeFlash;
+    context.beginPath();
+    context.arc(player.x + 5, player.y - 3, 4.2, 0, Math.PI * 2);
+    context.fill();
+    // Flowing cyan eye flame trail
+    context.beginPath();
+    context.moveTo(player.x + 5, player.y - 7);
+    context.quadraticCurveTo(
+      player.x + 16,
+      player.y - 12 + Math.sin(game.time * 18) * 3,
+      player.x + 25,
+      player.y - 18 + Math.cos(game.time * 14) * 3,
+    );
+    context.quadraticCurveTo(player.x + 15, player.y - 2, player.x + 5, player.y + 1);
+    context.closePath();
+    context.fillStyle = 'rgba(56, 189, 248, 0.78)';
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(player.x + 5, player.y - 3, 1.8, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
+  // Manual Aim Direction Indicator (glowing dashed sightline + aiming chevron!)
+  if (game.running && game.aimMode === 'manual') {
+    const aim = player.aimAngle ?? 0;
+    context.save();
+    context.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+    context.lineWidth = 2;
+    context.setLineDash([6, 6]);
+    context.beginPath();
+    context.moveTo(player.x + Math.cos(aim) * 26, player.y + Math.sin(aim) * 26);
+    context.lineTo(player.x + Math.cos(aim) * 110, player.y + Math.sin(aim) * 110);
+    context.stroke();
+    context.setLineDash([]);
+
+    context.translate(player.x + Math.cos(aim) * 40, player.y + Math.sin(aim) * 40);
+    context.rotate(aim);
+    context.fillStyle = '#38bdf8';
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.moveTo(9, 0);
+    context.lineTo(-4, -6);
+    context.lineTo(-1, 0);
+    context.lineTo(-4, 6);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.restore();
+  }
+
+  // Draw Combat Pet following the player!
+  if (game.pet) {
+    const pet = game.pet;
+    const bob = Math.sin(game.time * 7) * 3;
+    context.save();
+    context.translate(pet.x, pet.y + bob);
+    if (pet.rarity === 'mythic' || pet.rarity === 'legend' || pet.rarity === 'epic') {
+      context.strokeStyle = pet.rarityColor || '#facc15';
+      context.lineWidth = pet.rarity === 'mythic' ? 3 : 2;
+      context.globalAlpha = 0.65 + Math.sin(game.time * 9) * 0.25;
+      context.beginPath();
+      context.arc(0, 0, 19 + Math.sin(game.time * 6) * 2, 0, Math.PI * 2);
+      context.stroke();
+      context.globalAlpha = 1;
+    }
+    context.fillStyle = pet.color;
+    context.strokeStyle = pet.rarityColor || pet.accent || '#ffffff';
+    context.lineWidth = 3;
+    context.shadowColor = pet.rarityColor || pet.color;
+    context.shadowBlur = pet.rarity === 'mythic' ? 20 : 12;
+    context.beginPath();
+    context.arc(0, 0, 14, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.shadowBlur = 0;
+    context.font = '15px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(pet.icon, 0, 1);
+    context.fillStyle = pet.rarityColor || '#fef08a';
+    context.font = '900 9px Arial';
+    context.fillText(`LV.${pet.level}`, 0, 22);
+    context.restore();
+  }
+
+  // Draw 7 Active Skills visuals: Guardian blades, Attack Drones, & Skill Projectiles!
+  if ((game.skillLevels?.guardian ?? 0) > 0) {
+    const lv = game.skillLevels.guardian;
+    const aw = Boolean(game.awakenedSkills?.guardian);
+    const bladeCount = aw ? 6 : 1 + lv;
+    const orbitRadius = (aw ? 104 : 78 + lv * 4) * player.area;
+    const spinSpeed = aw ? 5.8 : 3.6 + lv * 0.3;
+
+    context.save();
+    context.strokeStyle = aw ? 'rgba(250, 204, 21, 0.28)' : 'rgba(56, 189, 248, 0.22)';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(player.x, player.y, orbitRadius, 0, Math.PI * 2);
+    context.stroke();
+
+    for (let b = 0; b < bladeCount; b += 1) {
+      const ba = game.time * spinSpeed + (Math.PI * 2 * b) / bladeCount;
+      const bx = player.x + Math.cos(ba) * orbitRadius;
+      const by = player.y + Math.sin(ba) * orbitRadius;
+      context.save();
+      context.translate(bx, by);
+      context.rotate(game.time * 14);
+      context.fillStyle = aw ? '#facc15' : '#38bdf8';
+      context.shadowColor = aw ? '#f59e0b' : '#38bdf8';
+      context.shadowBlur = 14;
+      context.beginPath();
+      context.arc(0, 0, aw ? 15 : 11, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#0f172a';
+      context.beginPath();
+      context.arc(0, 0, 4, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+    context.restore();
+  }
+
+  if ((game.skillLevels?.drone ?? 0) > 0) {
+    const aw = Boolean(game.awakenedSkills?.drone);
+    const droneCount = aw ? 2 : 1;
+    for (let d = 0; d < droneCount; d += 1) {
+      const da = game.time * 2.4 + d * Math.PI;
+      const dx = player.x + Math.cos(da) * 48;
+      const dy = player.y + Math.sin(da) * 48;
+      context.save();
+      context.fillStyle = aw ? '#facc15' : '#a855f7';
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.roundRect(dx - 9, dy - 7, 18, 14, 5);
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#38bdf8';
+      context.fillRect(dx - 4, dy - 2, 8, 4);
+      context.restore();
+    }
+  }
+
+  (game.skillProjectiles ?? []).forEach((sp) => {
+    context.save();
+    context.translate(sp.x, sp.y);
+    if (sp.kind === 'rocket') {
+      context.rotate(Math.atan2(sp.vy, sp.vx));
+      context.fillStyle = sp.awakened ? '#facc15' : '#ef4444';
+      context.shadowColor = '#f97316';
+      context.shadowBlur = 16;
+      context.beginPath();
+      context.moveTo(sp.radius + 8, 0);
+      context.lineTo(-sp.radius, -sp.radius * 0.7);
+      context.lineTo(-sp.radius, sp.radius * 0.7);
+      context.closePath();
+      context.fill();
+      context.fillStyle = '#fef08a';
+      context.fillRect(-sp.radius - 6, -3, 7, 6);
+    } else if (sp.kind === 'soccer') {
+      context.rotate(sp.spin ?? 0);
+      context.fillStyle = sp.awakened ? '#22d3ee' : '#ffffff';
+      context.strokeStyle = sp.awakened ? '#facc15' : '#0f172a';
+      context.lineWidth = 2.5;
+      context.shadowColor = sp.awakened ? '#22d3ee' : '#ffffff';
+      context.shadowBlur = sp.awakened ? 16 : 8;
+      context.beginPath();
+      context.arc(0, 0, sp.radius, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.fillStyle = sp.awakened ? '#facc15' : '#111827';
+      context.fillRect(-4, -4, 8, 8);
+    } else if (sp.kind === 'chakram') {
+      context.rotate(sp.spin ?? 0);
+      context.strokeStyle = sp.awakened ? '#facc15' : '#e2e8f0';
+      context.lineWidth = sp.awakened ? 5 : 4;
+      context.shadowColor = sp.awakened ? '#facc15' : '#38bdf8';
+      context.shadowBlur = 14;
+      context.beginPath();
+      context.arc(0, 0, sp.radius, 0, Math.PI * 2);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(-sp.radius, 0);
+      context.lineTo(sp.radius, 0);
+      context.moveTo(0, -sp.radius);
+      context.lineTo(0, sp.radius);
+      context.stroke();
+    } else {
+      context.rotate(Math.atan2(sp.vy, sp.vx));
+      context.fillStyle = sp.awakened ? '#facc15' : '#c084fc';
+      context.fillRect(-7, -3, 14, 6);
+    }
+    context.restore();
+  });
+
+  (game.lightningEffects ?? []).forEach((fx) => {
+    context.save();
+    context.globalAlpha = clamp(fx.life / (fx.maxLife || 0.22), 0, 1);
+    context.strokeStyle = fx.color;
+    context.shadowColor = fx.color;
+    context.shadowBlur = 18;
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(fx.x - 10, fx.y - 180);
+    context.lineTo(fx.x + 12, fx.y - 120);
+    context.lineTo(fx.x - 8, fx.y - 60);
+    context.lineTo(fx.x, fx.y);
+    context.stroke();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(fx.x, fx.y, 12, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  });
 
   game.particles.forEach((particle) => {
     context.globalAlpha = clamp(particle.life * 2, 0, 1);
@@ -1191,9 +4787,56 @@ function drawGame(context, game, canvas) {
     context.globalAlpha = 1;
   });
 
+  (game.floatingTexts ?? []).forEach((ft) => {
+    context.save();
+    context.globalAlpha = clamp(ft.life / (ft.maxLife || 0.9), 0, 1);
+    context.font = `900 ${ft.size || 18}px Arial`;
+    context.textAlign = 'center';
+    context.strokeStyle = '#020617';
+    context.lineWidth = 4;
+    context.strokeText(ft.text, ft.x, ft.y);
+    context.fillStyle = ft.color || '#ffffff';
+    context.fillText(ft.text, ft.x, ft.y);
+    context.restore();
+  });
+
   context.restore();
 
-  if (game.stageFlash > 0) {
+  if (game.bossFlash > 0) {
+    context.save();
+    context.globalAlpha = Math.min(0.95, game.bossFlash / 1.4);
+    context.fillStyle = 'rgba(127, 29, 29, 0.84)';
+    context.fillRect(0, canvas.height / 2 - 74, canvas.width, 148);
+    context.strokeStyle = '#facc15';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(0, canvas.height / 2 - 74);
+    context.lineTo(canvas.width, canvas.height / 2 - 74);
+    context.moveTo(0, canvas.height / 2 + 74);
+    context.lineTo(canvas.width, canvas.height / 2 + 74);
+    context.stroke();
+    context.fillStyle = '#facc15';
+    context.textAlign = 'center';
+    context.font = '900 38px Arial';
+    context.fillText('⚠ CHAPTER BOSS WARNING ⚠', canvas.width / 2, canvas.height / 2 - 10);
+    context.fillStyle = '#ffffff';
+    context.font = '900 20px Arial';
+    context.fillText(game.bossBannerName || 'CHAPTER BOSS', canvas.width / 2, canvas.height / 2 + 30);
+    context.restore();
+  } else if (game.bossClearFlash > 0) {
+    context.save();
+    context.globalAlpha = Math.min(0.95, game.bossClearFlash / 1.4);
+    context.fillStyle = 'rgba(20, 83, 45, 0.84)';
+    context.fillRect(0, canvas.height / 2 - 66, canvas.width, 132);
+    context.fillStyle = '#fde047';
+    context.textAlign = 'center';
+    context.font = '900 36px Arial';
+    context.fillText('🏆 BOSS DEFEATED!', canvas.width / 2, canvas.height / 2 - 8);
+    context.fillStyle = '#ffffff';
+    context.font = '900 18px Arial';
+    context.fillText(game.bossClearText || '챕터 클리어!', canvas.width / 2, canvas.height / 2 + 28);
+    context.restore();
+  } else if (game.stageFlash > 0) {
     context.save();
     context.globalAlpha = Math.min(0.85, game.stageFlash / 2.4);
     context.fillStyle = 'rgba(15, 23, 42, 0.72)';
@@ -1207,6 +4850,390 @@ function drawGame(context, game, canvas) {
     context.restore();
   }
 
+  if (game.ultCutscene) {
+    const cs = game.ultCutscene;
+    const elapsed = cs.maxTimer - cs.timer;
+    const enterT = clamp(elapsed / 0.14, 0, 1);
+    const exitT = cs.timer < 0.28 ? clamp(cs.timer / 0.28, 0, 1) : 1;
+    const easeOut = 1 - Math.pow(1 - enterT, 3);
+    const alpha = exitT;
+    const w = canvas.width;
+    const h = canvas.height;
+    const cy = h * 0.5;
+
+    context.save();
+    context.globalAlpha = alpha;
+
+    // 1. Dark anime dramatic backdrop vignette
+    context.fillStyle = cs.sansMode ? 'rgba(2, 6, 23, 0.84)' : 'rgba(2, 6, 23, 0.72)';
+    context.fillRect(0, 0, w, h);
+
+    // 2. High-speed anime radial speed-lines!
+    context.save();
+    context.translate(w * 0.28, cy);
+    for (let i = 0; i < 36; i += 1) {
+      const a = (Math.PI * 2 * i) / 36 + elapsed * 1.4;
+      const inner = 70 + ((i * 37) % 85);
+      const outer = Math.max(w, h) * 1.1;
+      context.strokeStyle = i % 3 === 0 ? '#ffffff' : cs.accent;
+      context.globalAlpha = alpha * (i % 2 === 0 ? 0.26 : 0.14);
+      context.lineWidth = i % 4 === 0 ? 3.5 : 1.6;
+      context.beginPath();
+      context.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+      context.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+      context.stroke();
+    }
+    context.restore();
+
+    // 3. Diagonal glowing Cut-In Slash Band across screen
+    const bandHalfH = (h * 0.24) * easeOut;
+    const tilt = h * 0.08;
+    context.save();
+    const bandGrad = context.createLinearGradient(0, cy - bandHalfH, w, cy + bandHalfH);
+    bandGrad.addColorStop(0, cs.bg);
+    bandGrad.addColorStop(0.5, cs.sansMode ? '#0f172a' : cs.bg);
+    bandGrad.addColorStop(1, '#020617');
+    context.fillStyle = bandGrad;
+    context.beginPath();
+    context.moveTo(-20, cy - bandHalfH + tilt);
+    context.lineTo(w + 20, cy - bandHalfH - tilt);
+    context.lineTo(w + 20, cy + bandHalfH - tilt);
+    context.lineTo(-20, cy + bandHalfH + tilt);
+    context.closePath();
+    context.fill();
+
+    // Clip energy streaks inside slash band
+    context.save();
+    context.clip();
+    for (let s = 0; s < 14; s += 1) {
+      const sy = cy - bandHalfH + ((s + 0.5) / 14) * (bandHalfH * 2);
+      const sx = ((elapsed * 2200 + s * 173) % (w + 360)) - 260;
+      const slen = 110 + (s % 4) * 70;
+      context.fillStyle = s % 2 === 0 ? cs.accent : '#ffffff';
+      context.globalAlpha = alpha * 0.35;
+      context.fillRect(sx, sy, slen, s % 3 === 0 ? 4 : 2);
+    }
+
+    // 4. Giant Stylized Hero (or SANS) Close-Up Portrait on the Left!
+    const px = w * 0.22 - (1 - easeOut) * 180;
+    const py = cy + 6;
+    const pr = Math.min(w, h) * 0.145;
+    context.save();
+    context.translate(px, py);
+
+    // Radiant portrait aura behind head
+    context.globalAlpha = alpha * 0.45;
+    const auraGrad = context.createRadialGradient(0, 0, pr * 0.2, 0, 0, pr * 1.65);
+    auraGrad.addColorStop(0, cs.accent);
+    auraGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    context.fillStyle = auraGrad;
+    context.beginPath();
+    context.arc(0, 0, pr * 1.65, 0, Math.PI * 2);
+    context.fill();
+    context.globalAlpha = alpha;
+
+    if (cs.weaponId === 'gaster') {
+      // 💀 GIANT SANS SKULL CLOSE-UP + BLAZING CYAN EYE FLAME!
+      context.fillStyle = '#f8fafc';
+      context.strokeStyle = '#020617';
+      context.lineWidth = 5;
+      context.beginPath();
+      context.ellipse(0, -pr * 0.12, pr * 0.92, pr * 0.78, 0, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.beginPath();
+      context.roundRect(-pr * 0.66, pr * 0.2, pr * 1.32, pr * 0.52, 16);
+      context.fill();
+      context.stroke();
+      context.strokeStyle = '#020617';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(-pr * 0.5, pr * 0.44);
+      context.quadraticCurveTo(0, pr * 0.62, pr * 0.5, pr * 0.44);
+      context.stroke();
+      for (let t = -3; t <= 3; t += 1) {
+        context.beginPath();
+        context.moveTo(t * pr * 0.14, pr * 0.36);
+        context.lineTo(t * pr * 0.14, pr * 0.55);
+        context.stroke();
+      }
+      context.fillStyle = '#020617';
+      context.beginPath();
+      context.ellipse(-pr * 0.34, -pr * 0.1, pr * 0.22, pr * 0.2, -0.1, 0, Math.PI * 2);
+      context.ellipse(pr * 0.34, -pr * 0.1, pr * 0.24, pr * 0.22, 0.1, 0, Math.PI * 2);
+      context.fill();
+      context.beginPath();
+      context.moveTo(0, pr * 0.08);
+      context.lineTo(-pr * 0.1, pr * 0.24);
+      context.lineTo(pr * 0.1, pr * 0.24);
+      context.closePath();
+      context.fill();
+      const eyeClr = Math.sin(elapsed * 32) > 0 ? '#38bdf8' : '#facc15';
+      context.shadowColor = eyeClr;
+      context.shadowBlur = 28;
+      context.fillStyle = eyeClr;
+      context.beginPath();
+      context.arc(pr * 0.34, -pr * 0.1, pr * 0.13, 0, Math.PI * 2);
+      context.fill();
+      context.beginPath();
+      context.moveTo(pr * 0.34, -pr * 0.24);
+      context.quadraticCurveTo(pr * 0.92, -pr * 0.44, pr * 1.4, -pr * 0.65);
+      context.quadraticCurveTo(pr * 0.85, -pr * 0.02, pr * 0.34, pr * 0.04);
+      context.closePath();
+      context.fillStyle = 'rgba(56, 189, 248, 0.85)';
+      context.fill();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(pr * 0.34, -pr * 0.1, pr * 0.06, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+    } else if (cs.weaponId === 'trident') {
+      // 🔱 GIANT GOLDEN POSEIDON TRIDENT + LIGHTNING!
+      context.rotate(-0.42);
+      context.shadowColor = '#2dd4bf';
+      context.shadowBlur = 26;
+      context.strokeStyle = '#f59e0b';
+      context.lineWidth = 10;
+      context.lineCap = 'round';
+      context.beginPath();
+      context.moveTo(-pr * 1.05, 0);
+      context.lineTo(pr * 0.35, 0);
+      context.stroke();
+      context.strokeStyle = '#fef08a';
+      context.lineWidth = 8;
+      context.beginPath();
+      context.moveTo(pr * 0.28, -pr * 0.48);
+      context.quadraticCurveTo(pr * 0.52, 0, pr * 0.28, pr * 0.48);
+      context.stroke();
+      // 3 Prongs
+      context.fillStyle = '#fef08a';
+      context.beginPath();
+      context.moveTo(pr * 1.18, 0);
+      context.lineTo(pr * 0.55, -pr * 0.16);
+      context.lineTo(pr * 0.65, 0);
+      context.lineTo(pr * 0.55, pr * 0.16);
+      context.closePath();
+      context.fill();
+      context.beginPath();
+      context.moveTo(pr * 0.28, 0);
+      context.lineTo(pr * 0.92, 0);
+      context.stroke();
+      [-1, 1].forEach((d) => {
+        context.beginPath();
+        context.moveTo(pr * 0.28, d * pr * 0.44);
+        context.quadraticCurveTo(pr * 0.68, d * pr * 0.48, pr * 0.98, d * pr * 0.28);
+        context.stroke();
+      });
+      context.fillStyle = '#2dd4bf';
+      context.beginPath();
+      context.arc(pr * 0.36, 0, pr * 0.13, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+    } else if (cs.weaponId === 'katana' || cs.weaponId === 'lightchaser') {
+      // ⚔️ / ✨ GIANT BLAZING SWORD / CRESCENT WAVE!
+      context.rotate(-0.52);
+      context.shadowColor = cs.accent;
+      context.shadowBlur = 28;
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.moveTo(-pr * 0.85, 6);
+      context.lineTo(pr * 1.15, -6);
+      context.lineTo(pr * 0.92, 10);
+      context.lineTo(-pr * 0.85, 14);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = cs.accent;
+      context.lineWidth = 6;
+      context.beginPath();
+      context.arc(0, 0, pr * 0.92, -1.1, 1.1);
+      context.stroke();
+      context.fillStyle = '#facc15';
+      context.fillRect(-pr * 0.62, -20, 10, 44);
+      context.shadowBlur = 0;
+    } else if (cs.weaponId === 'bat') {
+      // 🏏 GIANT GOLDEN CHAMPIONSHIP BAT + HOMERUN RINGS!
+      context.rotate(-0.6);
+      context.shadowColor = '#facc15';
+      context.shadowBlur = 28;
+      context.fillStyle = '#f59e0b';
+      context.strokeStyle = '#fef08a';
+      context.lineWidth = 5;
+      context.beginPath();
+      context.moveTo(-pr * 0.95, -6);
+      context.lineTo(pr * 0.85, -24);
+      context.arc(pr * 0.85, 0, 24, -Math.PI / 2, Math.PI / 2);
+      context.lineTo(-pr * 0.95, 6);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+    } else if (cs.weaponId === 'frost') {
+      // ❄️ GIANT GLOWING ICE CRYSTAL SNOWFLAKE!
+      context.rotate(elapsed * 1.8);
+      context.shadowColor = '#7dd3fc';
+      context.shadowBlur = 26;
+      context.strokeStyle = '#e0f2fe';
+      context.lineWidth = 7;
+      for (let i = 0; i < 6; i += 1) {
+        const a = (Math.PI / 3) * i;
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(Math.cos(a) * pr * 0.95, Math.sin(a) * pr * 0.95);
+        context.stroke();
+      }
+      context.fillStyle = '#38bdf8';
+      context.beginPath();
+      context.arc(0, 0, pr * 0.24, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+    } else if (cs.weaponId === 'kunai') {
+      // 🗡️ TRIPLE FANNED GLOWING KUNAI!
+      context.shadowColor = '#93c5fd';
+      context.shadowBlur = 22;
+      [-0.38, 0, 0.38].forEach((ang) => {
+        context.save();
+        context.rotate(ang);
+        context.fillStyle = '#f8fafc';
+        context.strokeStyle = '#38bdf8';
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(pr * 0.98, 0);
+        context.lineTo(pr * 0.1, -pr * 0.22);
+        context.lineTo(-pr * 0.35, 0);
+        context.lineTo(pr * 0.1, pr * 0.22);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.restore();
+      });
+      context.shadowBlur = 0;
+    } else {
+      // Glowing Weapon Emblem Crest for Blaster / Shotgun / Railgun / Boomer / Shockwave / Flame / Mine!
+      context.shadowColor = cs.accent;
+      context.shadowBlur = 30;
+      context.strokeStyle = cs.accent;
+      context.lineWidth = 7;
+      context.beginPath();
+      context.arc(0, 0, pr * 0.88, 0, Math.PI * 2);
+      context.stroke();
+      context.fillStyle = 'rgba(2, 6, 23, 0.72)';
+      context.fill();
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2.5;
+      context.beginPath();
+      context.arc(0, 0, pr * 0.7, 0, Math.PI * 2);
+      context.stroke();
+      context.font = `900 ${Math.round(pr * 0.95)}px Arial`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillStyle = '#ffffff';
+      context.fillText(cs.ultIcon || '⚡', 0, 4);
+      context.textBaseline = 'alphabetic';
+      context.shadowBlur = 0;
+    }
+    context.restore();
+    context.restore();
+
+    // Glowing Metallic Borders for Slash Band
+    context.strokeStyle = cs.accent;
+    context.lineWidth = 6;
+    context.shadowColor = cs.accent;
+    context.shadowBlur = 20;
+    context.beginPath();
+    context.moveTo(-20, cy - bandHalfH + tilt);
+    context.lineTo(w + 20, cy - bandHalfH - tilt);
+    context.moveTo(-20, cy + bandHalfH + tilt);
+    context.lineTo(w + 20, cy + bandHalfH - tilt);
+    context.stroke();
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 2;
+    context.stroke();
+    context.shadowBlur = 0;
+    context.restore();
+
+    // 5. Dramatic Anime Typography Sliding in from Right!
+    const textX = w * 0.61 + (1 - easeOut) * 220;
+    context.save();
+    context.textAlign = 'center';
+
+    // Top badge
+    context.font = '900 15px Arial';
+    context.fillStyle = cs.accent;
+    context.fillText(
+      cs.sansMode ? '★ MEGALOVANIA · 가스터 블래스터 ★' : `✦ WEAPON ULTIMATE · ${cs.weaponName} ✦`,
+      textX,
+      cy - 54,
+    );
+
+    // Giant Skill Name with heavy stroke + neon glow
+    context.font = `900 ${Math.min(54, Math.max(32, Math.round(w * 0.056)))}px Arial`;
+    context.lineWidth = 8;
+    context.strokeStyle = '#020617';
+    context.strokeText(`${cs.ultIcon} ${cs.ultName}`, textX, cy + 8);
+    context.shadowColor = cs.accent;
+    context.shadowBlur = 22;
+    context.fillStyle = '#ffffff';
+    context.fillText(`${cs.ultIcon} ${cs.ultName}`, textX, cy + 8);
+    context.shadowBlur = 0;
+
+    // English Subtext
+    context.font = '900 13px Arial';
+    context.fillStyle = 'rgba(255,255,255,0.75)';
+    context.fillText(cs.ultSub, textX, cy + 34);
+
+    // Anime Catchphrase Quote
+    context.font = '800 19px Arial';
+    context.strokeStyle = '#020617';
+    context.lineWidth = 5;
+    context.strokeText(`“${cs.ultQuote}”`, textX, cy + 68);
+    context.fillStyle = '#fef08a';
+    context.fillText(`“${cs.ultQuote}”`, textX, cy + 68);
+    context.restore();
+
+    // 6. Cinematic Top & Bottom Black Letterbox Bars
+    const barH = Math.round(h * 0.115 * easeOut);
+    context.fillStyle = '#000000';
+    context.fillRect(0, 0, w, barH);
+    context.fillRect(0, h - barH, w, barH);
+
+    context.restore();
+  }
+
+  if ((game.ultImpactFlash ?? 0) > 0) {
+    context.save();
+    context.globalAlpha = clamp((game.ultImpactFlash / 0.38) * 0.85, 0, 0.85);
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.restore();
+  }
+
+  if (game.ultFlash > 0) {
+    context.save();
+    context.globalAlpha = Math.min(0.95, game.ultFlash / 1.1);
+    context.fillStyle = 'rgba(131, 24, 67, 0.8)';
+    context.fillRect(0, canvas.height / 2 - 64, canvas.width, 128);
+    context.fillStyle = '#fde047';
+    context.textAlign = 'center';
+    context.font = '900 38px Arial';
+    context.fillText(game.ultBannerName || '⚡ ULTIMATE! ⚡', canvas.width / 2, canvas.height / 2 + 12);
+    context.restore();
+  }
+
+  if (game.abilityAwakenFlash > 0) {
+    context.save();
+    context.globalAlpha = Math.min(1, game.abilityAwakenFlash / 1.5);
+    context.fillStyle = 'rgba(126, 34, 206, 0.82)';
+    context.fillRect(0, canvas.height / 2 - 70, canvas.width, 140);
+    context.fillStyle = '#fde047';
+    context.textAlign = 'center';
+    context.font = '900 36px Arial';
+    context.fillText('⚡ ABILITY AWAKENED! ⚡', canvas.width / 2, canvas.height / 2 - 8);
+    context.fillStyle = '#ffffff';
+    context.font = '900 18px Arial';
+    context.fillText(game.abilityAwakenName || '능력 각성!', canvas.width / 2, canvas.height / 2 + 30);
+    context.restore();
+  }
+
   if (game.awakenFlash > 0) {
     const weapon = weapons[game.player.weaponIndex];
     context.save();
@@ -1216,9 +5243,9 @@ function drawGame(context, game, canvas) {
     context.fillStyle = '#fef3c7';
     context.textAlign = 'center';
     context.font = '900 38px Arial';
-    context.fillText('WEAPON AWAKENED', canvas.width / 2, canvas.height / 2 - 8);
+    context.fillText(game.awakenBannerCustom ? '💀 SANS MODE AWAKENED 💀' : 'WEAPON AWAKENED', canvas.width / 2, canvas.height / 2 - 8);
     context.font = '900 18px Arial';
-    context.fillText(weapon.displayName ?? weapon.name, canvas.width / 2, canvas.height / 2 + 30);
+    context.fillText(game.awakenBannerCustom || (weapon.displayName ?? weapon.name), canvas.width / 2, canvas.height / 2 + 30);
     context.restore();
   }
 }
@@ -1235,7 +5262,10 @@ export default function TangtangPage() {
     right: false,
     touch: { x: 0, y: 0 },
     mouse: { active: false, x: 0, y: 0 },
+    aim: { active: false, x: 0, y: 0 },
   });
+  const aimModeRef = useRef('manual');
+  const [aimMode, setAimMode] = useState('manual');
   const audioRef = useRef(null);
   const arenaTouchRef = useRef({ pointerId: null, originX: 0, originY: 0 });
   const stickPointerRef = useRef(null);
@@ -1243,6 +5273,12 @@ export default function TangtangPage() {
   const [fixedStickOffset, setFixedStickOffset] = useState({ x: 0, y: 0 });
   const [selectedStage, setSelectedStage] = useState(0);
   const [selectedWeapon, setSelectedWeapon] = useState(0);
+  const [selectedHero, setSelectedHero] = useState(0);
+  const [lobbyTab, setLobbyTab] = useState('deploy');
+  const [petFilter, setPetFilter] = useState('all');
+  const [gachaResults, setGachaResults] = useState([]);
+  const lobbyMetaRef = useRef(DEFAULT_LOBBY_META);
+  const [lobbyMeta, setLobbyMeta] = useState(DEFAULT_LOBBY_META);
   const [hud, setHud] = useState(() => gameRef.current);
   const [version, setVersion] = useState(0);
   const bmStateRef = useRef(DEFAULT_BLACK_MARKET);
@@ -1264,7 +5300,172 @@ export default function TangtangPage() {
     } catch {
       bmStateRef.current = DEFAULT_BLACK_MARKET;
     }
+
+    try {
+      const savedMeta = JSON.parse(window.localStorage.getItem(LOBBY_META_KEY) || '{}');
+      const loadedMeta = {
+        coins: Number.isFinite(Number(savedMeta.coins)) ? Math.max(0, Number(savedMeta.coins)) : DEFAULT_LOBBY_META.coins,
+        ownedPets: {
+          corgi: true,
+          ...(savedMeta.ownedPets && typeof savedMeta.ownedPets === 'object' ? savedMeta.ownedPets : {}),
+        },
+        petLevels: {
+          corgi: 1,
+          ...(savedMeta.petLevels && typeof savedMeta.petLevels === 'object' ? savedMeta.petLevels : {}),
+        },
+        equippedPet:
+          typeof savedMeta.equippedPet === 'string' || savedMeta.equippedPet === null
+            ? savedMeta.equippedPet
+            : DEFAULT_LOBBY_META.equippedPet,
+        upgrades: {
+          ...DEFAULT_LOBBY_META.upgrades,
+          ...(savedMeta.upgrades && typeof savedMeta.upgrades === 'object' ? savedMeta.upgrades : {}),
+        },
+      };
+      lobbyMetaRef.current = loadedMeta;
+      setLobbyMeta(loadedMeta);
+      const preview = createGame(0, bmStateRef.current.equipped, 0, loadedMeta);
+      gameRef.current = preview;
+      setHud({ ...preview, player: { ...preview.player } });
+    } catch {
+      lobbyMetaRef.current = DEFAULT_LOBBY_META;
+    }
   }, []);
+
+  function syncLobbyPreview(nextMeta = lobbyMetaRef.current, stageIdx = selectedStage, weaponIdx = selectedWeapon, heroIdx = selectedHero) {
+    if (gameRef.current.running) return;
+    const preview = createGame(stageIdx, bmStateRef.current.equipped, heroIdx, nextMeta);
+    preview.player.weaponIndex = weaponIdx;
+    gameRef.current = preview;
+    setHud({ ...preview, player: { ...preview.player } });
+  }
+
+  function updateLobbyMeta(updater) {
+    setLobbyMeta((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      lobbyMetaRef.current = next;
+      try {
+        window.localStorage.setItem(LOBBY_META_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage write failure.
+      }
+      if (!gameRef.current.running) {
+        const preview = createGame(selectedStage, bmStateRef.current.equipped, selectedHero, next);
+        preview.player.weaponIndex = selectedWeapon;
+        gameRef.current = preview;
+        setHud({ ...preview, player: { ...preview.player } });
+      }
+      return next;
+    });
+  }
+
+  function earnLobbyCoins(amount) {
+    if (!amount || amount <= 0) return;
+    const next = {
+      ...lobbyMetaRef.current,
+      coins: lobbyMetaRef.current.coins + amount,
+    };
+    lobbyMetaRef.current = next;
+    setLobbyMeta(next);
+    try {
+      window.localStorage.setItem(LOBBY_META_KEY, JSON.stringify(next));
+    } catch {
+      // Ignore storage write failure.
+    }
+  }
+
+  function buyOrEquipPet(pet) {
+    const meta = lobbyMetaRef.current;
+    if (!meta.ownedPets?.[pet.id]) return;
+    playSound('switch');
+    updateLobbyMeta((prev) => ({
+      ...prev,
+      equippedPet: prev.equippedPet === pet.id ? null : pet.id,
+    }));
+  }
+
+  function pullPetGacha(count = 1) {
+    const cost = count === 10 ? GACHA_TEN_COST : GACHA_SINGLE_COST;
+    const meta = lobbyMetaRef.current;
+    if (meta.coins < cost) return;
+
+    const nextOwned = { ...(meta.ownedPets ?? {}) };
+    const nextLevels = { ...(meta.petLevels ?? {}) };
+    let coinsAfter = meta.coins - cost;
+    let bestHighTier = false;
+    const pulls = [];
+
+    for (let i = 0; i < count; i += 1) {
+      const guaranteeEpic = count === 10 && i === count - 1;
+      const pet = rollSinglePet(guaranteeEpic);
+      const rarityInfo = PET_RARITIES[pet.rarity];
+      if (pet.rarity === 'legend' || pet.rarity === 'mythic') {
+        bestHighTier = true;
+      }
+
+      if (!nextOwned[pet.id]) {
+        nextOwned[pet.id] = true;
+        nextLevels[pet.id] = 1;
+        pulls.push({ pet, status: 'NEW!' });
+      } else {
+        const curLv = clamp(Number(nextLevels[pet.id]) || 1, 1, 5);
+        if (curLv < 5) {
+          nextLevels[pet.id] = curLv + 1;
+          pulls.push({ pet, status: `LV.${curLv + 1} UP!` });
+        } else {
+          const refund = rarityInfo.refund;
+          coinsAfter += refund;
+          pulls.push({ pet, status: `환급 +🪙${refund}` });
+        }
+      }
+    }
+
+    playSound(bestHighTier ? 'awake' : 'buy');
+    setGachaResults(pulls);
+    updateLobbyMeta((prev) => ({
+      ...prev,
+      coins: coinsAfter,
+      ownedPets: nextOwned,
+      petLevels: nextLevels,
+    }));
+  }
+
+  function upgradePet(petId) {
+    const meta = lobbyMetaRef.current;
+    if (!meta.ownedPets?.[petId]) return;
+    const curLv = clamp(Number(meta.petLevels?.[petId]) || 1, 1, 5);
+    if (curLv >= 5) return;
+    const cost = getPetUpgradeCost(curLv);
+    if (meta.coins < cost) return;
+    playSound('upgrade');
+    updateLobbyMeta((prev) => ({
+      ...prev,
+      coins: prev.coins - cost,
+      petLevels: { ...prev.petLevels, [petId]: curLv + 1 },
+    }));
+  }
+
+  function buyMetaUpgrade(spec) {
+    const meta = lobbyMetaRef.current;
+    const curLv = Number(meta.upgrades?.[spec.id]) || 0;
+    if (curLv >= spec.maxLv) return;
+    const cost = getMetaUpgradeCost(spec, curLv);
+    if (meta.coins < cost) return;
+    playSound('upgrade');
+    updateLobbyMeta((prev) => ({
+      ...prev,
+      coins: prev.coins - cost,
+      upgrades: { ...prev.upgrades, [spec.id]: curLv + 1 },
+    }));
+  }
+
+  function returnToLobby(tab = 'deploy') {
+    setLobbyTab(tab);
+    const preview = createGame(selectedStage, bmStateRef.current.equipped, selectedHero, lobbyMetaRef.current);
+    preview.player.weaponIndex = selectedWeapon;
+    gameRef.current = preview;
+    setHud({ ...preview, player: { ...preview.player } });
+  }
 
   function updateBlackMarket(updater) {
     setBmState((prev) => {
@@ -1350,6 +5551,12 @@ export default function TangtangPage() {
       switch: [360, 540, 0.08, 'triangle', 0.045],
       buy: [760, 1320, 0.18, 'sine', 0.085],
       blackMarket: [190, 560, 0.42, 'sawtooth', 0.095],
+      boss: [140, 62, 0.72, 'sawtooth', 0.13],
+      bossClear: [440, 1180, 0.52, 'triangle', 0.12],
+      gaster: [980, 110, 0.44, 'sawtooth', 0.12],
+      trident: [680, 290, 0.16, 'triangle', 0.085],
+      cutscene: [260, 880, 0.38, 'sawtooth', 0.13],
+      ultimate: [180, 1240, 0.65, 'sawtooth', 0.14],
     }[type] ?? [300, 180, 0.1, 'sine', 0.04];
     const [start, end, duration, wave, volume] = settings;
 
@@ -1370,27 +5577,48 @@ export default function TangtangPage() {
     game.sounds.splice(0, 5).forEach(playSound);
   }
 
-  function resetGame(stageIndex = selectedStage, weaponIndex = selectedWeapon) {
+  function resetGame(stageIndex = selectedStage, weaponIndex = selectedWeapon, heroIndex = selectedHero) {
     getAudioContext();
     closeBlackMarket();
     const equippedBm = bmStateRef.current.equipped;
-    const nextGame = createGame(stageIndex, equippedBm);
-    nextGame.player.weaponIndex = weaponIndex;
+    const unlockKey = weapons[weaponIndex]?.blackMarketUnlockId;
+    const safeWeaponIndex =
+      unlockKey && !bmStateRef.current.owned?.[unlockKey]
+        ? 0
+        : weaponIndex;
+    const nextGame = createGame(stageIndex, equippedBm, heroIndex, lobbyMetaRef.current);
+    nextGame.aimMode = aimModeRef.current;
+    nextGame.player.weaponIndex = safeWeaponIndex;
     if (equippedBm.instantAwaken) {
-      const chosenWeapon = weapons[weaponIndex];
+      const chosenWeapon = weapons[safeWeaponIndex];
       if (chosenWeapon) {
         nextGame.weaponLevels[chosenWeapon.id] = 5;
         nextGame.awakenedWeapons[chosenWeapon.id] = true;
         nextGame.awakenFlash = 1.6;
+        if (chosenWeapon.id === 'gaster') {
+          applySansAwakening(nextGame);
+        }
       }
     }
     nextGame.running = true;
     gameRef.current = nextGame;
     queueSound(gameRef.current, 'level');
     setSelectedStage(stageIndex);
-    setSelectedWeapon(weaponIndex);
+    setSelectedWeapon(safeWeaponIndex);
+    setSelectedHero(heroIndex);
     setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
     setVersion((current) => current + 1);
+  }
+
+  function selectHero(index) {
+    if (gameRef.current.running) return;
+    getAudioContext();
+    setSelectedHero(index);
+    const preview = createGame(selectedStage, bmStateRef.current.equipped, index, lobbyMetaRef.current);
+    preview.player.weaponIndex = selectedWeapon;
+    gameRef.current = preview;
+    queueSound(gameRef.current, 'switch');
+    setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
   }
 
   function chooseUpgrade(id) {
@@ -1399,19 +5627,56 @@ export default function TangtangPage() {
     setHud({ ...gameRef.current });
   }
 
-  function setWeapon(index) {
+  function setWeapon(index, fromKeyboard = false) {
     if (gameRef.current.running) return;
+    const unlockKey = weapons[index]?.blackMarketUnlockId;
+    if (unlockKey && !bmStateRef.current.owned?.[unlockKey]) return;
     getAudioContext();
     setSelectedWeapon(index);
     gameRef.current.player.weaponIndex = index;
     gameRef.current.player.cooldown = 0;
     queueSound(gameRef.current, 'switch');
     setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
+
+    // Mobile & Click Secret Easter Egg: tap weapons 1→2→3→4→5→6→7→8→9 in order to open Black Market!
+    if (!fromKeyboard && index >= 0 && index < SECRET_CODE.length) {
+      const digit = String(index + 1);
+      if (digit === SECRET_CODE[secretProgressRef.current]) {
+        secretProgressRef.current += 1;
+        if (secretProgressRef.current >= SECRET_CODE.length) {
+          secretProgressRef.current = 0;
+          blackMarketOpenRef.current = true;
+          setBlackMarketOpen(true);
+          playSound('blackMarket');
+        }
+      } else {
+        secretProgressRef.current = digit === '1' ? 1 : 0;
+      }
+    }
+  }
+
+  function toggleAimMode() {
+    setAimMode((prev) => {
+      const next = prev === 'manual' ? 'auto' : 'manual';
+      aimModeRef.current = next;
+      gameRef.current.aimMode = next;
+      playSound('switch');
+      return next;
+    });
+  }
+
+  function activateUltimate() {
+    getAudioContext();
+    if (triggerUltimate(gameRef.current)) {
+      setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
+    }
   }
 
   function isGameUiPointer(event) {
     return Boolean(
-      event.target.closest('button, .startOverlay, .upgradeOverlay, .mobileGameHud, [data-ui="black-market"]'),
+      event.target.closest(
+        'button, .startOverlay, .upgradeOverlay, .mobileGameHud, [data-ui="black-market"], [data-ui="lobby"]',
+      ),
     );
   }
 
@@ -1500,7 +5765,7 @@ export default function TangtangPage() {
       if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
       const delta = Math.min((timestamp - lastTimeRef.current) / 1000, 0.033);
       lastTimeRef.current = timestamp;
-      updateGame(gameRef.current, inputRef.current, canvas, delta, earnBlackMarketGold);
+      updateGame(gameRef.current, inputRef.current, canvas, delta, earnBlackMarketGold, earnLobbyCoins);
       drainSounds(gameRef.current);
       drawGame(context, gameRef.current, canvas);
       setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
@@ -1543,8 +5808,12 @@ export default function TangtangPage() {
       if (['arrowdown', 's'].includes(key)) inputRef.current.down = true;
       if (['arrowleft', 'a'].includes(key)) inputRef.current.left = true;
       if (['arrowright', 'd'].includes(key)) inputRef.current.right = true;
-      if (!gameRef.current.running && Number(key) >= 1 && Number(key) <= weapons.length) {
-        setWeapon(Number(key) - 1);
+      if (gameRef.current.running && !event.repeat && [' ', 'e', 'q'].includes(key)) {
+        event.preventDefault();
+        activateUltimate();
+      }
+      if (!gameRef.current.running && Number(key) >= 1 && Number(key) <= Math.min(9, weapons.length)) {
+        setWeapon(Number(key) - 1, true);
       }
     }
 
@@ -1583,25 +5852,69 @@ export default function TangtangPage() {
   const cooldownLeft = Math.max(0, player.cooldown ?? 0);
   const cooldownRatio = Math.max(0, Math.min(100, (1 - cooldownLeft / currentCooldown) * 100));
   const cooldownText = cooldownLeft > 0 ? `${cooldownLeft.toFixed(1)}s` : 'READY';
+  const activeHeroObj = HEROES[hud.heroIndex ?? selectedHero] ?? HEROES[0];
+  const equippedPetObj = lobbyMeta.equippedPet
+    ? PETS.find((p) => p.id === lobbyMeta.equippedPet) ?? null
+    : null;
+  const activeBoss = (hud.enemies ?? []).find((enemy) => enemy.boss);
+  const bossTimeLeft = Math.max(0, Math.ceil(stageSeconds - (hud.chapterTime ?? 0)));
+  const bossCountdown = activeBoss
+    ? '🔥 BOSS FIGHT!'
+    : `보스까지 ${Math.floor(bossTimeLeft / 60)}:${String(bossTimeLeft % 60).padStart(2, '0')}`;
+
+  const ultPct = Math.floor(clamp(player.ultCharge ?? 0, 0, 100));
+  const ultReady = hud.running && ultPct >= 100;
+  const visibleWeaponEntries = weapons
+    .map((weapon, index) => ({ weapon, index }))
+    .filter(({ weapon }) => !weapon.blackMarketUnlockId || Boolean(bmState.owned?.[weapon.blackMarketUnlockId]));
+  const activeWeaponUlt = WEAPON_ULTIMATES[currentWeapon?.id] ?? WEAPON_ULTIMATES.blaster;
+  const lobbySelectedWeapon = weapons[selectedWeapon] ?? weapons[0];
+  const lobbyWeaponUlt = WEAPON_ULTIMATES[lobbySelectedWeapon?.id] ?? WEAPON_ULTIMATES.blaster;
 
   return (
     <section className="survivorPage">
       <div className="survivorTop">
         <div>
-          <span>RPG Survival</span>
+          <span>GANGYOON!LAB! · RPG Survival</span>
           <h1>탕탕 특공대</h1>
         </div>
-        <button type="button" onClick={() => resetGame()}>
-          {hud.running ? '다시 시작' : '게임 시작'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className={
+              aimMode === 'manual'
+                ? bmStyles.aimToggleBtn
+                : `${bmStyles.aimToggleBtn} ${bmStyles.aimToggleBtnAuto}`
+            }
+            onClick={toggleAimMode}
+          >
+            {aimMode === 'manual' ? '🎯 수동 조준 ON' : '🤖 자동 조준'}
+          </button>
+          <span className={bmStyles.lobbyCoinBadge}>🪙 {lobbyMeta.coins.toLocaleString()} 코인</span>
+          {hud.running && (
+            <button
+              type="button"
+              className={bmStyles.lobbySecondaryBtn}
+              onClick={() => returnToLobby('deploy')}
+            >
+              🏕️ 로비로
+            </button>
+          )}
+          <button type="button" onClick={() => resetGame()}>
+            {hud.running ? '다시 시작' : '게임 시작'}
+          </button>
+        </div>
       </div>
 
       <div className="survivorLayout">
         <aside className="survivorPanel">
           <div className="statBox">
-            <span>MAP</span>
+            <span>MAP · HERO · PET</span>
             <strong>{stage.name}</strong>
-            <em>난이도 {stage.level}</em>
+            <em>
+              {activeHeroObj.icon} {activeHeroObj.name}
+              {equippedPetObj ? ` · ${equippedPetObj.icon} ${equippedPetObj.name}` : ''} · {bossCountdown}
+            </em>
           </div>
 
           <div className="mapList">
@@ -1613,10 +5926,7 @@ export default function TangtangPage() {
                 disabled={hud.running}
                 onClick={() => {
                   setSelectedStage(index);
-                  const nextGame = createGame(index);
-                  nextGame.player.weaponIndex = selectedWeapon;
-                  gameRef.current = nextGame;
-                  setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
+                  syncLobbyPreview(lobbyMetaRef.current, index, selectedWeapon, selectedHero);
                 }}
               >
                 <span>{item.level}</span>
@@ -1673,6 +5983,20 @@ export default function TangtangPage() {
             <i className="cooldownTrack"><b style={{ width: `${cooldownRatio}%` }} /></i>
           </div>
 
+          <button
+            type="button"
+            className={ultReady ? `${bmStyles.ultPanelBtn} ${bmStyles.ultPanelBtnReady}` : bmStyles.ultPanelBtn}
+            disabled={!ultReady}
+            onClick={activateUltimate}
+          >
+            <span>
+              {activeWeaponUlt.icon} 필살기 · {activeWeaponUlt.name} ({ultReady ? 'SPACE 발동!' : `${ultPct}%`})
+            </span>
+            <i className={bmStyles.ultTrack}>
+              <b className={bmStyles.ultFill} style={{ width: `${ultPct}%` }} />
+            </i>
+          </button>
+
           <div className="buildStats">
             <div>
               <span>CRIT</span>
@@ -1692,8 +6016,65 @@ export default function TangtangPage() {
             </div>
           </div>
 
+          <div className={bmStyles.abilitySection} aria-label="능력 7종 현황">
+            <div className={bmStyles.abilityHead}>
+              <span>🚀 능력 (7종 · 5LV 각성)</span>
+              <span>
+                {ACTIVE_SKILLS.filter((sk) => (hud.skillLevels?.[sk.id] ?? 0) > 0).length} / {ACTIVE_SKILLS.length}
+              </span>
+            </div>
+            <div className={bmStyles.abilityGrid}>
+              {ACTIVE_SKILLS.map((sk) => {
+                const lv = hud.skillLevels?.[sk.id] ?? 0;
+                const awakened = Boolean(hud.awakenedSkills?.[sk.id]);
+                return (
+                  <div
+                    key={sk.id}
+                    className={
+                      awakened
+                        ? `${bmStyles.abilityChip} ${bmStyles.abilityChipAwaken}`
+                        : bmStyles.abilityChip
+                    }
+                    title={awakened ? `${sk.awakenName}: ${sk.awakenText}` : sk.text}
+                  >
+                    <span>{sk.icon} {awakened ? sk.awakenName : sk.name}</span>
+                    <em>{awakened ? '★ 각성' : `${lv}/5`}</em>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className={bmStyles.abilitySection} aria-label="강화 5종 현황">
+            <div className={bmStyles.abilityHead}>
+              <span>💪 강화 (5종)</span>
+              <span>
+                {PASSIVES.filter((p) => (hud.passiveLevels?.[p.id] ?? 0) > 0).length} / {PASSIVES.length}
+              </span>
+            </div>
+            <div className={bmStyles.abilityGrid}>
+              {PASSIVES.map((p) => {
+                const lv = hud.passiveLevels?.[p.id] ?? 0;
+                return (
+                  <div
+                    key={p.id}
+                    className={
+                      lv >= 5
+                        ? `${bmStyles.abilityChip} ${bmStyles.abilityChipAwaken}`
+                        : bmStyles.abilityChip
+                    }
+                    title={p.text}
+                  >
+                    <span>{p.icon} {p.name}</span>
+                    <em>{lv >= 5 ? 'MAX' : `${lv}/5`}</em>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="weaponList">
-            {weapons.map((weapon, index) => (
+            {visibleWeaponEntries.map(({ weapon, index }, displayIdx) => (
               <button
                 key={weapon.id}
                 type="button"
@@ -1701,7 +6082,7 @@ export default function TangtangPage() {
                 disabled={hud.running && player.weaponIndex !== index}
                 onClick={() => setWeapon(index)}
               >
-                <span style={{ background: weapon.color }}>{index + 1}</span>
+                <span style={{ background: weapon.color }}>{displayIdx + 1}</span>
                 <strong>{weapon.displayName ?? weapon.name}</strong>
                 <em>
                   {hud.running && player.weaponIndex !== index
@@ -1728,6 +6109,12 @@ export default function TangtangPage() {
           }}
           onPointerMove={(event) => {
             if (event.pointerType === 'mouse') {
+              const rect = event.currentTarget.getBoundingClientRect();
+              inputRef.current.aim = {
+                active: true,
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top,
+              };
               if (inputRef.current.mouse.active) {
                 updateMouseMove(event);
               }
@@ -1743,10 +6130,36 @@ export default function TangtangPage() {
             stopMouseMove(event);
             endArenaTouch(event);
           }}
-          onPointerLeave={stopMouseMove}
+          onPointerLeave={(event) => {
+            inputRef.current.aim.active = false;
+            stopMouseMove(event);
+          }}
           onContextMenu={(e) => e.preventDefault()}
         >
           <canvas ref={canvasRef} className="arenaCanvas" />
+          {hud.running && (
+            <div className={bmStyles.arenaActionDock} data-ui="lobby">
+              <button
+                type="button"
+                className={
+                  aimMode === 'manual'
+                    ? bmStyles.aimToggleBtn
+                    : `${bmStyles.aimToggleBtn} ${bmStyles.aimToggleBtnAuto}`
+                }
+                onClick={toggleAimMode}
+              >
+                {aimMode === 'manual' ? '🎯 조준' : '🤖 자동'}
+              </button>
+              <button
+                type="button"
+                className={ultReady ? `${bmStyles.arenaUltBtn} ${bmStyles.arenaUltBtnReady}` : bmStyles.arenaUltBtn}
+                disabled={!ultReady}
+                onClick={activateUltimate}
+              >
+                {ultReady ? `${activeWeaponUlt.icon} 필살기!` : `⚡ ${ultPct}%`}
+              </button>
+            </div>
+          )}
           {floatingStick && (
             <div
               className="floatingStick"
@@ -1761,50 +6174,423 @@ export default function TangtangPage() {
             </div>
           )}
           <div className="mobileGameHud">
-            <span>{stage.name} · LV {hud.level}</span>
+            <span>{stage.name} · {activeBoss ? '🔥 BOSS' : `LV ${hud.level}`}</span>
             <strong>{minutes}:{seconds}</strong>
             <em>HP {Math.ceil(player.hp)}</em>
           </div>
+          {activeBoss && (
+            <div className={bmStyles.bossBarWrap} role="status" aria-label="챕터 보스 체력">
+              <div className={bmStyles.bossBarHead}>
+                <span className={bmStyles.bossBarName}>
+                  💀 {activeBoss.bossTitle} · {activeBoss.bossName}
+                  {activeBoss.hp < activeBoss.maxHp * 0.3
+                    ? ' (🔥 극광폭화!!)'
+                    : activeBoss.hp < activeBoss.maxHp * 0.6
+                      ? ' (광폭화!)'
+                      : ''}
+                </span>
+                <span className={bmStyles.bossBarHp}>
+                  {Math.max(0, Math.ceil(activeBoss.hp)).toLocaleString()} / {activeBoss.maxHp.toLocaleString()}
+                </span>
+              </div>
+              <i className={bmStyles.bossTrack}>
+                <b
+                  className={bmStyles.bossFill}
+                  style={{ width: `${clamp((activeBoss.hp / activeBoss.maxHp) * 100, 0, 100)}%` }}
+                />
+              </i>
+            </div>
+          )}
           {!hud.running && !hud.over && (
-            <div className="startOverlay">
-              <strong>{stages[selectedStage].name} 진입</strong>
-              <p>처음 선택한 무기 1개로 끝까지 싸웁니다(전투 중 변경 불가). 화면 드래그·조이스틱·WASD로 이동하세요.</p>
-              <div className="mobileStagePicker" aria-label="스테이지 선택">
-                {stages.map((item, index) => (
+            <div className={bmStyles.lobbyOverlay} data-ui="lobby" role="dialog" aria-label="작전 준비 로비">
+              <div className={bmStyles.lobbyWindow}>
+                <div className={bmStyles.lobbyTopBar}>
+                  <div className={bmStyles.lobbyTitleWrap}>
+                    <h2>🏕️ 탕탕 작전 준비 로비</h2>
+                    <p>출격 전 캐릭터·무기·전투 펫·영구 업그레이드를 세팅하세요!</p>
+                  </div>
+                  <span className={bmStyles.lobbyCoinBadge}>🪙 {lobbyMeta.coins.toLocaleString()} 코인</span>
+                </div>
+
+                <div className={bmStyles.lobbyTabs} role="tablist" aria-label="로비 메뉴">
                   <button
-                    key={item.id}
                     type="button"
-                    className={selectedStage === index ? 'active' : ''}
-                    onClick={() => setSelectedStage(index)}
+                    role="tab"
+                    aria-selected={lobbyTab === 'deploy'}
+                    className={
+                      lobbyTab === 'deploy'
+                        ? `${bmStyles.lobbyTab} ${bmStyles.lobbyTabActive}`
+                        : bmStyles.lobbyTab
+                    }
+                    onClick={() => setLobbyTab('deploy')}
                   >
-                    {item.level}. {item.name}
+                    🎯 출격 준비
                   </button>
-                ))}
-              </div>
-              <div className="startWeaponPicker" aria-label="시작 무기 선택">
-                {weapons.map((weapon, index) => (
                   <button
-                    key={weapon.id}
                     type="button"
-                    className={selectedWeapon === index ? 'active' : ''}
-                    onClick={() => setWeapon(index)}
+                    role="tab"
+                    aria-selected={lobbyTab === 'pets'}
+                    className={
+                      lobbyTab === 'pets'
+                        ? `${bmStyles.lobbyTab} ${bmStyles.lobbyTabActive}`
+                        : bmStyles.lobbyTab
+                    }
+                    onClick={() => setLobbyTab('pets')}
                   >
-                    <i style={{ background: weapon.color }} />
-                    <span>{weapon.name}</span>
+                    🐾 펫 ({Object.values(lobbyMeta.ownedPets ?? {}).filter(Boolean).length}/{PETS.length})
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={lobbyTab === 'upgrades'}
+                    className={
+                      lobbyTab === 'upgrades'
+                        ? `${bmStyles.lobbyTab} ${bmStyles.lobbyTabActive}`
+                        : bmStyles.lobbyTab
+                    }
+                    onClick={() => setLobbyTab('upgrades')}
+                  >
+                    ⬆️ 영구 업그레이드
+                  </button>
+                </div>
+
+                <div className={bmStyles.lobbyBody}>
+                  {lobbyTab === 'deploy' && (
+                    <>
+                      <div className={bmStyles.lobbySectionTitle}>
+                        <span>챕터 선택</span>
+                        <span>각 챕터 끝에 초강력 보스 등장!</span>
+                      </div>
+                      <div className={bmStyles.lobbyStageRow} aria-label="스테이지 선택">
+                        {stages.map((item, index) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={
+                              selectedStage === index
+                                ? `${bmStyles.lobbyStageBtn} ${bmStyles.lobbyStageBtnActive}`
+                                : bmStyles.lobbyStageBtn
+                            }
+                            onClick={() => {
+                              setSelectedStage(index);
+                              syncLobbyPreview(lobbyMetaRef.current, index, selectedWeapon, selectedHero);
+                            }}
+                          >
+                            {item.level}. {item.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className={bmStyles.lobbySectionTitle}>
+                        <span>캐릭터 선택 ({HEROES.length}명)</span>
+                        <span>{HEROES[selectedHero].icon} {HEROES[selectedHero].name}</span>
+                      </div>
+                      <div className={bmStyles.heroPicker} aria-label="캐릭터 선택">
+                        {HEROES.map((heroItem, index) => (
+                          <button
+                            key={heroItem.id}
+                            type="button"
+                            className={
+                              selectedHero === index
+                                ? `${bmStyles.heroBtn} ${bmStyles.heroBtnActive}`
+                                : bmStyles.heroBtn
+                            }
+                            onClick={() => selectHero(index)}
+                          >
+                            <span className={bmStyles.heroIcon} style={{ background: heroItem.body }}>
+                              {heroItem.icon}
+                            </span>
+                            <span className={bmStyles.heroName}>{heroItem.name}</span>
+                            <span className={bmStyles.heroRole}>{heroItem.role}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className={bmStyles.heroPerkNote}>
+                        {HEROES[selectedHero].icon} {HEROES[selectedHero].name}: {HEROES[selectedHero].perk}
+                      </div>
+
+                      <div className={bmStyles.lobbySectionTitle}>
+                        <span>시작 무기 선택 ({visibleWeaponEntries.length}종 · 전투 중 변경 불가)</span>
+                        <span>{lobbySelectedWeapon.name}</span>
+                      </div>
+                      <div className="startWeaponPicker" aria-label="시작 무기 선택" style={{ maxWidth: '100%' }}>
+                        {visibleWeaponEntries.map(({ weapon, index }) => (
+                          <button
+                            key={weapon.id}
+                            type="button"
+                            className={selectedWeapon === index ? 'active' : ''}
+                            onClick={() => setWeapon(index)}
+                          >
+                            <i style={{ background: weapon.color }} />
+                            <span>{weapon.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className={bmStyles.heroPerkNote}>
+                        {lobbyWeaponUlt.icon} 무기 필살기 · <strong>{lobbyWeaponUlt.name}</strong>: {lobbyWeaponUlt.detail}
+                      </div>
+                    </>
+                  )}
+
+                  {lobbyTab === 'pets' && (
+                    <>
+                      <div className={bmStyles.gachaBox}>
+                        <div className={bmStyles.gachaHead}>
+                          <strong>🎲 펫 뽑기 (총 {PETS.length}종 · 5등급)</strong>
+                          <span className={bmStyles.gachaRates}>
+                            일반 45% · 희귀 30% · 영웅 16% · 전설 7% · 신화 2%
+                          </span>
+                        </div>
+                        <div className={bmStyles.gachaBtns}>
+                          <button
+                            type="button"
+                            className={bmStyles.gachaBtnSingle}
+                            disabled={lobbyMeta.coins < GACHA_SINGLE_COST}
+                            onClick={() => pullPetGacha(1)}
+                          >
+                            🎲 1회 뽑기 (🪙 {GACHA_SINGLE_COST})
+                          </button>
+                          <button
+                            type="button"
+                            className={bmStyles.gachaBtnTen}
+                            disabled={lobbyMeta.coins < GACHA_TEN_COST}
+                            onClick={() => pullPetGacha(10)}
+                          >
+                            ✨ 10연차 (🪙 {GACHA_TEN_COST} · 영웅+ 확정)
+                          </button>
+                        </div>
+
+                        {gachaResults.length > 0 && (
+                          <div className={bmStyles.gachaResults} aria-label="최근 뽑기 결과">
+                            {gachaResults.map((res, idx) => (
+                              <div
+                                key={`${res.pet.id}-${idx}`}
+                                className={bmStyles.gachaChip}
+                                style={{ borderColor: res.pet.rarityColor }}
+                              >
+                                <span className={bmStyles.gachaChipIcon}>{res.pet.icon}</span>
+                                <span
+                                  className={bmStyles.rarityPill}
+                                  style={{ background: res.pet.rarityColor }}
+                                >
+                                  {res.pet.rarityLabel}
+                                </span>
+                                <span className={bmStyles.gachaChipName}>{res.pet.name}</span>
+                                <span className={bmStyles.gachaChipTag}>{res.status}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={bmStyles.petFilterRow} aria-label="펫 등급 필터">
+                        {[
+                          { id: 'all', label: `전체 (${PETS.length})` },
+                          {
+                            id: 'owned',
+                            label: `보유 (${PETS.filter((p) => lobbyMeta.ownedPets?.[p.id]).length})`,
+                          },
+                          ...PET_RARITY_ORDER.map((rKey) => ({
+                            id: rKey,
+                            label: `${PET_RARITIES[rKey].label} (${PETS.filter((p) => p.rarity === rKey).length})`,
+                          })),
+                        ].map((f) => (
+                          <button
+                            key={f.id}
+                            type="button"
+                            className={
+                              petFilter === f.id
+                                ? `${bmStyles.petFilterBtn} ${bmStyles.petFilterBtnActive}`
+                                : bmStyles.petFilterBtn
+                            }
+                            onClick={() => setPetFilter(f.id)}
+                          >
+                            {f.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className={bmStyles.petGrid}>
+                        {PETS.filter((pet) => {
+                          if (petFilter === 'owned') return Boolean(lobbyMeta.ownedPets?.[pet.id]);
+                          if (petFilter !== 'all') return pet.rarity === petFilter;
+                          return true;
+                        })
+                          .sort((a, b) => {
+                            const ownedDiff =
+                              Number(Boolean(lobbyMeta.ownedPets?.[b.id])) -
+                              Number(Boolean(lobbyMeta.ownedPets?.[a.id]));
+                            if (ownedDiff !== 0) return ownedDiff;
+                            return PET_RARITY_ORDER.indexOf(a.rarity) - PET_RARITY_ORDER.indexOf(b.rarity);
+                          })
+                          .map((pet) => {
+                            const owned = Boolean(lobbyMeta.ownedPets?.[pet.id]);
+                            const equipped = lobbyMeta.equippedPet === pet.id;
+                            const lv = clamp(Number(lobbyMeta.petLevels?.[pet.id]) || 1, 1, 5);
+                            const upCost = getPetUpgradeCost(lv);
+                            const canUpgrade = owned && lv < 5 && lobbyMeta.coins >= upCost;
+
+                            return (
+                              <div
+                                key={pet.id}
+                                className={[
+                                  bmStyles.petCard,
+                                  equipped ? bmStyles.petCardEquipped : '',
+                                  !owned ? bmStyles.petCardLocked : '',
+                                ]
+                                  .filter(Boolean)
+                                  .join(' ')}
+                                style={!equipped ? { borderColor: `${pet.rarityColor}66` } : undefined}
+                              >
+                                <div className={bmStyles.petHead}>
+                                  <div className={bmStyles.petTitle}>
+                                    <span className={bmStyles.petIcon} style={{ background: pet.color }}>
+                                      {pet.icon}
+                                    </span>
+                                    <div>
+                                      <strong>{pet.name}</strong>
+                                      <span style={{ color: pet.rarityColor }}>{pet.role}</span>
+                                    </div>
+                                  </div>
+                                  <span
+                                    className={bmStyles.petLvTag}
+                                    style={{ color: owned ? '#fde68a' : pet.rarityColor }}
+                                  >
+                                    {owned ? `LV.${lv}/5` : pet.rarityLabel}
+                                  </span>
+                                </div>
+                                <p className={bmStyles.petDesc}>
+                                  {pet.description} (위력 x{pet.powerMult.toFixed(2)})
+                                </p>
+                                <div className={bmStyles.petActions}>
+                                  {owned ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className={
+                                          equipped
+                                            ? `${bmStyles.petBtnEquip} ${bmStyles.petBtnEquipped}`
+                                            : bmStyles.petBtnEquip
+                                        }
+                                        onClick={() => buyOrEquipPet(pet)}
+                                      >
+                                        {equipped ? '동행 중 ✓ (해제)' : '동행하기'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className={bmStyles.petBtnLevelUp}
+                                        disabled={!canUpgrade}
+                                        onClick={() => upgradePet(pet.id)}
+                                      >
+                                        {lv >= 5 ? 'MAX' : `강화 🪙${upCost}`}
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button type="button" className={bmStyles.petBtnPrimary} disabled>
+                                      🔒 뽑기로 획득
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </>
+                  )}
+
+                  {lobbyTab === 'upgrades' && (
+                    <>
+                      <div className={bmStyles.lobbySectionTitle}>
+                        <span>영구 업그레이드 (매 판 자동 적용 · 자동 저장)</span>
+                        <span>보유 🪙 {lobbyMeta.coins.toLocaleString()}</span>
+                      </div>
+                      <div className={bmStyles.metaGrid}>
+                        {META_UPGRADES.map((spec) => {
+                          const lv = Number(lobbyMeta.upgrades?.[spec.id]) || 0;
+                          const isMax = lv >= spec.maxLv;
+                          const cost = getMetaUpgradeCost(spec, lv);
+                          const canAfford = !isMax && lobbyMeta.coins >= cost;
+
+                          return (
+                            <div key={spec.id} className={bmStyles.metaCard}>
+                              <div className={bmStyles.petHead}>
+                                <div className={bmStyles.petTitle}>
+                                  <span className={bmStyles.petIcon} style={{ background: 'rgba(15, 23, 42, 0.85)' }}>
+                                    {spec.icon}
+                                  </span>
+                                  <div>
+                                    <strong>{spec.name}</strong>
+                                    <span>{spec.effectText(lv)}</span>
+                                  </div>
+                                </div>
+                                <span className={bmStyles.petLvTag}>
+                                  LV.{lv}/{spec.maxLv}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                className={bmStyles.petBtnPrimary}
+                                disabled={!canAfford}
+                                onClick={() => buyMetaUpgrade(spec)}
+                              >
+                                {isMax
+                                  ? '최대 레벨 달성 ✓'
+                                  : canAfford
+                                    ? `⬆️ 업그레이드 (🪙 ${cost})`
+                                    : `코인 부족 (${lobbyMeta.coins}/${cost})`}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className={bmStyles.lobbyFooter}>
+                  <div className={bmStyles.lobbySummary}>
+                    <strong>
+                      {stages[selectedStage].name} · {HEROES[selectedHero].icon} {HEROES[selectedHero].name}
+                    </strong>
+                    <span>
+                      무기: {weapons[selectedWeapon].name} · 펫:{' '}
+                      {equippedPetObj
+                        ? `${equippedPetObj.icon} ${equippedPetObj.name} (LV.${lobbyMeta.petLevels?.[equippedPetObj.id] ?? 1})`
+                        : '없음'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={bmStyles.launchBtn}
+                    onClick={() => resetGame(selectedStage, selectedWeapon, selectedHero)}
+                  >
+                    🚀 작전 출격!
+                  </button>
+                </div>
               </div>
-              <button type="button" onClick={() => resetGame(selectedStage, selectedWeapon)}>
-                {weapons[selectedWeapon].name}(으)로 시작
-              </button>
             </div>
           )}
           {hud.pausedForUpgrade && (
             <div className="upgradeOverlay">
-              <strong>레벨 업!</strong>
+              <strong>LEVEL {hud.level} UP!</strong>
+              <p className={bmStyles.upgradeSub}>
+                ✨ 기본 효과 UP (최대HP +6 · 회복 +12 · 화력 +4% · 이속 +2) · 능력을 선택하세요!
+              </p>
               <div>
                 {hud.upgrades.map((upgrade) => (
                   <button key={upgrade.id} type="button" onClick={() => chooseUpgrade(upgrade.id)}>
+                    {upgrade.badge && (
+                      <i
+                        className={
+                          upgrade.isAwakenPick
+                            ? `${bmStyles.upgradeBadge} ${bmStyles.upgradeBadgeAwaken}`
+                            : bmStyles.upgradeBadge
+                        }
+                        style={{ fontStyle: 'normal' }}
+                      >
+                        {upgrade.badge}
+                      </i>
+                    )}
                     <span>{upgrade.name}</span>
                     <em>{upgrade.text}</em>
                   </button>
@@ -1815,22 +6601,35 @@ export default function TangtangPage() {
           {hud.over && (
             <div className="startOverlay">
               <strong>작전 종료</strong>
-              <p>{minutes}:{seconds} 생존, {hud.kills} 처치, 점수 {hud.score}</p>
-              <div className="startWeaponPicker" aria-label="다음 판 무기 선택">
-                {weapons.map((weapon, index) => (
-                  <button
-                    key={weapon.id}
-                    type="button"
-                    className={selectedWeapon === index ? 'active' : ''}
-                    onClick={() => setWeapon(index)}
-                  >
-                    <i style={{ background: weapon.color }} />
-                    <span>{weapon.name}</span>
-                  </button>
-                ))}
+              <p>
+                {minutes}:{seconds} 생존 · {hud.kills} 처치 · 점수 {hud.score} ·{' '}
+                <span style={{ color: '#fde047' }}>+🪙 {hud.runCoins ?? 0} 코인 획득!</span>
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  className={bmStyles.lobbySecondaryBtn}
+                  onClick={() => returnToLobby('upgrades')}
+                >
+                  ⬆️ 영구 업그레이드
+                </button>
+                <button
+                  type="button"
+                  className={bmStyles.lobbySecondaryBtn}
+                  onClick={() => returnToLobby('pets')}
+                >
+                  🐾 펫 관리
+                </button>
+                <button
+                  type="button"
+                  className={bmStyles.lobbySecondaryBtn}
+                  onClick={() => returnToLobby('deploy')}
+                >
+                  🏕️ 로비로
+                </button>
               </div>
-              <button type="button" onClick={() => resetGame(selectedStage, selectedWeapon)}>
-                {weapons[selectedWeapon].name}(으)로 다시 도전
+              <button type="button" onClick={() => resetGame(selectedStage, selectedWeapon, selectedHero)}>
+                🚀 {HEROES[selectedHero].name} · {weapons[selectedWeapon].name}(으)로 바로 재도전
               </button>
             </div>
           )}
@@ -1886,17 +6685,31 @@ export default function TangtangPage() {
 
                         <div>
                           {isOwned ? (
-                            <button
-                              type="button"
-                              className={
-                                isEquipped
-                                  ? `${bmStyles.toggleBtn} ${bmStyles.toggleBtnActive}`
-                                  : bmStyles.toggleBtn
-                              }
-                              onClick={() => toggleBlackMarketItem(item.id)}
-                            >
-                              {isEquipped ? '활성화 중 ⚡ (클릭해 끄기)' : '꺼짐 (클릭해 켜기)'}
-                            </button>
+                            item.isWeaponUnlock ? (
+                              <button
+                                type="button"
+                                className={`${bmStyles.toggleBtn} ${bmStyles.toggleBtnActive}`}
+                                onClick={() => {
+                                  const wIdx = weapons.findIndex((w) => w.id === item.unlockWeaponId);
+                                  if (wIdx >= 0) setWeapon(wIdx, true);
+                                  closeBlackMarket();
+                                }}
+                              >
+                                {item.icon} 해금 완료! (클릭해 바로 장착)
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className={
+                                  isEquipped
+                                    ? `${bmStyles.toggleBtn} ${bmStyles.toggleBtnActive}`
+                                    : bmStyles.toggleBtn
+                                }
+                                onClick={() => toggleBlackMarketItem(item.id)}
+                              >
+                                {isEquipped ? '활성화 중 ⚡ (클릭해 끄기)' : '꺼짐 (클릭해 켜기)'}
+                              </button>
+                            )
                           ) : (
                             <button
                               type="button"
@@ -1996,7 +6809,7 @@ export default function TangtangPage() {
         }
 
         .survivorTop button,
-        .startOverlay button {
+        .startOverlay > button {
           min-height: 44px;
           padding: 0 18px;
           border: 0;
@@ -2295,10 +7108,12 @@ export default function TangtangPage() {
           inset: 0;
           z-index: 5;
           display: grid;
-          place-content: center;
-          gap: 14px;
-          padding: 24px;
-          background: rgba(15, 23, 42, 0.72);
+          justify-items: center;
+          align-content: safe center;
+          overflow-y: auto;
+          gap: 10px;
+          padding: 20px;
+          background: rgba(15, 23, 42, 0.78);
           text-align: center;
           backdrop-filter: blur(7px);
         }

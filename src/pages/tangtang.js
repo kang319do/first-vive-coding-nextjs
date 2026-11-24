@@ -159,6 +159,26 @@ const BLACK_MARKET_ITEMS = [
     isWeaponUnlock: true,
     unlockWeaponId: 'trident',
   },
+  {
+    id: 'unlockSans',
+    name: '샌즈 (비밀 캐릭터)',
+    icon: '💀',
+    price: 400,
+    tag: '비밀 캐릭터 해금',
+    description: '언더테일의 금지된 캐릭터 [샌즈]를 해금합니다. HP 1 고정 · 99.5% 절대 회피 MISS · 가스터 블래스터 전용 + ⚡ 시너지 콤보 추가 기술 발동!',
+    isHeroUnlock: true,
+    unlockHeroId: 'sans',
+  },
+  {
+    id: 'unlockForsaken',
+    name: '포세이큰 (비밀 캐릭터)',
+    icon: '👁️',
+    price: 450,
+    tag: '비밀 캐릭터 해금',
+    description: '어둠에 잠식된 비밀 캐릭터 [포세이큰]을 해금합니다. HP 220 · 공격력 +35% · 방어 +4 · 2.6초마다 부패 가시 & 침식 파동 자동 발사!',
+    isHeroUnlock: true,
+    unlockHeroId: 'forsaken',
+  },
 ];
 
 const HEROES = [
@@ -263,6 +283,53 @@ const HEROES = [
     stroke: '#fda4af',
     accent: '#f43f5e',
     stats: { maxHp: 105, speed: 260, critDamage: 2.5, xpGain: 1.25, lifestealKills: 8 },
+  },
+  {
+    id: 'sans',
+    name: '샌즈',
+    icon: '💀',
+    role: '회피·업보(KR)',
+    ultIcon: '💀',
+    ultName: '배드 타임',
+    ultSub: 'MEGALOVANIA',
+    ultQuote: '* 끔찍한 시간을 보내고 싶나?',
+    ultColor: '#38bdf8',
+    ultBg: '#020617',
+    perk: 'HP 1 고정 · 99.5% 절대 회피 MISS (0.5% 피격) · 가스터 블래스터 전용 · ⚡ 시너지 콤보(추가 기술 2종 + 필살기 초강화)!',
+    body: '#f8fafc',
+    stroke: '#38bdf8',
+    accent: '#2563eb',
+    stats: { maxHp: 1, speed: 285, damage: 1.15, fireRate: 1.25, critChance: 0.25, sansHero: true },
+    blackMarketUnlockId: 'unlockSans',
+  },
+  {
+    id: 'forsaken',
+    name: '포세이큰',
+    icon: '👁️',
+    role: '부패·폭주',
+    ultIcon: '👁️',
+    ultName: '어둠의 침식',
+    ultSub: 'FORSAKEN CORRUPTION',
+    ultQuote: '모든 빛은 결국 어둠에 잠식된다...',
+    ultColor: '#ef4444',
+    ultBg: '#180207',
+    perk: 'HP 220 · 공격력 +35% · 방어 +4 · 치명 피해 +80% · 2.6초마다 [부패 가시 & 침식 파동] 발사 · 10처치마다 흡혈!',
+    body: '#09090b',
+    stroke: '#ef4444',
+    accent: '#ef4444',
+    stats: {
+      maxHp: 220,
+      speed: 278,
+      damage: 1.35,
+      fireRate: 1.2,
+      armor: 4,
+      critChance: 0.25,
+      critDamage: 2.8,
+      area: 1.18,
+      lifestealKills: 10,
+      forsakenHero: true,
+    },
+    blackMarketUnlockId: 'unlockForsaken',
   },
 ];
 
@@ -564,32 +631,32 @@ const weapons = [
   {
     id: 'gaster',
     displayName: '가스터 블래스터',
-    displayDetail: '해골 레이저 발사! 각성 시 샌즈 패턴(서클·뼈·푸른 영혼) + MISS 회피 & KR 업보!',
+    displayDetail: '쌍둥이 초거대 해골 레이저 & KR 업보! 각성 시 8연 샌즈 서클·14연 뼈다귀·6연 푸른 영혼 폭격!',
     name: '가스터 블래스터',
-    detail: '해골 레이저 발사! 각성 시 샌즈 패턴(서클·뼈·푸른 영혼) + MISS 회피 & KR 업보!',
+    detail: '쌍둥이 초거대 해골 레이저 & KR 업보! 각성 시 8연 샌즈 서클·14연 뼈다귀·6연 푸른 영혼 폭격!',
     color: '#38bdf8',
-    cooldown: 1.15,
-    damage: 92,
-    radius: 34,
-    life: 0.72,
-    chargeTime: 0.26,
-    beamLength: 740,
+    cooldown: 0.62,
+    damage: 220,
+    radius: 44,
+    life: 0.78,
+    chargeTime: 0.18,
+    beamLength: 920,
     blackMarketUnlockId: 'unlockGaster',
   },
   {
     id: 'trident',
     displayName: '삼지창',
-    displayDetail: '관통 투척 후 되돌아오며 파도 번개 충격을 터뜨림!',
+    displayDetail: '초고속 3연 관통 투척·회수 + 낙뢰 해일 폭파! 각성 시 7연 황금 포세이돈 폭풍!',
     name: '삼지창',
-    detail: '관통 투척 후 되돌아오며 파도 번개 충격을 터뜨림!',
+    detail: '초고속 3연 관통 투척·회수 + 낙뢰 해일 폭파! 각성 시 7연 황금 포세이돈 폭풍!',
     color: '#2dd4bf',
-    cooldown: 0.68,
-    damage: 76,
-    speed: 780,
-    radius: 20,
-    life: 1.18,
-    pierce: 99,
-    slow: 0.45,
+    cooldown: 0.38,
+    damage: 195,
+    speed: 960,
+    radius: 28,
+    life: 1.35,
+    pierce: 999,
+    slow: 1.2,
     blackMarketUnlockId: 'unlockTrident',
   },
 ];
@@ -718,7 +785,7 @@ const WEAPON_ULTIMATES = {
     name: '포세이돈의 해일 번개',
     sub: 'POSEIDON TSUNAMI WRATH',
     quote: '거친 파도와 천둥이 너희를 삼키리라!',
-    detail: '8방향 황금 삼지창 왕복 투척 + 8연 낙뢰 번개 폭격',
+    detail: '16방향 초대형 황금 삼지창 왕복 폭풍 + 20연 천둥 낙뢰 & 초대형 해일 폭발',
     accent: '#2dd4bf',
     bg: '#042f2e',
   },
@@ -832,8 +899,8 @@ function createGame(startStage = 0, bmEquipped = {}, heroIndex = 0, lobbyMeta = 
   const up = meta.upgrades ?? {};
   const hero = HEROES[clamp(heroIndex, 0, HEROES.length - 1)] ?? HEROES[0];
   const hs = hero.stats ?? {};
-  const baseMaxHp = (hs.maxHp ?? 100) + (up.hp ?? 0) * 15;
-  const maxHp = bm.immortal ? 999 : baseMaxHp;
+  const baseMaxHp = hs.sansHero ? 1 : (hs.maxHp ?? 100) + (up.hp ?? 0) * 15;
+  const maxHp = hs.sansHero ? 1 : bm.immortal ? 999 : baseMaxHp;
   const baseSpeed = Math.round((hs.speed ?? 245) * (1 + (up.speed ?? 0) * 0.04));
   const baseDamage = (hs.damage ?? 1) * (1 + (up.atk ?? 0) * 0.08);
   const baseFireRate = (hs.fireRate ?? 1) * (1 + (up.haste ?? 0) * 0.05);
@@ -938,8 +1005,15 @@ function createGame(startStage = 0, bmEquipped = {}, heroIndex = 0, lobbyMeta = 
       slowTimer: 0,
       aimAngle: 0,
       ultCharge: 100,
-      sansMode: false,
+      sansHero: Boolean(hs.sansHero),
+      sansMode: Boolean(hs.sansHero),
       sansDodgeCd: 0,
+      sansBoneTimer: 2.0,
+      sansSynergyTimer: 2.6,
+      sansSynergyStep: 0,
+      forsakenHero: Boolean(hs.forsakenHero),
+      forsakenTimer: 2.2,
+      forsakenStep: 0,
     },
     enemies: [],
     bullets: [],
@@ -1297,10 +1371,17 @@ function applyUpgrade(game, id) {
       player.invincibleBonus += 0.06;
     }
     if (pId === 'vitality') {
-      player.maxHp += 24;
-      player.hp = Math.min(player.maxHp, player.hp + 32);
-      player.armor += 2;
-      player.regen += 0.4;
+      if (player.sansHero) {
+        player.maxHp = 1;
+        player.hp = 1;
+        player.invincibleBonus += 0.08;
+        player.damage *= 1.08;
+      } else {
+        player.maxHp += 24;
+        player.hp = Math.min(player.maxHp, player.hp + 32);
+        player.armor += 2;
+        player.regen += 0.4;
+      }
     }
     if (pId === 'utility') {
       player.magnet += 60;
@@ -1384,13 +1465,20 @@ function applySansAwakening(game) {
 function trySansDodge(game) {
   const player = game.player;
   const activeWeapon = weapons[player.weaponIndex];
-  if (!player.sansMode || activeWeapon?.id !== 'gaster') return false;
+  const hasGasterSans = Boolean(player.sansMode && activeWeapon?.id === 'gaster');
+  const hasHeroSans = Boolean(player.sansHero);
+  if (!hasHeroSans && !hasGasterSans) return false;
   if (player.invincible > 0) return false;
 
-  const canDodge = (player.sansDodgeCd ?? 0) <= 0 || Math.random() < 0.72;
+  // Sans Hero: exact 0.5% hit chance (99.5% MISS dodge)!
+  const canDodge = hasHeroSans
+    ? Math.random() < 0.995
+    : (player.sansDodgeCd ?? 0) <= 0 || Math.random() < 0.72;
   if (!canDodge) return false;
 
-  player.sansDodgeCd = 1.5;
+  if (!hasHeroSans) {
+    player.sansDodgeCd = 1.5;
+  }
   player.invincible = 0.44;
   // Classic Sans crisp sidestep!
   const dodgeDir = (player.aimAngle ?? 0) + (Math.random() < 0.5 ? Math.PI / 2 : -Math.PI / 2);
@@ -1429,10 +1517,13 @@ function executeUltimatePayload(game) {
   game.enemyBullets = (game.enemyBullets ?? []).filter((eb) => distance(player, eb) > 460);
 
   if (wId === 'gaster') {
-    // 💀 메갈로바니아 · 배드 타임: 8-Blaster Mega Spinning Gaster Circle + 16 Bone Barrage + KR!
-    const ringRadius = 260;
-    for (let i = 0; i < 8; i += 1) {
-      const a = aim + (Math.PI * 2 * i) / 8;
+    // 💀 메갈로바니아 · 배드 타임 (⚡ 샌즈 시너지 시 12블래스터 + 24뼈다귀 + 440px 푸른 영혼 대격돌!)
+    const isSynergy = Boolean(player.sansHero);
+    const blasterN = isSynergy ? 12 : 8;
+    const boneN = isSynergy ? 24 : 16;
+    const ringRadius = isSynergy ? 290 : 260;
+    for (let i = 0; i < blasterN; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / blasterN;
       const sx = clamp(player.x + Math.cos(a) * ringRadius, 40, world.width - 40);
       const sy = clamp(player.y + Math.sin(a) * ringRadius, 40, world.height - 40);
       const inward = Math.atan2(player.y - sy, player.x - sx);
@@ -1442,14 +1533,14 @@ function executeUltimatePayload(game) {
         vx: 0,
         vy: 0,
         angle: inward,
-        radius: 44 * player.area,
-        beamLength: 820,
-        charge: 0.14 + i * 0.055,
-        maxCharge: 0.14 + i * 0.055,
+        radius: (isSynergy ? 52 : 44) * player.area,
+        beamLength: isSynergy ? 920 : 820,
+        charge: 0.12 + i * 0.045,
+        maxCharge: 0.12 + i * 0.045,
         fired: false,
-        damage: getPlayerDamage(player, 240),
-        life: 1.05 + i * 0.055,
-        maxLife: 1.05 + i * 0.055,
+        damage: getPlayerDamage(player, isSynergy ? 320 : 240),
+        life: 1.15 + i * 0.045,
+        maxLife: 1.15 + i * 0.045,
         pierce: 9999,
         color: i % 2 === 0 ? '#38bdf8' : '#facc15',
         spin: 0,
@@ -1458,19 +1549,19 @@ function executeUltimatePayload(game) {
         hitCooldowns: new Map(),
       });
     }
-    for (let b = 0; b < 16; b += 1) {
-      const ba = aim + (Math.PI * 2 * b) / 16;
+    for (let b = 0; b < boneN; b += 1) {
+      const ba = aim + (Math.PI * 2 * b) / boneN;
       const isBlue = b % 2 === 1;
       game.bullets.push({
         x: player.x + Math.cos(ba) * 28,
         y: player.y + Math.sin(ba) * 28,
-        vx: Math.cos(ba) * 760,
-        vy: Math.sin(ba) * 760,
-        radius: 16 * player.area,
-        damage: getPlayerDamage(player, 165),
-        life: 1.15,
+        vx: Math.cos(ba) * (isSynergy ? 840 : 760),
+        vy: Math.sin(ba) * (isSynergy ? 840 : 760),
+        radius: (isSynergy ? 19 : 16) * player.area,
+        damage: getPlayerDamage(player, isSynergy ? 220 : 165),
+        life: 1.25,
         pierce: 99,
-        slow: isBlue ? 1.8 : 0.6,
+        slow: isBlue ? 2.2 : 0.7,
         color: isBlue ? '#38bdf8' : '#f8fafc',
         blueBone: isBlue,
         spin: 0,
@@ -1479,27 +1570,48 @@ function executeUltimatePayload(game) {
         hitIds: new Set(),
       });
     }
-    addFloatingText(game, player.x, player.y - 34, '💀 BAD TIME!!', '#38bdf8', 26);
+    if (isSynergy) {
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: 80,
+        damage: getPlayerDamage(player, 340),
+        life: 0.5,
+        maxLife: 0.5,
+        pierce: 999,
+        color: '#38bdf8',
+        spin: 0,
+        type: 'shockwave',
+        blast: 440 * player.area,
+        hitIds: new Set(),
+      });
+    }
+    addFloatingText(game, player.x, player.y - 34, isSynergy ? '⚡ 심판의 회랑 · BAD TIME!!' : '💀 BAD TIME!!', '#38bdf8', 26);
   } else if (wId === 'trident') {
-    // 🔱 포세이돈의 해일 번개: 8 Golden Returning Tridents 360° + 8 Lightning Strikes!
-    for (let i = 0; i < 8; i += 1) {
-      const a = aim + (Math.PI * 2 * i) / 8;
+    // 🔱 GOD-TIER 포세이돈의 해일 번개: 16 Gigantic Golden Tridents 360° + 20 Sky Lightning Strikes + Giant Tidal Wave!
+    if (!player.sansHero) {
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.5));
+    }
+    for (let i = 0; i < 16; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 16;
       game.bullets.push({
         x: player.x + Math.cos(a) * 26,
         y: player.y + Math.sin(a) * 26,
-        vx: Math.cos(a) * 860,
-        vy: Math.sin(a) * 860,
-        speed: 860,
-        radius: 26 * player.area,
-        damage: getPlayerDamage(player, 210),
-        life: 1.35,
-        maxLife: 1.35,
-        outboundTime: 0.52,
+        vx: Math.cos(a) * 1020,
+        vy: Math.sin(a) * 1020,
+        speed: 1020,
+        radius: 36 * player.area,
+        damage: getPlayerDamage(player, 420),
+        life: 1.55,
+        maxLife: 1.55,
+        outboundTime: 0.56,
         returning: false,
         hitOut: new Set(),
         hitBack: new Set(),
         pierce: 999,
-        slow: 1.1,
+        slow: 2.0,
         color: '#facc15',
         spin: 0,
         type: 'trident',
@@ -1508,14 +1620,30 @@ function executeUltimatePayload(game) {
     }
     const targets = [...game.enemies]
       .sort((a, b) => distance(player, a) - distance(player, b))
-      .slice(0, 8);
+      .slice(0, 20);
     targets.forEach((enemy) => {
-      applyDamageToEnemy(enemy, getPlayerDamage(player, 260));
-      enemy.slow = Math.max(enemy.slow ?? 0, 1.5);
-      game.lightningEffects.push({ x: enemy.x, y: enemy.y, color: '#2dd4bf', life: 0.34, maxLife: 0.34 });
-      addParticles(game, enemy.x, enemy.y, '#5eead4', 14);
+      applyDamageToEnemy(enemy, getPlayerDamage(player, 480));
+      enemy.slow = Math.max(enemy.slow ?? 0, 2.4);
+      game.lightningEffects.push({ x: enemy.x, y: enemy.y, color: '#facc15', life: 0.42, maxLife: 0.42 });
+      addParticles(game, enemy.x, enemy.y, '#5eead4', 18);
     });
-    addFloatingText(game, player.x, player.y - 34, '🔱 POSEIDON WRATH!', '#2dd4bf', 24);
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 80,
+      damage: getPlayerDamage(player, 380),
+      life: 0.5,
+      maxLife: 0.5,
+      pierce: 999,
+      color: '#2dd4bf',
+      spin: 0,
+      type: 'shockwave',
+      blast: 480 * player.area,
+      hitIds: new Set(),
+    });
+    addFloatingText(game, player.x, player.y - 34, '🔱 POSEIDON WRATH!!', '#2dd4bf', 28);
   } else if (wId === 'blaster') {
     // 🔫 하이퍼 플라즈마 난사: 24 homing plasma bolts (16 radial + 8 aimed)
     for (let i = 0; i < 24; i += 1) {
@@ -1608,6 +1736,7 @@ function executeUltimatePayload(game) {
         returning: false,
         spin: 0,
         awakened: true,
+        hitCooldowns: new Map(),
       });
     }
   } else if (wId === 'shockwave') {
@@ -1868,6 +1997,7 @@ function triggerUltimate(game) {
   const weapon = weapons[player.weaponIndex] ?? weapons[0];
   const ultSpec = WEAPON_ULTIMATES[weapon.id] ?? WEAPON_ULTIMATES.blaster;
   const isSans = weapon.id === 'gaster';
+  const isSansSynergy = Boolean(player.sansHero && isSans);
 
   player.ultCharge = 0;
   player.invincible = Math.max(player.invincible, 2.6);
@@ -1880,14 +2010,15 @@ function triggerUltimate(game) {
     impactAt: 0.42,
     executed: false,
     weaponId: weapon.id,
-    weaponName: weapon.displayName ?? weapon.name,
+    weaponName: isSansSynergy ? '시너지 · 샌즈 × 가스터' : (weapon.displayName ?? weapon.name),
     ultIcon: ultSpec.icon,
-    ultName: ultSpec.name,
-    ultSub: ultSpec.sub,
-    ultQuote: ultSpec.quote,
+    ultName: isSansSynergy ? '심판의 회랑 · 메갈로바니아' : ultSpec.name,
+    ultSub: isSansSynergy ? 'SYNERGY OVERDRIVE · JUDGEMENT HALL' : ultSpec.sub,
+    ultQuote: isSansSynergy ? '* 심판의 시간이다... 끔찍한 시간을 보내게 될 거야.' : ultSpec.quote,
     accent: ultSpec.accent,
     bg: ultSpec.bg,
     sansMode: isSans,
+    synergyMode: isSansSynergy,
   };
   game.ultBannerName = `${ultSpec.icon} ${ultSpec.name}!`;
   game.shake = 10;
@@ -2079,29 +2210,29 @@ function fireWeapon(game) {
             };
 
       if (pattern === 0) {
-        // Pattern 1: Spinning Gaster Blaster Circle Ring (6 skulls firing staggered inward beams!)
-        const count = 6;
-        const ringR = 205;
+        // Pattern 1: GOD-TIER Spinning Gaster Blaster Circle Ring (8 skulls firing staggered mega beams!)
+        const count = 8;
+        const ringR = 225;
         for (let i = 0; i < count; i += 1) {
           const a = baseAngle + (Math.PI * 2 * i) / count;
           const sx = clamp(anchor.x + Math.cos(a) * ringR, 40, world.width - 40);
           const sy = clamp(anchor.y + Math.sin(a) * ringR, 40, world.height - 40);
           const aimIn = Math.atan2(anchor.y - sy, anchor.x - sx);
-          const stagger = 0.14 + i * 0.06;
+          const stagger = 0.1 + i * 0.045;
           game.bullets.push({
             x: sx,
             y: sy,
             vx: 0,
             vy: 0,
             angle: aimIn,
-            radius: weapon.radius * player.area * 1.18,
-            beamLength: (weapon.beamLength ?? 740) * 1.15,
+            radius: weapon.radius * player.area * 1.3,
+            beamLength: (weapon.beamLength ?? 920) * 1.15,
             charge: stagger,
             maxCharge: stagger,
             fired: false,
-            damage: getPlayerDamage(player, weapon.damage * boost * 0.95),
-            life: weapon.life + 0.12 + i * 0.06,
-            maxLife: weapon.life + 0.12 + i * 0.06,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.35),
+            life: weapon.life + 0.16 + i * 0.045,
+            maxLife: weapon.life + 0.16 + i * 0.045,
             pierce: 9999,
             color: i % 2 === 0 ? '#38bdf8' : '#facc15',
             spin: 0,
@@ -2111,22 +2242,22 @@ function fireWeapon(game) {
           });
           addParticles(game, sx, sy, '#38bdf8', 8);
         }
-        addFloatingText(game, anchor.x, anchor.y - 36, '💀 GASTER CIRCLE!', '#38bdf8', 18);
+        addFloatingText(game, anchor.x, anchor.y - 36, '💀 GASTER CIRCLE!', '#38bdf8', 20);
       } else if (pattern === 1) {
-        // Pattern 2: Undertale Bone Zone Barrage + Twin Flanking Gaster Blasters!
-        for (let b = 0; b < 9; b += 1) {
-          const spreadA = baseAngle + (b / 8 - 0.5) * 1.05;
+        // Pattern 2: GOD-TIER Undertale Bone Zone Barrage (14 Bones) + Triple Mega Gaster Blasters!
+        for (let b = 0; b < 14; b += 1) {
+          const spreadA = baseAngle + (b / 13 - 0.5) * 1.35;
           const isBlue = b % 2 === 1;
           game.bullets.push({
             x: player.x + Math.cos(spreadA) * 24,
             y: player.y + Math.sin(spreadA) * 24,
-            vx: Math.cos(spreadA) * (isBlue ? 680 : 760),
-            vy: Math.sin(spreadA) * (isBlue ? 680 : 760),
-            radius: 15 * player.area,
-            damage: getPlayerDamage(player, weapon.damage * boost * 0.85),
-            life: 1.05,
+            vx: Math.cos(spreadA) * (isBlue ? 760 : 860),
+            vy: Math.sin(spreadA) * (isBlue ? 760 : 860),
+            radius: 18 * player.area,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.1),
+            life: 1.15,
             pierce: 99,
-            slow: isBlue ? 1.6 : 0.45,
+            slow: isBlue ? 2.0 : 0.65,
             color: isBlue ? '#38bdf8' : '#f8fafc',
             blueBone: isBlue,
             spin: 0,
@@ -2135,48 +2266,48 @@ function fireWeapon(game) {
             hitIds: new Set(),
           });
         }
-        [-1, 1].forEach((side) => {
+        [-1, 0, 1].forEach((side) => {
           const perp = baseAngle + Math.PI / 2;
-          const sx = clamp(player.x + Math.cos(baseAngle) * 44 + Math.cos(perp) * side * 74, 40, world.width - 40);
-          const sy = clamp(player.y + Math.sin(baseAngle) * 44 + Math.sin(perp) * side * 74, 40, world.height - 40);
+          const sx = clamp(player.x + Math.cos(baseAngle) * 48 + Math.cos(perp) * side * 78, 40, world.width - 40);
+          const sy = clamp(player.y + Math.sin(baseAngle) * 48 + Math.sin(perp) * side * 78, 40, world.height - 40);
           game.bullets.push({
             x: sx,
             y: sy,
             vx: 0,
             vy: 0,
-            angle: baseAngle,
-            radius: weapon.radius * player.area * 1.16,
-            beamLength: (weapon.beamLength ?? 740) * 1.15,
-            charge: 0.2,
-            maxCharge: 0.2,
+            angle: baseAngle + side * 0.06,
+            radius: weapon.radius * player.area * 1.26,
+            beamLength: (weapon.beamLength ?? 920) * 1.15,
+            charge: 0.15,
+            maxCharge: 0.15,
             fired: false,
-            damage: getPlayerDamage(player, weapon.damage * boost),
-            life: weapon.life + 0.12,
-            maxLife: weapon.life + 0.12,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.35),
+            life: weapon.life + 0.16,
+            maxLife: weapon.life + 0.16,
             pierce: 9999,
-            color: '#38bdf8',
+            color: side === 0 ? '#facc15' : '#38bdf8',
             spin: 0,
             type: 'gaster',
             awakened: true,
             hitCooldowns: new Map(),
           });
         });
-        addFloatingText(game, player.x, player.y - 32, '🦴 BONE ZONE!', '#f8fafc', 18);
+        addFloatingText(game, player.x, player.y - 32, '🦴 BONE ZONE!', '#f8fafc', 20);
       } else {
-        // Pattern 3: Blue Soul Gravity Slam + X-Formation Converging Blasters!
-        const slamR = 240 * player.area;
+        // Pattern 3: GOD-TIER Blue Soul Gravity Slam (320px) + 6 Star-Formation Converging Mega Blasters!
+        const slamR = 320 * player.area;
         game.enemies.forEach((enemy) => {
           const d = distance(anchor, enemy);
           if (d < slamR + enemy.radius) {
             const pullA = Math.atan2(anchor.y - enemy.y, anchor.x - enemy.x);
-            const pullDist = Math.min(d * 0.55, enemy.boss ? 22 : 95);
+            const pullDist = Math.min(d * 0.65, enemy.boss ? 28 : 130);
             enemy.x = clamp(enemy.x + Math.cos(pullA) * pullDist, 30, world.width - 30);
             enemy.y = clamp(enemy.y + Math.sin(pullA) * pullDist, 30, world.height - 30);
-            enemy.slow = Math.max(enemy.slow ?? 0, 1.6);
-            enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 3.4);
-            enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, getPlayerDamage(player, weapon.damage * boost * 0.65));
-            applyDamageToEnemy(enemy, getPlayerDamage(player, weapon.damage * boost * 0.55));
-            addParticles(game, enemy.x, enemy.y, '#38bdf8', 7);
+            enemy.slow = Math.max(enemy.slow ?? 0, 2.2);
+            enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 4.0);
+            enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, getPlayerDamage(player, weapon.damage * boost * 0.95));
+            applyDamageToEnemy(enemy, getPlayerDamage(player, weapon.damage * boost * 0.85));
+            addParticles(game, enemy.x, enemy.y, '#38bdf8', 8);
           }
         });
         game.bullets.push({
@@ -2184,10 +2315,10 @@ function fireWeapon(game) {
           y: anchor.y,
           vx: 0,
           vy: 0,
-          radius: 40,
-          damage: getPlayerDamage(player, 40),
-          life: 0.34,
-          maxLife: 0.34,
+          radius: 50,
+          damage: getPlayerDamage(player, 90),
+          life: 0.38,
+          maxLife: 0.38,
           pierce: 999,
           color: '#38bdf8',
           spin: 0,
@@ -2195,24 +2326,24 @@ function fireWeapon(game) {
           blast: slamR,
           hitIds: new Set(),
         });
-        for (let k = 0; k < 4; k += 1) {
-          const xa = baseAngle + Math.PI / 4 + (Math.PI / 2) * k;
-          const sx = clamp(anchor.x + Math.cos(xa) * 195, 40, world.width - 40);
-          const sy = clamp(anchor.y + Math.sin(xa) * 195, 40, world.height - 40);
+        for (let k = 0; k < 6; k += 1) {
+          const xa = baseAngle + (Math.PI * 2 * k) / 6;
+          const sx = clamp(anchor.x + Math.cos(xa) * 215, 40, world.width - 40);
+          const sy = clamp(anchor.y + Math.sin(xa) * 215, 40, world.height - 40);
           game.bullets.push({
             x: sx,
             y: sy,
             vx: 0,
             vy: 0,
             angle: Math.atan2(anchor.y - sy, anchor.x - sx),
-            radius: weapon.radius * player.area * 1.22,
-            beamLength: (weapon.beamLength ?? 740) * 1.15,
-            charge: 0.22,
-            maxCharge: 0.22,
+            radius: weapon.radius * player.area * 1.32,
+            beamLength: (weapon.beamLength ?? 920) * 1.15,
+            charge: 0.16,
+            maxCharge: 0.16,
             fired: false,
-            damage: getPlayerDamage(player, weapon.damage * boost * 1.05),
-            life: weapon.life + 0.14,
-            maxLife: weapon.life + 0.14,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.4),
+            life: weapon.life + 0.18,
+            maxLife: weapon.life + 0.18,
             pierce: 9999,
             color: k % 2 === 0 ? '#38bdf8' : '#e879f9',
             spin: 0,
@@ -2221,38 +2352,42 @@ function fireWeapon(game) {
             hitCooldowns: new Map(),
           });
         }
-        addFloatingText(game, anchor.x, anchor.y - 34, '💙 BLUE SOUL SLAM!', '#38bdf8', 19);
-        game.shake = Math.max(game.shake, 10);
+        addFloatingText(game, anchor.x, anchor.y - 34, '💙 BLUE SOUL SLAM!', '#38bdf8', 21);
+        game.shake = Math.max(game.shake, 12);
       }
 
       queueSound(game, 'switch');
       return;
     }
 
-    const spawnX = clamp(player.x + Math.cos(baseAngle) * 46, 40, world.width - 40);
-    const spawnY = clamp(player.y + Math.sin(baseAngle) * 46, 40, world.height - 40);
-    game.bullets.push({
-      x: spawnX,
-      y: spawnY,
-      vx: 0,
-      vy: 0,
-      angle: baseAngle,
-      radius: weapon.radius * player.area,
-      beamLength: weapon.beamLength ?? 740,
-      charge: weapon.chargeTime ?? 0.26,
-      maxCharge: weapon.chargeTime ?? 0.26,
-      fired: false,
-      damage: getPlayerDamage(player, weapon.damage * boost),
-      life: weapon.life,
-      maxLife: weapon.life,
-      pierce: 9999,
-      color: '#38bdf8',
-      spin: 0,
-      type: 'gaster',
-      awakened: false,
-      hitCooldowns: new Map(),
+    // Normal (Unawakened) GOD-TIER Twin Flanking Gaster Blasters!
+    [-1, 1].forEach((side) => {
+      const perp = baseAngle + Math.PI / 2;
+      const spawnX = clamp(player.x + Math.cos(baseAngle) * 46 + Math.cos(perp) * side * 44, 40, world.width - 40);
+      const spawnY = clamp(player.y + Math.sin(baseAngle) * 46 + Math.sin(perp) * side * 44, 40, world.height - 40);
+      game.bullets.push({
+        x: spawnX,
+        y: spawnY,
+        vx: 0,
+        vy: 0,
+        angle: baseAngle,
+        radius: weapon.radius * player.area,
+        beamLength: weapon.beamLength ?? 920,
+        charge: weapon.chargeTime ?? 0.18,
+        maxCharge: weapon.chargeTime ?? 0.18,
+        fired: false,
+        damage: getPlayerDamage(player, weapon.damage * boost),
+        life: weapon.life,
+        maxLife: weapon.life,
+        pierce: 9999,
+        color: '#38bdf8',
+        spin: 0,
+        type: 'gaster',
+        awakened: false,
+        hitCooldowns: new Map(),
+      });
+      addParticles(game, spawnX, spawnY, '#38bdf8', 10);
     });
-    addParticles(game, spawnX, spawnY, '#38bdf8', 10);
     queueSound(game, 'switch');
     return;
   }
@@ -2267,38 +2402,45 @@ function fireWeapon(game) {
       baseAngle = Math.atan2(nearestForTrident.y - player.y, nearestForTrident.x - player.x);
     }
 
-    const tridentCount = awakened ? 3 : 1;
-    const spread = awakened ? 0.52 : 0;
-    const speed = weapon.speed * (awakened ? 1.12 : 1);
+    // 🔱 GOD-TIER POSEIDON TRIDENT: 3 huge tridents normally, 7 (5 front storm + 2 rear guard) when awakened!
+    const frontCount = awakened ? 5 : 3;
+    const spread = awakened ? 0.88 : 0.38;
+    const speed = weapon.speed * (awakened ? 1.2 : 1);
+    const angles = [];
+    for (let i = 0; i < frontCount; i += 1) {
+      const offset = i / (frontCount - 1) - 0.5;
+      angles.push(baseAngle + offset * spread);
+    }
+    if (awakened) {
+      angles.push(baseAngle + Math.PI - 0.25, baseAngle + Math.PI + 0.25);
+    }
 
-    for (let i = 0; i < tridentCount; i += 1) {
-      const offset = tridentCount === 1 ? 0 : i / (tridentCount - 1) - 0.5;
-      const angle = baseAngle + offset * spread;
+    angles.forEach((angle) => {
       game.bullets.push({
         x: player.x + Math.cos(angle) * 24,
         y: player.y + Math.sin(angle) * 24,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         speed,
-        radius: weapon.radius * player.area * (awakened ? 1.24 : 1),
-        damage: getPlayerDamage(player, weapon.damage * boost),
-        life: weapon.life + (awakened ? 0.16 : 0),
-        maxLife: weapon.life + (awakened ? 0.16 : 0),
-        outboundTime: awakened ? 0.48 : 0.42,
+        radius: weapon.radius * player.area * (awakened ? 1.38 : 1.12),
+        damage: getPlayerDamage(player, weapon.damage * boost * (awakened ? 1.35 : 1)),
+        life: weapon.life + (awakened ? 0.22 : 0),
+        maxLife: weapon.life + (awakened ? 0.22 : 0),
+        outboundTime: awakened ? 0.52 : 0.45,
         returning: false,
         hitOut: new Set(),
         hitBack: new Set(),
         pierce: 999,
-        slow: (weapon.slow ?? 0.45) * (awakened ? 1.4 : 1),
+        slow: (weapon.slow ?? 1.2) * (awakened ? 1.5 : 1),
         color: awakened ? '#facc15' : '#2dd4bf',
         spin: 0,
         type: 'trident',
         awakened,
       });
-    }
+    });
 
-    addParticles(game, player.x + Math.cos(baseAngle) * 22, player.y + Math.sin(baseAngle) * 22, awakened ? '#facc15' : '#2dd4bf', awakened ? 14 : 7);
-    if (awakened) game.shake = Math.max(game.shake, 6);
+    addParticles(game, player.x + Math.cos(baseAngle) * 22, player.y + Math.sin(baseAngle) * 22, awakened ? '#facc15' : '#2dd4bf', awakened ? 18 : 10);
+    game.shake = Math.max(game.shake, awakened ? 8 : 3);
     queueSound(game, 'trident');
     return;
   }
@@ -2423,6 +2565,242 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
   const player = game.player;
   player.slowTimer = Math.max(0, (player.slowTimer ?? 0) - delta);
   player.sansDodgeCd = Math.max(0, (player.sansDodgeCd ?? 0) - delta);
+  if (player.sansHero && game.enemies.length > 0) {
+    player.sansBoneTimer = (player.sansBoneTimer ?? 2.4) - delta;
+    if (player.sansBoneTimer <= 0) {
+      player.sansBoneTimer = 2.4;
+      const nearestForBone = game.enemies
+        .map((e) => ({ e, dist: distance(player, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      if (nearestForBone) {
+        const boneAngle = Math.atan2(nearestForBone.y - player.y, nearestForBone.x - player.x);
+        [-0.14, 0.14].forEach((off, idx) => {
+          const a = boneAngle + off;
+          const isBlue = idx === 1;
+          game.bullets.push({
+            x: player.x + Math.cos(a) * 20,
+            y: player.y + Math.sin(a) * 20,
+            vx: Math.cos(a) * 720,
+            vy: Math.sin(a) * 720,
+            radius: 14 * player.area,
+            damage: getPlayerDamage(player, 48),
+            life: 1.0,
+            pierce: 99,
+            slow: isBlue ? 1.2 : 0.4,
+            color: isBlue ? '#38bdf8' : '#f8fafc',
+            blueBone: isBlue,
+            spin: 0,
+            type: 'sansBone',
+            awakened: true,
+            hitIds: new Set(),
+          });
+        });
+      }
+    }
+
+    // ⚡ SANS × GASTER BLASTER SYNERGY COMBO: 2 Extra Signature Techniques every 3.1s!
+    if (weapons[player.weaponIndex]?.id === 'gaster') {
+      player.sansSynergyTimer = (player.sansSynergyTimer ?? 2.6) - delta;
+      if (player.sansSynergyTimer <= 0) {
+        player.sansSynergyTimer = 3.1;
+        const step = (player.sansSynergyStep ?? 0) % 2;
+        player.sansSynergyStep = (player.sansSynergyStep ?? 0) + 1;
+        const nearest = game.enemies
+          .map((e) => ({ e, dist: distance(player, e) }))
+          .sort((a, b) => a.dist - b.dist)[0]?.e;
+        const target = nearest
+          ? { x: nearest.x, y: nearest.y }
+          : {
+              x: clamp(player.x + Math.cos(player.aimAngle ?? 0) * 180, 80, world.width - 80),
+              y: clamp(player.y + Math.sin(player.aimAngle ?? 0) * 180, 80, world.height - 80),
+            };
+
+        if (step === 0) {
+          // Synergy Technique 1: ⚡ 뼈 감옥 + 십자 심판 (12 Converging Bones + 4 Cross Gaster Blasters!)
+          for (let b = 0; b < 12; b += 1) {
+            const ba = (Math.PI * 2 * b) / 12;
+            const bx = clamp(target.x + Math.cos(ba) * 185, 36, world.width - 36);
+            const by = clamp(target.y + Math.sin(ba) * 185, 36, world.height - 36);
+            const inward = Math.atan2(target.y - by, target.x - bx);
+            const isBlue = b % 2 === 1;
+            game.bullets.push({
+              x: bx,
+              y: by,
+              vx: Math.cos(inward) * 560,
+              vy: Math.sin(inward) * 560,
+              radius: 16 * player.area,
+              damage: getPlayerDamage(player, 115),
+              life: 0.72,
+              pierce: 99,
+              slow: isBlue ? 2.0 : 0.7,
+              color: isBlue ? '#38bdf8' : '#f8fafc',
+              blueBone: isBlue,
+              spin: 0,
+              type: 'sansBone',
+              awakened: true,
+              hitIds: new Set(),
+            });
+          }
+          for (let k = 0; k < 4; k += 1) {
+            const ka = Math.PI / 4 + (Math.PI / 2) * k;
+            const sx = clamp(target.x + Math.cos(ka) * 210, 40, world.width - 40);
+            const sy = clamp(target.y + Math.sin(ka) * 210, 40, world.height - 40);
+            game.bullets.push({
+              x: sx,
+              y: sy,
+              vx: 0,
+              vy: 0,
+              angle: Math.atan2(target.y - sy, target.x - sx),
+              radius: 38 * player.area,
+              beamLength: 820,
+              charge: 0.2,
+              maxCharge: 0.2,
+              fired: false,
+              damage: getPlayerDamage(player, 145),
+              life: 0.86,
+              maxLife: 0.86,
+              pierce: 9999,
+              color: k % 2 === 0 ? '#38bdf8' : '#facc15',
+              spin: 0,
+              type: 'gaster',
+              awakened: true,
+              hitCooldowns: new Map(),
+            });
+          }
+          addFloatingText(game, target.x, target.y - 36, '⚡ 시너지 · 뼈 감옥 심판!', '#38bdf8', 20);
+          queueSound(game, 'switch');
+        } else {
+          // Synergy Technique 2: 💙 심판의 회랑 · 푸른 영혼 대격돌 + 5연 회전 블래스터!
+          const slamR = 340 * player.area;
+          game.enemies.forEach((enemy) => {
+            const d = distance(player, enemy);
+            if (d < slamR + enemy.radius) {
+              const pullA = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+              const pullDist = Math.min(d * 0.45, enemy.boss ? 28 : 110);
+              enemy.x = clamp(enemy.x + Math.cos(pullA) * pullDist, 30, world.width - 30);
+              enemy.y = clamp(enemy.y + Math.sin(pullA) * pullDist, 30, world.height - 30);
+              enemy.slow = Math.max(enemy.slow ?? 0, 2.2);
+              enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 3.6);
+              enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, getPlayerDamage(player, 95));
+              applyDamageToEnemy(enemy, getPlayerDamage(player, 125));
+              addParticles(game, enemy.x, enemy.y, '#38bdf8', 8);
+            }
+          });
+          game.bullets.push({
+            x: player.x,
+            y: player.y,
+            vx: 0,
+            vy: 0,
+            radius: 60,
+            damage: getPlayerDamage(player, 80),
+            life: 0.42,
+            maxLife: 0.42,
+            pierce: 999,
+            color: '#38bdf8',
+            spin: 0,
+            type: 'shockwave',
+            blast: slamR,
+            hitIds: new Set(),
+          });
+          const aimA = Math.atan2(target.y - player.y, target.x - player.x);
+          for (let i = -2; i <= 2; i += 1) {
+            const arcA = aimA + i * 0.34;
+            const sx = clamp(player.x + Math.cos(arcA) * 95, 40, world.width - 40);
+            const sy = clamp(player.y + Math.sin(arcA) * 95, 40, world.height - 40);
+            game.bullets.push({
+              x: sx,
+              y: sy,
+              vx: 0,
+              vy: 0,
+              angle: arcA,
+              radius: 36 * player.area,
+              beamLength: 820,
+              charge: 0.16 + Math.abs(i) * 0.06,
+              maxCharge: 0.16 + Math.abs(i) * 0.06,
+              fired: false,
+              damage: getPlayerDamage(player, 135),
+              life: 0.88 + Math.abs(i) * 0.06,
+              maxLife: 0.88 + Math.abs(i) * 0.06,
+              pierce: 9999,
+              color: i === 0 ? '#facc15' : '#38bdf8',
+              spin: 0,
+              type: 'gaster',
+              awakened: true,
+              hitCooldowns: new Map(),
+            });
+          }
+          addFloatingText(game, player.x, player.y - 36, '💙 시너지 · 심판의 회랑!', '#facc15', 20);
+          game.shake = Math.max(game.shake, 11);
+          queueSound(game, 'gaster');
+        }
+      }
+    }
+  }
+
+  // 👁️ FORSAKEN PASSIVE CORRUPTION SKILLS (every 2.6s: Corruption Spikes / Forsaken Nova!)
+  if (player.forsakenHero && game.enemies.length > 0) {
+    player.forsakenTimer = (player.forsakenTimer ?? 2.6) - delta;
+    if (player.forsakenTimer <= 0) {
+      player.forsakenTimer = 2.6;
+      const fStep = (player.forsakenStep ?? 0) % 2;
+      player.forsakenStep = (player.forsakenStep ?? 0) + 1;
+      const nearest = game.enemies
+        .map((e) => ({ e, dist: distance(player, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      const aimA = nearest
+        ? Math.atan2(nearest.y - player.y, nearest.x - player.x)
+        : (player.aimAngle ?? 0);
+
+      if (fStep === 0) {
+        // Skill 1: 👁️ 부패의 사슬 가시 (6 piercing crimson shadow waves!)
+        for (let i = 0; i < 6; i += 1) {
+          const a = aimA + (i / 5 - 0.5) * 0.95;
+          game.bullets.push({
+            x: player.x + Math.cos(a) * 22,
+            y: player.y + Math.sin(a) * 22,
+            vx: Math.cos(a) * 820,
+            vy: Math.sin(a) * 820,
+            radius: 22 * player.area,
+            damage: getPlayerDamage(player, 125),
+            life: 0.9,
+            pierce: 16,
+            slow: 1.2,
+            color: i % 2 === 0 ? '#ef4444' : '#22c55e',
+            spin: 0,
+            type: 'lightchaser',
+            awakened: true,
+          });
+        }
+        addFloatingText(game, player.x, player.y - 34, '👁️ 부패의 가시!', '#ef4444', 19);
+        queueSound(game, 'bat');
+      } else {
+        // Skill 2: 🩸 침식의 파동 (250px dark-crimson corruption shockwave + lifesteal!)
+        const novaR = 250 * player.area;
+        game.bullets.push({
+          x: player.x,
+          y: player.y,
+          vx: 0,
+          vy: 0,
+          radius: 50,
+          damage: getPlayerDamage(player, 190),
+          life: 0.4,
+          maxLife: 0.4,
+          pierce: 999,
+          color: '#ef4444',
+          spin: 0,
+          type: 'shockwave',
+          blast: novaR,
+          hitIds: new Set(),
+        });
+        player.hp = Math.min(player.maxHp, player.hp + 8);
+        addParticles(game, player.x, player.y, '#ef4444', 18);
+        addParticles(game, player.x, player.y, '#22c55e', 10);
+        addFloatingText(game, player.x, player.y - 34, '🩸 침식의 파동!', '#ef4444', 19);
+        game.shake = Math.max(game.shake, 7);
+        queueSound(game, 'boom');
+      }
+    }
+  }
   const playerSpeedFactor = player.slowTimer > 0 ? 0.62 : 1;
   const moveX = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch.x;
   const moveY = (input.down ? 1 : 0) - (input.up ? 1 : 0) + input.touch.y;
@@ -2910,6 +3288,7 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
       }
       sp.x += sp.vx * delta;
       sp.y += sp.vy * delta;
+      if (!sp.hitCooldowns) sp.hitCooldowns = new Map();
       game.enemies.forEach((enemy) => {
         const lastHit = sp.hitCooldowns.get(enemy) ?? -1;
         if (game.time - lastHit > 0.24 && distance(sp, enemy) < sp.radius + enemy.radius) {
@@ -3048,9 +3427,10 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
       const len = bullet.beamLength ?? 740;
       const halfWidth = bullet.radius * 0.68;
 
+      if (!bullet.hitCooldowns) bullet.hitCooldowns = new Map();
       game.enemies.forEach((enemy) => {
         const lastHit = bullet.hitCooldowns.get(enemy) ?? -1;
-        if (game.time - lastHit < 0.11) return;
+        if (game.time - lastHit < 0.085) return;
         const ex = enemy.x - bx1;
         const ey = enemy.y - by1;
         const proj = clamp(ex * dx + ey * dy, 0, len);
@@ -3058,12 +3438,13 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
         const cy = by1 + dy * proj;
         if (Math.hypot(enemy.x - cx, enemy.y - cy) < halfWidth + enemy.radius) {
           bullet.hitCooldowns.set(enemy, game.time);
-          applyDamageToEnemy(enemy, bullet.damage * 0.42);
-          if (bullet.awakened) {
-            // 💀 Sans KR (KARMA): defense-piercing purple damage-over-time!
-            enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 3.2);
-            enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, bullet.damage * 0.72);
+          applyDamageToEnemy(enemy, bullet.damage * 0.58);
+          if (enemy.boss) {
+            enemy.hp -= Math.min(220, enemy.maxHp * 0.006);
           }
+          // 💀 Sans KR (KARMA): defense-piercing purple damage-over-time on every Gaster hit!
+          enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, bullet.awakened ? 4.0 : 2.8);
+          enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, bullet.damage * (bullet.awakened ? 1.15 : 0.65));
           addParticles(game, enemy.x, enemy.y, bullet.awakened ? '#e879f9' : '#38bdf8', 5);
         }
       });
@@ -3102,35 +3483,54 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
 
       if (bullet.returning) {
         const backAngle = Math.atan2(player.y - bullet.y, player.x - bullet.x);
-        const returnSpd = (bullet.speed ?? 780) * 1.18;
+        const returnSpd = (bullet.speed ?? 960) * 1.35;
         bullet.vx = Math.cos(backAngle) * returnSpd;
         bullet.vy = Math.sin(backAngle) * returnSpd;
       }
 
-      if (Math.random() < 0.55) {
+      if (Math.random() < 0.65) {
         addParticles(game, bullet.x, bullet.y, bullet.awakened ? '#fef08a' : '#5eead4', 1);
       }
 
       const hitSet = bullet.returning ? bullet.hitBack : bullet.hitOut;
-      const splashRadius = (bullet.awakened ? 84 : 56) * player.area;
+      const splashRadius = (bullet.awakened ? 165 : 115) * player.area;
+      const strikeDmg = bullet.damage * (bullet.returning ? 1.25 : 1);
 
       game.enemies.forEach((enemy) => {
         if (hitSet.has(enemy)) return;
         if (distance(bullet, enemy) < bullet.radius + enemy.radius) {
           hitSet.add(enemy);
-          applyDamageToEnemy(enemy, bullet.damage);
-          enemy.slow = Math.max(enemy.slow ?? 0, bullet.slow ?? 0.45);
-          addParticles(game, enemy.x, enemy.y, bullet.awakened ? '#facc15' : '#2dd4bf', bullet.awakened ? 10 : 6);
+          // Main spear strike + bonus boss-melting sea true damage!
+          applyDamageToEnemy(enemy, strikeDmg);
+          if (enemy.boss) {
+            enemy.hp -= Math.min(260, enemy.maxHp * 0.008);
+          }
+          enemy.slow = Math.max(enemy.slow ?? 0, bullet.slow ?? 1.2);
+          addParticles(game, enemy.x, enemy.y, bullet.awakened ? '#facc15' : '#2dd4bf', bullet.awakened ? 12 : 8);
 
-          // Ocean wave & lightning splash!
+          // Sky Lightning Bolt on hit!
+          if ((game.lightningEffects?.length ?? 0) < 18) {
+            game.lightningEffects.push({
+              x: enemy.x,
+              y: enemy.y,
+              color: bullet.awakened ? '#facc15' : '#2dd4bf',
+              life: 0.22,
+              maxLife: 0.22,
+            });
+          }
+
+          // Massive Poseidon Ocean Wave & Chain Lightning Splash!
           game.enemies.forEach((nearby) => {
             if (nearby !== enemy && distance(enemy, nearby) < splashRadius) {
-              applyDamageToEnemy(nearby, bullet.damage * (bullet.awakened ? 0.42 : 0.3));
-              nearby.slow = Math.max(nearby.slow ?? 0, (bullet.slow ?? 0.45) * 0.7);
+              applyDamageToEnemy(nearby, strikeDmg * (bullet.awakened ? 0.85 : 0.65));
+              nearby.slow = Math.max(nearby.slow ?? 0, (bullet.slow ?? 1.2) * 0.85);
               addParticles(game, nearby.x, nearby.y, bullet.awakened ? '#fef08a' : '#38bdf8', 3);
             }
           });
-          if (Math.random() < 0.28) queueSound(game, 'hit');
+          if (!player.sansHero && player.hp > 0 && Math.random() < 0.25) {
+            player.hp = Math.min(player.maxHp, player.hp + 1);
+          }
+          if (Math.random() < 0.25) queueSound(game, 'hit');
         }
       });
 
@@ -3274,6 +3674,10 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
     enemy.slow = Math.max(0, (enemy.slow ?? 0) - delta);
 
     // 💀 Sans KR (KARMA) poison tick — ignores boss damage reduction!
+    if (player.sansHero && enemy._prevHp !== undefined && enemy.hp < enemy._prevHp) {
+      enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 2.8);
+      enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, 26 + player.damage * 20);
+    }
     if ((enemy.karmaTimer ?? 0) > 0) {
       enemy.karmaTimer = Math.max(0, enemy.karmaTimer - delta);
       enemy.hp -= (enemy.karmaDps ?? 35) * delta;
@@ -3281,6 +3685,7 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
         addParticles(game, enemy.x, enemy.y, '#d946ef', 1);
       }
     }
+    enemy._prevHp = enemy.hp;
 
     if (enemy.boss) {
       const hpPct = enemy.hp / enemy.maxHp;
@@ -3720,8 +4125,13 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
         game.level += 1;
         game.nextXp += 40;
         // Automatic Level-Up 효과업!
-        player.maxHp += 6;
-        player.hp = Math.min(player.maxHp, player.hp + 12);
+        if (!player.sansHero) {
+          player.maxHp += 6;
+          player.hp = Math.min(player.maxHp, player.hp + 12);
+        } else {
+          player.maxHp = 1;
+          player.hp = 1;
+        }
         player.damage *= 1.04;
         player.speed += 2;
         addParticles(game, player.x, player.y, '#facc15', 26);
@@ -4546,16 +4956,101 @@ function drawGame(context, game, canvas) {
     context.lineTo(player.x + 24, player.y - 10);
     context.lineTo(player.x + 10, player.y - 4);
     context.fill();
+  } else if (hero.id === 'sans') {
+    // 💀 Iconic Undertale Sans Blue Hoodie + Fluffy White Collar + Skull Face!
+    context.save();
+    // Blue hoodie shoulders at bottom
+    context.fillStyle = '#2563eb';
+    context.beginPath();
+    context.arc(player.x, player.y + 4, player.radius + 1, 0.25, Math.PI - 0.25);
+    context.closePath();
+    context.fill();
+    // White hood fluff trim
+    context.strokeStyle = '#cbd5e1';
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(player.x, player.y + 6, player.radius * 0.72, 0.35, Math.PI - 0.35);
+    context.stroke();
+    // Dark skull eye sockets
+    context.fillStyle = '#020617';
+    context.beginPath();
+    context.ellipse(player.x - 6, player.y - 4, 4.2, 3.8, -0.1, 0, Math.PI * 2);
+    context.ellipse(player.x + 6, player.y - 4, 4.4, 4.0, 0.1, 0, Math.PI * 2);
+    context.fill();
+    // Nose triangle
+    context.beginPath();
+    context.moveTo(player.x, player.y - 1);
+    context.lineTo(player.x - 2, player.y + 2);
+    context.lineTo(player.x + 2, player.y + 2);
+    context.closePath();
+    context.fill();
+    // Classic wide toothy Sans grin!
+    context.strokeStyle = '#020617';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(player.x - 8, player.y + 5);
+    context.quadraticCurveTo(player.x, player.y + 9.5, player.x + 8, player.y + 5);
+    context.stroke();
+    [-4, 0, 4].forEach((tx) => {
+      context.beginPath();
+      context.moveTo(player.x + tx, player.y + 4.5);
+      context.lineTo(player.x + tx, player.y + 8);
+      context.stroke();
+    });
+    context.restore();
+  } else if (hero.id === 'forsaken') {
+    // 👁️ FORSAKEN: Corrupted Void Aura + Jagged Shadow Crown + Blazing Crimson Eye!
+    context.save();
+    // Pulsing corrupted crimson & toxic-green glitch aura
+    context.strokeStyle = Math.sin(game.time * 16) > 0 ? '#ef4444' : '#22c55e';
+    context.lineWidth = 2.5;
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 18;
+    context.beginPath();
+    context.arc(player.x, player.y, player.radius + 7 + Math.sin(game.time * 10) * 2, 0, Math.PI * 2);
+    context.stroke();
+    // Glitch pixel bars around body
+    context.fillStyle = '#22c55e';
+    context.fillRect(player.x - 22, player.y - 6 + Math.sin(game.time * 24) * 4, 6, 2.5);
+    context.fillStyle = '#ef4444';
+    context.fillRect(player.x + 16, player.y + 2 + Math.cos(game.time * 22) * 4, 7, 2.5);
+    // Jagged dark shadow crown
+    context.fillStyle = '#18181b';
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(player.x - 13, player.y - 12);
+    context.lineTo(player.x - 9, player.y - 25);
+    context.lineTo(player.x - 2, player.y - 16);
+    context.lineTo(player.x + 3, player.y - 27);
+    context.lineTo(player.x + 8, player.y - 16);
+    context.lineTo(player.x + 13, player.y - 23);
+    context.lineTo(player.x + 13, player.y - 11);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    // Single piercing glowing crimson eye in center!
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 16;
+    context.fillStyle = '#ef4444';
+    context.beginPath();
+    context.ellipse(player.x, player.y - 2, 7.5, 4.5, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.ellipse(player.x, player.y - 2, 2.2, 4, 0, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
   }
 
-  if (hero.id !== 'titan' && hero.id !== 'cyber') {
+  if (hero.id !== 'titan' && hero.id !== 'cyber' && hero.id !== 'sans' && hero.id !== 'forsaken') {
     context.fillStyle = hero.id === 'vampire' ? '#fda4af' : hero.id === 'ninja' ? '#fef08a' : '#1e293b';
     context.fillRect(player.x - 6, player.y - 5, 4, 4);
     context.fillRect(player.x + 3, player.y - 5, 4, 4);
   }
 
-  // 💀 Sans Glowing Cyan/Yellow Left Eye Flame when Awakened Gaster Blaster is equipped!
-  if (player.sansMode && weapon?.id === 'gaster') {
+  // 💀 Sans Glowing Cyan/Yellow Left Eye Flame (Sans Hero OR Awakened Gaster Blaster)!
+  if (hero.id === 'sans' || (player.sansMode && weapon?.id === 'gaster')) {
     const eyeFlash = Math.sin(game.time * 24) > 0 ? '#38bdf8' : '#facc15';
     context.save();
     context.shadowColor = eyeFlash;
@@ -5160,7 +5655,11 @@ function drawGame(context, game, canvas) {
     context.font = '900 15px Arial';
     context.fillStyle = cs.accent;
     context.fillText(
-      cs.sansMode ? '★ MEGALOVANIA · 가스터 블래스터 ★' : `✦ WEAPON ULTIMATE · ${cs.weaponName} ✦`,
+      cs.synergyMode
+        ? '★ SYNERGY OVERDRIVE · 심판의 회랑 ★'
+        : cs.sansMode
+          ? '★ MEGALOVANIA · 가스터 블래스터 ★'
+          : `✦ WEAPON ULTIMATE · ${cs.weaponName} ✦`,
       textX,
       cy - 54,
     );
@@ -5267,6 +5766,9 @@ export default function TangtangPage() {
   const aimModeRef = useRef('manual');
   const [aimMode, setAimMode] = useState('manual');
   const audioRef = useRef(null);
+  const bgmMutedRef = useRef(false);
+  const [bgmMuted, setBgmMuted] = useState(false);
+  const sansBgmRef = useRef({ active: false, intervalId: null, step: 0, audioEl: null, hasMp3: null });
   const arenaTouchRef = useRef({ pointerId: null, originX: 0, originY: 0 });
   const stickPointerRef = useRef(null);
   const [floatingStick, setFloatingStick] = useState(null);
@@ -5460,6 +5962,7 @@ export default function TangtangPage() {
   }
 
   function returnToLobby(tab = 'deploy') {
+    stopSansBgm();
     setLobbyTab(tab);
     const preview = createGame(selectedStage, bmStateRef.current.equipped, selectedHero, lobbyMetaRef.current);
     preview.player.weaponIndex = selectedWeapon;
@@ -5577,16 +6080,334 @@ export default function TangtangPage() {
     game.sounds.splice(0, 5).forEach(playSound);
   }
 
+  function stopSansBgm() {
+    const bgm = sansBgmRef.current;
+    bgm.active = false;
+    if (bgm.intervalId) {
+      window.clearInterval(bgm.intervalId);
+      bgm.intervalId = null;
+    }
+    if (bgm.audioEl) {
+      try {
+        bgm.audioEl.pause();
+        bgm.audioEl.currentTime = 0;
+      } catch {
+        // Ignore audio pause errors.
+      }
+    }
+  }
+
+  function startSansChiptuneLoop() {
+    const bgm = sansBgmRef.current;
+    if (!bgm.active || bgmMutedRef.current) return;
+    if (bgm.intervalId) {
+      window.clearInterval(bgm.intervalId);
+      bgm.intervalId = null;
+    }
+
+    // 120 BPM (125ms/16th) SNES / Undertale-style Overdriven Chiptune Boss Rock BGM (128-step 2-section loop)
+    const N = {
+      A1: 55.0, Bb1: 58.27, B1: 61.74, C2: 65.41, D2: 73.42, F2: 87.31, G2: 98.0,
+      A2: 110.0, Bb2: 116.54, B2: 123.47, C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.0, A3: 220.0, Bb3: 233.08, B3: 246.94,
+      C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, Ab4: 415.3, A4: 440.0, Bb4: 466.16, B4: 493.88,
+      C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, Ab5: 830.61, A5: 880.0,
+    };
+
+    // Section A (0-63): Driving D -> C -> B -> Bb chiptune rock riff
+    // Section B (64-127): High-energy Boss Climax / Overdriven Solo + Power Chords
+    const leadSeq = [
+      // Bar 1 (D)
+      [N.D4, 0.9], [N.D4, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
+      null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
+      // Bar 2 (C)
+      [N.C4, 0.9], [N.C4, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
+      null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
+      // Bar 3 (B)
+      [N.B3, 0.9], [N.B3, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
+      null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
+      // Bar 4 (Bb)
+      [N.Bb3, 0.9], [N.Bb3, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
+      null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
+      // Bar 5 (Climax High Riff - Dm)
+      [N.F5, 1.8], null, [N.F5, 0.9], [N.F5, 0.9], [N.F5, 1.6], null, [N.D5, 1.6], null,
+      [N.D5, 1.6], null, [N.F5, 1.6], null, [N.F5, 0.9], [N.G5, 0.9], [N.Ab5, 1.5], null,
+      // Bar 6 (Climax - C)
+      [N.G5, 1.5], null, [N.F5, 1.5], null, [N.D5, 1.5], null, [N.F5, 0.9], [N.G5, 0.9],
+      [N.A5, 2.2], null, null, [N.G5, 1.4], null, [N.F5, 1.4], [N.D5, 1.2], null,
+      // Bar 7 (Climax - Bb)
+      [N.D5, 0.9], [N.F5, 0.9], [N.G5, 1.6], null, [N.A5, 1.8], null, [N.G5, 1.5], null,
+      [N.F5, 1.5], null, [N.D5, 1.5], null, [N.C5, 1.4], null, [N.D5, 1.4], null,
+      // Bar 8 (Turnaround - C -> A)
+      [N.E5, 1.8], null, [N.F5, 1.6], null, [N.G5, 1.8], null, [N.A5, 2.4], null,
+      null, [N.G5, 0.9], [N.F5, 0.9], [N.E5, 0.9], [N.D5, 1.4], null, [N.C5, 1.2], null,
+    ];
+
+    const bassSeq = [
+      // Bar 1 (D)
+      N.D2, 0, N.D3, 0, N.D2, 0, N.D3, N.D2, N.D2, 0, N.D3, 0, N.A1, 0, N.C2, 0,
+      // Bar 2 (C)
+      N.C2, 0, N.C3, 0, N.C2, 0, N.C3, N.C2, N.C2, 0, N.C3, 0, N.C2, 0, N.D2, 0,
+      // Bar 3 (B)
+      N.B1, 0, N.B2, 0, N.B1, 0, N.B2, N.B1, N.B1, 0, N.B2, 0, N.B1, 0, N.C2, 0,
+      // Bar 4 (Bb)
+      N.Bb1, 0, N.Bb2, 0, N.Bb1, 0, N.Bb2, N.Bb1, N.Bb1, 0, N.C2, 0, N.A1, 0, N.C2, 0,
+      // Bar 5 (Dm)
+      N.D2, N.D2, N.D3, 0, N.D2, 0, N.D3, N.D2, N.D2, N.D2, N.D3, 0, N.F2, 0, N.G2, 0,
+      // Bar 6 (C)
+      N.C2, N.C2, N.C3, 0, N.C2, 0, N.C3, N.C2, N.C2, N.C2, N.C3, 0, N.G2, 0, N.C2, 0,
+      // Bar 7 (Bb)
+      N.Bb1, N.Bb1, N.Bb2, 0, N.Bb1, 0, N.Bb2, N.Bb1, N.Bb1, N.Bb1, N.Bb2, 0, N.F2, 0, N.Bb1, 0,
+      // Bar 8 (C -> A)
+      N.C2, 0, N.C3, 0, N.C2, 0, N.C3, 0, N.A1, 0, N.A2, 0, N.A1, N.B1, N.C2, N.D2,
+    ];
+
+    const chordPads = {
+      0: [N.D3, N.A3, N.F4],
+      16: [N.C3, N.G3, N.E4],
+      32: [N.B2, N.F3, N.D4],
+      48: [N.Bb2, N.F3, N.D4],
+      64: [N.D3, N.A3, N.D4],
+      80: [N.C3, N.G3, N.C4],
+      96: [N.Bb2, N.F3, N.Bb3],
+      112: [N.C3, N.G3, N.C4],
+      120: [N.A2, N.E3, N.A3],
+    };
+
+    let noiseBuf = null;
+    function getNoiseBuffer(ctx) {
+      if (noiseBuf && noiseBuf.sampleRate === ctx.sampleRate) return noiseBuf;
+      const len = Math.floor(ctx.sampleRate * 0.14);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < len; i += 1) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      noiseBuf = buf;
+      return buf;
+    }
+
+    bgm.step = 0;
+    bgm.intervalId = window.setInterval(() => {
+      if (!bgm.active || bgmMutedRef.current) return;
+      if (!gameRef.current.running || gameRef.current.over) {
+        stopSansBgm();
+        return;
+      }
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const step = bgm.step % 128;
+      bgm.step += 1;
+      const now = ctx.currentTime;
+      const stepDur = 0.125;
+
+      // 1. Overdriven SNES Chiptune Guitar Lead (Square + Detuned Saw through Dynamic Lowpass)
+      const leadEntry = leadSeq[step];
+      if (leadEntry) {
+        const [leadFreq, mult] = leadEntry;
+        const dur = stepDur * mult;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3400, now);
+        filter.frequency.exponentialRampToValueAtTime(1100, now + dur);
+        filter.Q.setValueAtTime(2.4, now);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.056, now + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'square';
+        osc1.frequency.setValueAtTime(leadFreq, now);
+
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'sawtooth';
+        osc2.frequency.setValueAtTime(leadFreq * 1.0035, now);
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + dur + 0.015);
+        osc2.stop(now + dur + 0.015);
+      }
+
+      // 2. Punchy Rock Bassline (Sawtooth + Sub Sine)
+      const bassFreq = bassSeq[step];
+      if (bassFreq) {
+        const bFilter = ctx.createBiquadFilter();
+        bFilter.type = 'lowpass';
+        bFilter.frequency.setValueAtTime(920, now);
+        bFilter.frequency.exponentialRampToValueAtTime(280, now + 0.13);
+
+        const bGain = ctx.createGain();
+        bGain.gain.setValueAtTime(0.0001, now);
+        bGain.gain.linearRampToValueAtTime(0.072, now + 0.007);
+        bGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+        const bassOsc = ctx.createOscillator();
+        bassOsc.type = 'sawtooth';
+        bassOsc.frequency.setValueAtTime(bassFreq, now);
+
+        bassOsc.connect(bFilter);
+        bFilter.connect(bGain);
+        bGain.connect(ctx.destination);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.15);
+      }
+
+      // 3. Crunch Power-Chord Guitar Stabs on bar changes & climax beats
+      const chord = chordPads[step] || (step >= 64 && step % 4 === 0 ? chordPads[Math.floor(step / 16) * 16] : null);
+      if (chord) {
+        const isClimaxStab = step >= 64;
+        const cDur = isClimaxStab ? 0.16 : 0.36;
+        chord.forEach((freq) => {
+          const cOsc = ctx.createOscillator();
+          const cGain = ctx.createGain();
+          cOsc.type = 'sawtooth';
+          cOsc.frequency.setValueAtTime(freq, now);
+          cGain.gain.setValueAtTime(0.0001, now);
+          cGain.gain.linearRampToValueAtTime(isClimaxStab ? 0.016 : 0.012, now + 0.012);
+          cGain.gain.exponentialRampToValueAtTime(0.0001, now + cDur);
+          cOsc.connect(cGain);
+          cGain.connect(ctx.destination);
+          cOsc.start(now);
+          cOsc.stop(now + cDur + 0.015);
+        });
+      }
+
+      // 4. Arcade Rock Drum Kit (Punchy Kick + Crisp White-Noise Snare + 16th Hi-Hat!)
+      const barStep = step % 16;
+      if (barStep === 0 || barStep === 6 || barStep === 8 || barStep === 14) {
+        const kick = ctx.createOscillator();
+        const kGain = ctx.createGain();
+        kick.type = 'sine';
+        kick.frequency.setValueAtTime(155, now);
+        kick.frequency.exponentialRampToValueAtTime(38, now + 0.09);
+        kGain.gain.setValueAtTime(barStep === 0 || barStep === 8 ? 0.12 : 0.08, now);
+        kGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+        kick.connect(kGain);
+        kGain.connect(ctx.destination);
+        kick.start(now);
+        kick.stop(now + 0.11);
+      }
+      if (barStep === 4 || barStep === 12 || (step >= 120 && barStep % 2 === 0)) {
+        // Real white-noise Snare + body snap!
+        const src = ctx.createBufferSource();
+        src.buffer = getNoiseBuffer(ctx);
+        const sFilter = ctx.createBiquadFilter();
+        sFilter.type = 'bandpass';
+        sFilter.frequency.setValueAtTime(1900, now);
+        const sGain = ctx.createGain();
+        sGain.gain.setValueAtTime(0.085, now);
+        sGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+        src.connect(sFilter);
+        sFilter.connect(sGain);
+        sGain.connect(ctx.destination);
+        src.start(now);
+        src.stop(now + 0.12);
+      }
+      if (step % 2 === 1 || step >= 64) {
+        // Crisp Hi-Hat ticks
+        const hSrc = ctx.createBufferSource();
+        hSrc.buffer = getNoiseBuffer(ctx);
+        const hFilter = ctx.createBiquadFilter();
+        hFilter.type = 'highpass';
+        hFilter.frequency.setValueAtTime(7500, now);
+        const hGain = ctx.createGain();
+        hGain.gain.setValueAtTime(step % 2 === 0 ? 0.028 : 0.018, now);
+        hGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+        hSrc.connect(hFilter);
+        hFilter.connect(hGain);
+        hGain.connect(ctx.destination);
+        hSrc.start(now);
+        hSrc.stop(now + 0.04);
+      }
+    }, 125);
+  }
+
+  function startSansBgm() {
+    if (bgmMutedRef.current) return;
+    stopSansBgm();
+    const bgm = sansBgmRef.current;
+    bgm.active = true;
+
+    // Optional local user-supplied MP3 at public/audio/megalovania.mp3; falls back seamlessly to built-in 8-bit Chiptune Boss BGM!
+    const playMp3 = () => {
+      if (!bgm.active || bgmMutedRef.current) return;
+      if (!bgm.audioEl) {
+        const el = new Audio('/audio/megalovania.mp3');
+        el.loop = true;
+        el.volume = 0.45;
+        bgm.audioEl = el;
+      }
+      bgm.audioEl.currentTime = 0;
+      bgm.audioEl.play().catch(() => {
+        bgm.hasMp3 = false;
+        startSansChiptuneLoop();
+      });
+    };
+
+    if (bgm.hasMp3 === true) {
+      playMp3();
+      return;
+    }
+    if (bgm.hasMp3 === false) {
+      startSansChiptuneLoop();
+      return;
+    }
+
+    fetch('/audio/megalovania.mp3', { method: 'HEAD' })
+      .then((res) => {
+        if (!bgm.active || bgmMutedRef.current) return;
+        if (res.ok) {
+          bgm.hasMp3 = true;
+          playMp3();
+        } else {
+          bgm.hasMp3 = false;
+          startSansChiptuneLoop();
+        }
+      })
+      .catch(() => {
+        bgm.hasMp3 = false;
+        if (bgm.active && !bgmMutedRef.current) startSansChiptuneLoop();
+      });
+  }
+
+  function toggleBgmMute() {
+    setBgmMuted((prev) => {
+      const next = !prev;
+      bgmMutedRef.current = next;
+      if (next) {
+        stopSansBgm();
+      } else if (gameRef.current.running && HEROES[gameRef.current.heroIndex]?.id === 'sans') {
+        startSansBgm();
+      }
+      return next;
+    });
+  }
+
   function resetGame(stageIndex = selectedStage, weaponIndex = selectedWeapon, heroIndex = selectedHero) {
     getAudioContext();
     closeBlackMarket();
     const equippedBm = bmStateRef.current.equipped;
+    const heroUnlockKey = HEROES[heroIndex]?.blackMarketUnlockId;
+    const safeHeroIndex =
+      heroUnlockKey && !bmStateRef.current.owned?.[heroUnlockKey]
+        ? 0
+        : heroIndex;
+    const gasterIdx = weapons.findIndex((w) => w.id === 'gaster');
+    const isSansHero = HEROES[safeHeroIndex]?.id === 'sans';
     const unlockKey = weapons[weaponIndex]?.blackMarketUnlockId;
-    const safeWeaponIndex =
-      unlockKey && !bmStateRef.current.owned?.[unlockKey]
+    const safeWeaponIndex = isSansHero && gasterIdx >= 0
+      ? gasterIdx
+      : unlockKey && !bmStateRef.current.owned?.[unlockKey]
         ? 0
         : weaponIndex;
-    const nextGame = createGame(stageIndex, equippedBm, heroIndex, lobbyMetaRef.current);
+    const nextGame = createGame(stageIndex, equippedBm, safeHeroIndex, lobbyMetaRef.current);
     nextGame.aimMode = aimModeRef.current;
     nextGame.player.weaponIndex = safeWeaponIndex;
     if (equippedBm.instantAwaken) {
@@ -5602,20 +6423,39 @@ export default function TangtangPage() {
     }
     nextGame.running = true;
     gameRef.current = nextGame;
+    if (isSansHero) {
+      startSansBgm();
+    } else {
+      stopSansBgm();
+    }
     queueSound(gameRef.current, 'level');
     setSelectedStage(stageIndex);
     setSelectedWeapon(safeWeaponIndex);
-    setSelectedHero(heroIndex);
+    setSelectedHero(safeHeroIndex);
     setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
     setVersion((current) => current + 1);
   }
 
   function selectHero(index) {
     if (gameRef.current.running) return;
+    const heroUnlockKey = HEROES[index]?.blackMarketUnlockId;
+    if (heroUnlockKey && !bmStateRef.current.owned?.[heroUnlockKey]) return;
     getAudioContext();
+    const gasterIdx = weapons.findIndex((w) => w.id === 'gaster');
+    let nextWeaponIdx = selectedWeapon;
+    if (HEROES[index]?.id === 'sans' && gasterIdx >= 0) {
+      // 💀 Sans can ONLY wield Gaster Blaster -> auto-equip + activate Synergy Combo!
+      nextWeaponIdx = gasterIdx;
+    } else if (
+      weapons[nextWeaponIdx]?.blackMarketUnlockId &&
+      !bmStateRef.current.owned?.[weapons[nextWeaponIdx].blackMarketUnlockId]
+    ) {
+      nextWeaponIdx = 0;
+    }
     setSelectedHero(index);
+    setSelectedWeapon(nextWeaponIdx);
     const preview = createGame(selectedStage, bmStateRef.current.equipped, index, lobbyMetaRef.current);
-    preview.player.weaponIndex = selectedWeapon;
+    preview.player.weaponIndex = nextWeaponIdx;
     gameRef.current = preview;
     queueSound(gameRef.current, 'switch');
     setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
@@ -5629,8 +6469,10 @@ export default function TangtangPage() {
 
   function setWeapon(index, fromKeyboard = false) {
     if (gameRef.current.running) return;
+    const activeHero = HEROES[gameRef.current.heroIndex ?? selectedHero];
+    if (activeHero?.id === 'sans' && weapons[index]?.id !== 'gaster') return;
     const unlockKey = weapons[index]?.blackMarketUnlockId;
-    if (unlockKey && !bmStateRef.current.owned?.[unlockKey]) return;
+    if (activeHero?.id !== 'sans' && unlockKey && !bmStateRef.current.owned?.[unlockKey]) return;
     getAudioContext();
     setSelectedWeapon(index);
     gameRef.current.player.weaponIndex = index;
@@ -5766,6 +6608,9 @@ export default function TangtangPage() {
       const delta = Math.min((timestamp - lastTimeRef.current) / 1000, 0.033);
       lastTimeRef.current = timestamp;
       updateGame(gameRef.current, inputRef.current, canvas, delta, earnBlackMarketGold, earnLobbyCoins);
+      if (gameRef.current.over && sansBgmRef.current.active) {
+        stopSansBgm();
+      }
       drainSounds(gameRef.current);
       drawGame(context, gameRef.current, canvas);
       setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
@@ -5839,6 +6684,8 @@ export default function TangtangPage() {
     };
   }, [version]);
 
+  useEffect(() => () => stopSansBgm(), []);
+
   const player = hud.player;
   const stage = stages[hud.stageIndex];
   const xpRatio = Math.min(100, (hud.xp / hud.nextXp) * 100);
@@ -5864,9 +6711,18 @@ export default function TangtangPage() {
 
   const ultPct = Math.floor(clamp(player.ultCharge ?? 0, 0, 100));
   const ultReady = hud.running && ultPct >= 100;
+  const isSansSelected = HEROES[selectedHero]?.id === 'sans';
+  const isSansSynergyActive = Boolean(isSansSelected && weapons[selectedWeapon]?.id === 'gaster');
+  const visibleHeroEntries = HEROES
+    .map((hero, index) => ({ hero, index }))
+    .filter(({ hero }) => !hero.blackMarketUnlockId || Boolean(bmState.owned?.[hero.blackMarketUnlockId]));
   const visibleWeaponEntries = weapons
     .map((weapon, index) => ({ weapon, index }))
-    .filter(({ weapon }) => !weapon.blackMarketUnlockId || Boolean(bmState.owned?.[weapon.blackMarketUnlockId]));
+    .filter(({ weapon }) =>
+      isSansSelected
+        ? weapon.id === 'gaster'
+        : !weapon.blackMarketUnlockId || Boolean(bmState.owned?.[weapon.blackMarketUnlockId]),
+    );
   const activeWeaponUlt = WEAPON_ULTIMATES[currentWeapon?.id] ?? WEAPON_ULTIMATES.blaster;
   const lobbySelectedWeapon = weapons[selectedWeapon] ?? weapons[0];
   const lobbyWeaponUlt = WEAPON_ULTIMATES[lobbySelectedWeapon?.id] ?? WEAPON_ULTIMATES.blaster;
@@ -5879,6 +6735,19 @@ export default function TangtangPage() {
           <h1>탕탕 특공대</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {activeHeroObj.id === 'sans' && (
+            <button
+              type="button"
+              className={
+                !bgmMuted
+                  ? bmStyles.aimToggleBtn
+                  : `${bmStyles.aimToggleBtn} ${bmStyles.aimToggleBtnAuto}`
+              }
+              onClick={toggleBgmMute}
+            >
+              {bgmMuted ? '🔇 BGM OFF' : '🎵 MEGALOVANIA ON'}
+            </button>
+          )}
           <button
             type="button"
             className={
@@ -5990,7 +6859,7 @@ export default function TangtangPage() {
             onClick={activateUltimate}
           >
             <span>
-              {activeWeaponUlt.icon} 필살기 · {activeWeaponUlt.name} ({ultReady ? 'SPACE 발동!' : `${ultPct}%`})
+              {activeWeaponUlt.icon} 필살기 · {isSansSynergyActive ? '심판의 회랑 · 메갈로바니아' : activeWeaponUlt.name} ({ultReady ? 'SPACE 발동!' : `${ultPct}%`})
             </span>
             <i className={bmStyles.ultTrack}>
               <b className={bmStyles.ultFill} style={{ width: `${ultPct}%` }} />
@@ -6282,11 +7151,11 @@ export default function TangtangPage() {
                       </div>
 
                       <div className={bmStyles.lobbySectionTitle}>
-                        <span>캐릭터 선택 ({HEROES.length}명)</span>
+                        <span>캐릭터 선택 ({visibleHeroEntries.length}명)</span>
                         <span>{HEROES[selectedHero].icon} {HEROES[selectedHero].name}</span>
                       </div>
                       <div className={bmStyles.heroPicker} aria-label="캐릭터 선택">
-                        {HEROES.map((heroItem, index) => (
+                        {visibleHeroEntries.map(({ hero: heroItem, index }) => (
                           <button
                             key={heroItem.id}
                             type="button"
@@ -6310,7 +7179,11 @@ export default function TangtangPage() {
                       </div>
 
                       <div className={bmStyles.lobbySectionTitle}>
-                        <span>시작 무기 선택 ({visibleWeaponEntries.length}종 · 전투 중 변경 불가)</span>
+                        <span>
+                          {isSansSelected
+                            ? '💀 샌즈 전용 무기 고정 (가스터 블래스터 전용!)'
+                            : `시작 무기 선택 (${visibleWeaponEntries.length}종 · 전투 중 변경 불가)`}
+                        </span>
                         <span>{lobbySelectedWeapon.name}</span>
                       </div>
                       <div className="startWeaponPicker" aria-label="시작 무기 선택" style={{ maxWidth: '100%' }}>
@@ -6327,7 +7200,10 @@ export default function TangtangPage() {
                         ))}
                       </div>
                       <div className={bmStyles.heroPerkNote}>
-                        {lobbyWeaponUlt.icon} 무기 필살기 · <strong>{lobbyWeaponUlt.name}</strong>: {lobbyWeaponUlt.detail}
+                        {lobbyWeaponUlt.icon} 무기 필살기 · <strong>{isSansSynergyActive ? '심판의 회랑 · 메갈로바니아' : lobbyWeaponUlt.name}</strong>:{' '}
+                        {isSansSynergyActive
+                          ? '⚡ 시너지 콤보 발동! 3.1초마다 [뼈 감옥 십자 심판] & [심판의 회랑 대격돌] 추가 기술 자동 발동 + 12블래스터·24뼈다귀 초강화 필살기!'
+                          : lobbyWeaponUlt.detail}
                       </div>
                     </>
                   )}
@@ -6692,6 +7568,18 @@ export default function TangtangPage() {
                                 onClick={() => {
                                   const wIdx = weapons.findIndex((w) => w.id === item.unlockWeaponId);
                                   if (wIdx >= 0) setWeapon(wIdx, true);
+                                  closeBlackMarket();
+                                }}
+                              >
+                                {item.icon} 해금 완료! (클릭해 바로 장착)
+                              </button>
+                            ) : item.isHeroUnlock ? (
+                              <button
+                                type="button"
+                                className={`${bmStyles.toggleBtn} ${bmStyles.toggleBtnActive}`}
+                                onClick={() => {
+                                  const hIdx = HEROES.findIndex((h) => h.id === item.unlockHeroId);
+                                  if (hIdx >= 0) selectHero(hIdx);
                                   closeBlackMarket();
                                 }}
                               >

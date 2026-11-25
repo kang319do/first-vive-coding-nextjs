@@ -705,18 +705,30 @@ export default function BouncePage() {
       }, 1400);
     }
 
+    function getBounceDir(event) {
+      const key = event.key.toLowerCase();
+      const code = event.code || '';
+      if (key === 'arrowleft' || key === 'a' || code === 'KeyA') return 'Left';
+      if (key === 'arrowright' || key === 'd' || code === 'KeyD') return 'Right';
+      return null;
+    }
+
     function handleKeyDown(event) {
-      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+      const dir = getBounceDir(event);
+      if (!dir) {
         return;
       }
 
       event.preventDefault();
       getAudioContext();
-      pressedKeys.current.add(event.key);
+      pressedKeys.current.add(dir);
     }
 
     function handleKeyUp(event) {
-      pressedKeys.current.delete(event.key);
+      const dir = getBounceDir(event);
+      if (dir) {
+        pressedKeys.current.delete(dir);
+      }
     }
 
     function moveBall(timestamp) {
@@ -737,11 +749,11 @@ export default function BouncePage() {
       let velocity = velocityRef.current;
       let xDirection = 0;
 
-      if (pressedKeys.current.has('ArrowLeft') || pressedKeys.current.has('TouchLeft')) {
+      if (pressedKeys.current.has('Left') || pressedKeys.current.has('TouchLeft')) {
         xDirection -= 1;
       }
 
-      if (pressedKeys.current.has('ArrowRight') || pressedKeys.current.has('TouchRight')) {
+      if (pressedKeys.current.has('Right') || pressedKeys.current.has('TouchRight')) {
         xDirection += 1;
       }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import profileStyles from '@/styles/PlayerProfile.module.css';
 
 const pureHallKey = 'jump-map-pure-clear-hall-v1';
 
@@ -31,7 +32,7 @@ const pages = [
   },
 ];
 
-export default function Home() {
+export default function Home({ playerName = '', openNameModal }) {
   const [pureClearHall, setPureClearHall] = useState([]);
 
   useEffect(() => {
@@ -48,7 +49,18 @@ export default function Home() {
   return (
     <section className="homePage">
       <div className="homeIntro">
-        <p>게임·스터디·일상 기능을 하나씩 만들어 채워가는 실험실</p>
+        <div className={profileStyles.greetingRow}>
+          <p>
+            {playerName
+              ? `👋 ${playerName}님, GANGYOON!LAB!에 오신 걸 환영해요!`
+              : '게임·스터디·일상 기능을 하나씩 만들어 채워가는 실험실'}
+          </p>
+          {openNameModal && (
+            <button type="button" className={profileStyles.renameBtn} onClick={openNameModal}>
+              ✏️ {playerName ? '이름 변경' : '이름 정하기'}
+            </button>
+          )}
+        </div>
         <h1>GANGYOON!LAB!</h1>
       </div>
 

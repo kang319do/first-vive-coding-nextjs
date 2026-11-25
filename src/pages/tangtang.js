@@ -14,7 +14,41 @@ const DEFAULT_LOBBY_META = {
   petLevels: { corgi: 1 },
   equippedPet: 'corgi',
   upgrades: { atk: 0, hp: 0, armor: 0, speed: 0, haste: 0, greed: 0 },
+  unlockStats: { totalKills: 0, bossClears: 0, eliteKills: 0, sansDeaths: 0, asrielClears: 0 },
 };
+
+function isHeroUnlocked(hero, bmOwned = {}, unlockStats = {}) {
+  if (!hero) return false;
+  if (hero.id === 'sans') {
+    return Boolean(bmOwned?.unlockSans) || (unlockStats?.totalKills ?? 0) >= 300;
+  }
+  if (hero.id === 'forsaken') {
+    return Boolean(bmOwned?.unlockForsaken) || (unlockStats?.bossClears ?? 0) >= 3;
+  }
+  if (hero.id === 'asriel') {
+    return Boolean(bmOwned?.unlockAsriel) || (unlockStats?.sansDeaths ?? 0) >= 3;
+  }
+  if (hero.id === 'chara') {
+    return Boolean(bmOwned?.unlockChara) || (unlockStats?.asrielClears ?? 0) >= 5;
+  }
+  if (hero.id === 'omegaFlowey') {
+    return Boolean(bmOwned?.unlockFlowey) || (unlockStats?.eliteKills ?? 0) >= 15;
+  }
+  if (hero.blackMarketUnlockId) {
+    return Boolean(bmOwned?.[hero.blackMarketUnlockId]);
+  }
+  return true;
+}
+
+function getHeroQuestLabel(hero, unlockStats = {}) {
+  if (!hero) return '';
+  if (hero.id === 'sans') return `🔒 누적 처치 ${Math.min(300, unlockStats?.totalKills ?? 0)}/300`;
+  if (hero.id === 'forsaken') return `🔒 보스 격파 ${Math.min(3, unlockStats?.bossClears ?? 0)}/3`;
+  if (hero.id === 'asriel') return `🔒 샌즈 사망 ${Math.min(3, unlockStats?.sansDeaths ?? 0)}/3`;
+  if (hero.id === 'chara') return `🔒 드리무어 클리어 ${Math.min(5, unlockStats?.asrielClears ?? 0)}/5`;
+  if (hero.id === 'omegaFlowey') return `🔒 엘리트 처치 ${Math.min(15, unlockStats?.eliteKills ?? 0)}/15`;
+  return hero.role;
+}
 
 const GACHA_SINGLE_COST = 40;
 const GACHA_TEN_COST = 360;
@@ -161,23 +195,53 @@ const BLACK_MARKET_ITEMS = [
   },
   {
     id: 'unlockSans',
-    name: '샌즈 (비밀 캐릭터)',
+    name: '샌즈 (특별 캐릭터)',
     icon: '💀',
-    price: 400,
-    tag: '비밀 캐릭터 해금',
-    description: '언더테일의 금지된 캐릭터 [샌즈]를 해금합니다. HP 1 고정 · 99.5% 절대 회피 MISS · 가스터 블래스터 전용 + ⚡ 시너지 콤보 추가 기술 발동!',
+    price: 3000,
+    tag: '특별 캐릭터 즉시 해금',
+    description: '누적 몬스터 300마리 처치 퀘스트를 건너뛰고 [샌즈] & 전용 무기 [가스터 블래스터]를 즉시 해금합니다!',
     isHeroUnlock: true,
     unlockHeroId: 'sans',
   },
   {
     id: 'unlockForsaken',
-    name: '포세이큰 (비밀 캐릭터)',
+    name: '포세이큰 (특별 캐릭터)',
     icon: '👁️',
-    price: 450,
-    tag: '비밀 캐릭터 해금',
-    description: '어둠에 잠식된 비밀 캐릭터 [포세이큰]을 해금합니다. HP 220 · 공격력 +35% · 방어 +4 · 2.6초마다 부패 가시 & 침식 파동 자동 발사!',
+    price: 3000,
+    tag: '특별 캐릭터 즉시 해금',
+    description: '챕터 보스 3회 격파 퀘스트를 건너뛰고 [포세이큰] & 전용 무기 [부패의 검]을 즉시 해금합니다!',
     isHeroUnlock: true,
     unlockHeroId: 'forsaken',
+  },
+  {
+    id: 'unlockAsriel',
+    name: '아스리엘 드리무어 (특별 캐릭터)',
+    icon: '🌈',
+    price: 3000,
+    tag: '특별 캐릭터 즉시 해금',
+    description: '샌즈로 3번 사망 퀘스트를 건너뛰고 [아스리엘 드리무어] & 전용 무기 [카오스 세이버]를 즉시 해금합니다!',
+    isHeroUnlock: true,
+    unlockHeroId: 'asriel',
+  },
+  {
+    id: 'unlockChara',
+    name: '차라 (특별 캐릭터)',
+    icon: '🔪',
+    price: 3000,
+    tag: '특별 캐릭터 즉시 해금',
+    description: '아스리엘 드리무어로 5챕터 클리어 퀘스트를 건너뛰고 [차라] & 전용 무기 [진정한 칼]을 즉시 해금합니다!',
+    isHeroUnlock: true,
+    unlockHeroId: 'chara',
+  },
+  {
+    id: 'unlockFlowey',
+    name: '오메가 플라위 (특별 캐릭터)',
+    icon: '🌻',
+    price: 3000,
+    tag: '특별 캐릭터 즉시 해금',
+    description: '엘리트 몬스터 15마리 처치 퀘스트를 건너뛰고 [오메가 플라위] & 전용 무기 [악몽의 덩굴포]를 즉시 해금합니다!',
+    isHeroUnlock: true,
+    unlockHeroId: 'omegaFlowey',
   },
 ];
 
@@ -288,19 +352,19 @@ const HEROES = [
     id: 'sans',
     name: '샌즈',
     icon: '💀',
-    role: '회피·업보(KR)',
+    role: 'HP 1 · 회피·업보(KR)',
     ultIcon: '💀',
     ultName: '배드 타임',
     ultSub: 'MEGALOVANIA',
-    ultQuote: '* 끔찍한 시간을 보내고 싶나?',
+    ultQuote: '* 참 아름다운 날이야. 새들은 지저귀고, 꽃들은 피어나고...\n* 이런 날엔 너 같은 녀석은... 지옥에서 불타야 해.',
     ultColor: '#38bdf8',
     ultBg: '#020617',
-    perk: 'HP 1 고정 · 99.5% 절대 회피 MISS (0.5% 피격) · 가스터 블래스터 전용 · ⚡ 시너지 콤보(추가 기술 2종 + 필살기 초강화)!',
+    perk: '[40% 너프] HP 1 · 99.5% 회피(MISS) · 공격력 35% · 공속 1.5초 · 2번 각성 · 가스터 블래스터 & 업보(KR)!',
     body: '#f8fafc',
     stroke: '#38bdf8',
     accent: '#2563eb',
-    stats: { maxHp: 1, speed: 285, damage: 1.15, fireRate: 1.25, critChance: 0.25, sansHero: true },
-    blackMarketUnlockId: 'unlockSans',
+    stats: { maxHp: 1, speed: 232, damage: 0.35, fireRate: 1, armor: 0, critChance: 0.05, sansHero: true },
+    signatureWeaponId: 'gaster',
   },
   {
     id: 'forsaken',
@@ -313,23 +377,167 @@ const HEROES = [
     ultQuote: '모든 빛은 결국 어둠에 잠식된다...',
     ultColor: '#ef4444',
     ultBg: '#180207',
-    perk: 'HP 220 · 공격력 +35% · 방어 +4 · 치명 피해 +80% · 2.6초마다 [부패 가시 & 침식 파동] 발사 · 10처치마다 흡혈!',
+    perk: '[40% 너프] HP 85 · 공격력 44% · 공속 1.5초 · 1번 각성 · 부패의 검 전용 · 28처치마다 흡혈!',
     body: '#09090b',
     stroke: '#ef4444',
     accent: '#ef4444',
     stats: {
-      maxHp: 220,
-      speed: 278,
-      damage: 1.35,
-      fireRate: 1.2,
-      armor: 4,
-      critChance: 0.25,
-      critDamage: 2.8,
-      area: 1.18,
-      lifestealKills: 10,
+      maxHp: 85,
+      speed: 226,
+      damage: 0.44,
+      fireRate: 1,
+      armor: 0,
+      critChance: 0.05,
+      critDamage: 1.65,
+      area: 0.96,
+      lifestealKills: 28,
       forsakenHero: true,
     },
-    blackMarketUnlockId: 'unlockForsaken',
+    signatureWeaponId: 'voidBlade',
+  },
+  {
+    id: 'asriel',
+    name: '아스리엘 드리무어',
+    icon: '🌈',
+    role: '하이퍼데스·부활',
+    ultIcon: '🌈',
+    ultName: '하이퍼 데스',
+    ultSub: 'GOD OF HYPERDEATH',
+    ultQuote: '* 드디어... 진짜 모습으로 싸울 때가 왔군.\n* 이제 이 타임라인을 영원히 끝장내주마!',
+    ultColor: '#ec4899',
+    ultBg: '#2e1065',
+    perk: '[40% 너프] HP 105 · 공격력 44% · 공속 1.5초 · 2번 각성 · 카오스 세이버 전용 · ⚠️ 챕터 종료마다 10% 확률로 즉시 소멸(사망)!',
+    body: '#f8fafc',
+    stroke: '#a855f7',
+    accent: '#ec4899',
+    stats: {
+      maxHp: 105,
+      speed: 230,
+      damage: 0.44,
+      fireRate: 1,
+      armor: 0,
+      regen: 0.2,
+      critChance: 0.06,
+      critDamage: 1.65,
+      area: 0.96,
+      asrielHero: true,
+    },
+    signatureWeaponId: 'chaosSaber',
+  },
+  {
+    id: 'chara',
+    name: '차라',
+    icon: '🔪',
+    role: 'LV.20 · HP 99',
+    ultIcon: '🔪',
+    ultName: '세계 삭제 · ERASE',
+    ultSub: 'DETERMINATION LV.20',
+    ultQuote: '* 반가워. 나는 차라야.\n* 자, 함께 이 무의미한 세계를 지우고 다음으로 나아가자.',
+    ultColor: '#ef4444',
+    ultBg: '#2b040a',
+    perk: '[40% 너프] LV.20 · HP 99 고정 · 방어 +1 · 공격력 48% · 공속 1.5초 · 치명타 9% · 2번 각성 · 진정한 칼 전용!',
+    body: '#fef3c7',
+    stroke: '#ef4444',
+    accent: '#22c55e',
+    stats: {
+      maxHp: 99,
+      speed: 238,
+      damage: 0.48,
+      fireRate: 1,
+      armor: 1,
+      critChance: 0.09,
+      critDamage: 1.75,
+      xpGain: 1.0,
+      lifestealKills: 26,
+      charaHero: true,
+    },
+    signatureWeaponId: 'realKnife',
+  },
+  {
+    id: 'omegaFlowey',
+    name: '오메가 플라위',
+    icon: '🌻',
+    role: 'HP 9,950 · SAVE',
+    ultIcon: '🌻',
+    ultName: '유어 베스트 나이트메어',
+    ultSub: 'YOUR BEST NIGHTMARE',
+    ultQuote: '* 이 바보야! 이 세상은 죽이거나, 죽임을 당하는 거야!\n* 하하하하하!! 넌 절대 날 이길 수 없어!',
+    ultColor: '#facc15',
+    ultBg: '#14532d',
+    perk: '[40% 너프] HP 9,950(거대 피격 ×48) · 공격력 43% · 공속 1.5초 · 2번 각성 · 악몽의 덩굴포 전용!',
+    body: '#166534',
+    stroke: '#facc15',
+    accent: '#ef4444',
+    stats: {
+      maxHp: 9950,
+      speed: 215,
+      damage: 0.43,
+      fireRate: 1,
+      armor: 1,
+      regen: 1,
+      critChance: 0.05,
+      critDamage: 1.65,
+      area: 0.96,
+      floweyHero: true,
+    },
+    signatureWeaponId: 'floweyArsenal',
+  },
+  {
+    id: 'undying',
+    name: '불사의 언다인',
+    icon: '🛡️',
+    role: 'HP 23,000 · 영웅',
+    ultIcon: '🛡️',
+    ultName: '진정한 영웅 · 정의의 창',
+    ultSub: 'BATTLE AGAINST A TRUE HERO',
+    ultQuote: '* 안 돼... 난 여기서 쓰러질 수 없어!\n* 넌 지금... 진정한 영웅과 맞서고 있는 거야!',
+    ultColor: '#38bdf8',
+    ultBg: '#0c2748',
+    perk: '[40% 너프] 자유 기동(이속 234) · HP 23,000(피격 ×130) · 공격력 46% · 공속 1.5초 · 정의의 창(피해 4,920) · 2번 각성!',
+    body: '#0284c7',
+    stroke: '#38bdf8',
+    accent: '#dc2626',
+    stats: {
+      maxHp: 23000,
+      speed: 234,
+      damage: 0.46,
+      fireRate: 1,
+      armor: 1,
+      critChance: 0.06,
+      critDamage: 1.7,
+      magnet: 700,
+      area: 0.96,
+      undyingHero: true,
+    },
+    signatureWeaponId: 'justiceSpear',
+  },
+  {
+    id: 'mettatonNeo',
+    name: '메타톤 NEO',
+    icon: '🌟',
+    role: 'HP 30,000 · 유리대포',
+    ultIcon: '🌟',
+    ultName: '파워 오브 NEO · 쇼타임',
+    ultSub: 'POWER OF "NEO" · GLAMOUR OVERDRIVE',
+    ultQuote: '* 나의 진정한 모습을 보고 싶었던 거지?\n* 자, 이제 쇼타임이다! 파워 오브 NEO를 보여주지! OH YES!!',
+    ultColor: '#ec4899',
+    ultBg: '#3b0764',
+    perk: '[40% 너프] HP 30,000 · 유리대포(피격 ×250) · 공격력 46% · 공속 1.5초 · 1번 각성 · NEO 암 캐논 전용!',
+    body: '#ec4899',
+    stroke: '#f472b6',
+    accent: '#facc15',
+    stats: {
+      maxHp: 30000,
+      speed: 232,
+      damage: 0.46,
+      fireRate: 1,
+      armor: 0,
+      critChance: 0.07,
+      critDamage: 1.7,
+      area: 0.96,
+      neoHero: true,
+    },
+    signatureWeaponId: 'neoCannon',
   },
 ];
 
@@ -631,16 +839,16 @@ const weapons = [
   {
     id: 'gaster',
     displayName: '가스터 블래스터',
-    displayDetail: '쌍둥이 초거대 해골 레이저 & KR 업보! 각성 시 8연 샌즈 서클·14연 뼈다귀·6연 푸른 영혼 폭격!',
+    displayDetail: '쌍둥이 해골 레이저 & KR 업보! 각성 시 샌즈 서클·뼈다귀·푸른 영혼 폭격!',
     name: '가스터 블래스터',
-    detail: '쌍둥이 초거대 해골 레이저 & KR 업보! 각성 시 8연 샌즈 서클·14연 뼈다귀·6연 푸른 영혼 폭격!',
+    detail: '쌍둥이 해골 레이저 & KR 업보! 각성 시 샌즈 서클·뼈다귀·푸른 영혼 폭격!',
     color: '#38bdf8',
-    cooldown: 0.62,
-    damage: 220,
-    radius: 44,
-    life: 0.78,
-    chargeTime: 0.18,
-    beamLength: 920,
+    cooldown: 1.5,
+    damage: 50,
+    radius: 34,
+    life: 0.64,
+    chargeTime: 0.24,
+    beamLength: 780,
     blackMarketUnlockId: 'unlockGaster',
   },
   {
@@ -650,14 +858,104 @@ const weapons = [
     name: '삼지창',
     detail: '초고속 3연 관통 투척·회수 + 낙뢰 해일 폭파! 각성 시 7연 황금 포세이돈 폭풍!',
     color: '#2dd4bf',
-    cooldown: 0.38,
-    damage: 195,
-    speed: 960,
-    radius: 28,
-    life: 1.35,
+    cooldown: 1.5,
+    damage: 58,
+    speed: 850,
+    radius: 22,
+    life: 1.2,
     pierce: 999,
-    slow: 1.2,
+    slow: 0.7,
     blackMarketUnlockId: 'unlockTrident',
+  },
+  {
+    id: 'chaosSaber',
+    displayName: '카오스 세이버',
+    displayDetail: '무지개 쌍검 참격 & 유도 별똥별! 각성 시 카오스 버스터·스타 블레이징·쇼커 브레이커 발동!',
+    name: '카오스 세이버',
+    detail: '무지개 쌍검 참격 & 유도 별똥별! 각성 시 카오스 버스터·스타 블레이징·쇼커 브레이커 발동!',
+    color: '#e879f9',
+    cooldown: 1.5,
+    damage: 30,
+    radius: 102,
+    life: 0.21,
+    arc: Math.PI * 0.74,
+    knockback: 45,
+    exclusiveHeroId: 'asriel',
+  },
+  {
+    id: 'realKnife',
+    displayName: '진정한 칼',
+    displayDetail: '진홍 참격 & 결의의 칼날 발사! 각성 시 360° 999999 처형 일격!',
+    name: '진정한 칼',
+    detail: '진홍 참격 & 결의의 칼날 발사! 각성 시 360° 999999 처형 일격!',
+    color: '#ef4444',
+    cooldown: 1.5,
+    damage: 34,
+    radius: 105,
+    life: 0.2,
+    arc: Math.PI * 0.65,
+    knockback: 42,
+    exclusiveHeroId: 'chara',
+  },
+  {
+    id: 'voidBlade',
+    displayName: '부패의 검',
+    displayDetail: '포세이큰 전용 어둠의 대검! 부패 검기 3연발 + 공허 충격파!',
+    name: '부패의 검',
+    detail: '포세이큰 전용 어둠의 대검! 부패 검기 3연발 + 공허 충격파!',
+    color: '#22c55e',
+    cooldown: 1.5,
+    damage: 36,
+    radius: 108,
+    life: 0.21,
+    arc: Math.PI * 0.74,
+    knockback: 50,
+    exclusiveHeroId: 'forsaken',
+  },
+  {
+    id: 'floweyArsenal',
+    displayName: '악몽의 덩굴포',
+    displayDetail: '친절한 알갱이 5연발 + 유도 핵폭탄! 각성 시 포위 알갱이·핵폭격·TV 메가 레이저!',
+    name: '악몽의 덩굴포',
+    detail: '친절한 알갱이 5연발 + 유도 핵폭탄! 각성 시 포위 알갱이·핵폭격·TV 메가 레이저!',
+    color: '#facc15',
+    cooldown: 1.5,
+    damage: 30,
+    speed: 680,
+    radius: 10,
+    life: 1.0,
+    pierce: 2,
+    exclusiveHeroId: 'omegaFlowey',
+  },
+  {
+    id: 'justiceSpear',
+    displayName: '정의의 창',
+    displayDetail: '불사의 언다인 전용! 기본 피해 4,920 · 5연장 정의의 창 + 넉백 결계! 각성 시 7연 창 & 8연 포위 창!',
+    name: '정의의 창',
+    detail: '불사의 언다인 전용! 기본 피해 4,920 · 5연장 정의의 창 + 넉백 결계! 각성 시 7연 창 & 8연 포위 창!',
+    color: '#38bdf8',
+    cooldown: 1.5,
+    damage: 4920,
+    speed: 880,
+    radius: 13,
+    life: 1.1,
+    pierce: 4,
+    exclusiveHeroId: 'undying',
+  },
+  {
+    id: 'neoCannon',
+    displayName: 'NEO 암 캐논',
+    displayDetail: '메타톤 NEO 전용! 3연발 핫핑크 플라즈마 캐논! 각성 시 5연 스타버스트 & 유도 폭탄!',
+    name: 'NEO 암 캐논',
+    detail: '메타톤 NEO 전용! 3연발 핫핑크 플라즈마 캐논! 각성 시 5연 스타버스트 & 유도 폭탄!',
+    color: '#ec4899',
+    cooldown: 1.5,
+    damage: 34,
+    speed: 800,
+    radius: 12,
+    life: 1.05,
+    pierce: 2,
+    exclusiveHeroId: 'mettatonNeo',
   },
 ];
 
@@ -789,6 +1087,60 @@ const WEAPON_ULTIMATES = {
     accent: '#2dd4bf',
     bg: '#042f2e',
   },
+  chaosSaber: {
+    icon: '🌈',
+    name: '하이퍼 데스 · 별빛 심판',
+    sub: 'GOD OF HYPERDEATH · STAR BLAZING',
+    quote: '* 이제... 나의 진짜 힘을 보여줄 시간이야!',
+    detail: '460px 하이퍼 고너 무지개 소용돌이 + 18연 폭발 별똥별 + 12연 무지개 낙뢰 + 체력 40% 회복',
+    accent: '#e879f9',
+    bg: '#2e1065',
+  },
+  realKnife: {
+    icon: '🔪',
+    name: '진홍의 일격 · 999999',
+    sub: 'THE REAL KNIFE · DETERMINATION LV.20',
+    quote: '* 함께 이 무의미한 세계를 지워버리자.',
+    detail: '540px 화면 전체 9999999 처형 참격 + 20연 유도 결의의 칼날 + 체력 40% 흡혈',
+    accent: '#ef4444',
+    bg: '#2b040a',
+  },
+  voidBlade: {
+    icon: '👁️',
+    name: '포세이큰 · 공허 침식',
+    sub: 'FORSAKEN · CORRUPTED VOID SLASH',
+    quote: '모든 빛은 결국 어둠과 부패에 잠식된다...',
+    detail: '480px 공허 침식 대폭발 + 16방향 부패 검기 폭풍 + 체력 45% 흡혈',
+    accent: '#22c55e',
+    bg: '#09090b',
+  },
+  floweyArsenal: {
+    icon: '🌻',
+    name: '유어 베스트 나이트메어',
+    sub: 'YOUR BEST NIGHTMARE · SAVE & LOAD',
+    quote: '* 이 세상은 죽이거나, 죽임을 당하는 거야! 하하하하!',
+    detail: 'SAVE & LOAD 체력 100% 완전 회복 + 6영혼 메가 레이저 + 10연 유도 핵폭탄 + 18연 알갱이 폭풍',
+    accent: '#facc15',
+    bg: '#14532d',
+  },
+  justiceSpear: {
+    icon: '🛡️',
+    name: '진정한 영웅 · 정의의 창',
+    sub: 'BATTLE AGAINST A TRUE HERO',
+    quote: '* 넌 지금... 진정한 영웅과 맞서고 있는 거야!',
+    detail: '28연 360° 초대형 정의의 창 + 14연 포위 창 + 520px 초록 영혼 결계 폭발 + HP 240,000 결의 회복',
+    accent: '#38bdf8',
+    bg: '#0c2748',
+  },
+  neoCannon: {
+    icon: '🌟',
+    name: '파워 오브 NEO · 쇼타임',
+    sub: 'POWER OF "NEO" · GLAMOUR OVERDRIVE',
+    quote: '* 나의 진정한 모습... 파워 오브 NEO를 보여주지! OH YES!!',
+    detail: '18연 360° 핫핑크·골드 NEO 플라즈마 포격 + 6연 유도 디스코 스타 폭탄 + 480px 스포트라이트 대폭발 + HP 35% 회복',
+    accent: '#ec4899',
+    bg: '#3b0764',
+  },
 };
 
 // 5종 강화 (패시브 스탯 업그레이드, 각 1~5레벨)
@@ -893,14 +1245,204 @@ function getStage(game) {
   return stages[clamp(game.stageIndex, 0, stages.length - 1)];
 }
 
+// 사망 시 각성 시스템: 기본 캐릭터 1번 각성 / 특별 캐릭터 7명 2번 각성 (1차 각성 -> 2차 초각성!)
+const HERO_DEATH_AWAKENINGS = {
+  sans: [
+    {
+      title: '💀 LAST BREATH · 1차 각성 (PHASE 2)',
+      quote: '* 헉... 아직 한 번은 더 버틸 수 있어.',
+      color: '#38bdf8',
+      dmgMult: 1.1,
+      fireMult: 1.05,
+      speedAdd: 8,
+    },
+    {
+      title: '💀 ENIGMATIC ENCOUNTER · 2차 초각성 (PHASE 3)',
+      quote: '* 기억해 둬, 꼬맹이. 여기서 쓰러지는 건 게으른 짓이야.',
+      color: '#facc15',
+      dmgMult: 1.16,
+      fireMult: 1.08,
+      speedAdd: 10,
+    },
+  ],
+  forsaken: [
+    {
+      title: '👁️ 완전 공허 침식 · 각성',
+      quote: '어둠은 쓰러지지 않는다... 모든 빛을 삼키는 공허가 깨어났다!',
+      color: '#ef4444',
+      dmgMult: 1.12,
+      fireMult: 1.06,
+      speedAdd: 8,
+    },
+  ],
+  asriel: [
+    {
+      title: '🌈 GOD OF HYPERDEATH · 1차 각성',
+      quote: '* ♥ But it refused. — 아직 끝나지 않았어!',
+      color: '#e879f9',
+      dmgMult: 1.1,
+      fireMult: 1.05,
+      speedAdd: 8,
+    },
+    {
+      title: '🌈 ANGEL OF DEATH · 2차 초각성 (FINAL FORM)',
+      quote: '* 이제 나의 진정한 최종 형태를 보여주지!!',
+      color: '#facc15',
+      dmgMult: 1.16,
+      fireMult: 1.08,
+      speedAdd: 10,
+    },
+  ],
+  chara: [
+    {
+      title: '🔪 DETERMINATION LV.20 · 1차 각성',
+      quote: '* 아직 끝나지 않았어... 결의가 나를 일으켜 세운다.',
+      color: '#ef4444',
+      dmgMult: 1.12,
+      fireMult: 1.06,
+      speedAdd: 8,
+    },
+    {
+      title: '🔪 ABSOLUTE ERASE · 2차 초각성 (9999999)',
+      quote: '* 9999999... 이 세계째로 완전히 지워버리겠어!!',
+      color: '#dc2626',
+      dmgMult: 1.18,
+      fireMult: 1.08,
+      speedAdd: 10,
+    },
+  ],
+  omegaFlowey: [
+    {
+      title: '🌻 FILE 2 LOADED · 1차 각성',
+      quote: '* 하하하! 내가 세이브 파일을 불러왔지!!',
+      color: '#facc15',
+      dmgMult: 1.1,
+      fireMult: 1.05,
+      speedAdd: 8,
+    },
+    {
+      title: '🌻 YOUR BEST NIGHTMARE · 2차 초각성',
+      quote: '* 이 타임라인은 내 거야! 절대 끝내지 못해!!',
+      color: '#ef4444',
+      dmgMult: 1.16,
+      fireMult: 1.08,
+      speedAdd: 10,
+    },
+  ],
+  undying: [
+    {
+      title: '🛡️ 결의의 영웅 · 1차 각성',
+      quote: '* 안 돼... 난 여기서 쓰러질 수 없어!!',
+      color: '#38bdf8',
+      dmgMult: 1.1,
+      fireMult: 1.05,
+      speedAdd: 8,
+    },
+    {
+      title: '🛡️ 진정한 불사의 영웅 · 2차 초각성',
+      quote: '* 내 몸이 먼지가 되어도... 정의의 창은 멈추지 않는다!!',
+      color: '#22c55e',
+      dmgMult: 1.16,
+      fireMult: 1.08,
+      speedAdd: 10,
+    },
+  ],
+  mettatonNeo: [
+    {
+      title: '🌟 HYPER NEO ENCORE · 각성',
+      quote: '* 앙코르 요청인가? 쇼는 아직 안 끝났어! OH YES!!',
+      color: '#ec4899',
+      dmgMult: 1.12,
+      fireMult: 1.06,
+      speedAdd: 8,
+    },
+  ],
+};
+
+function getHeroAwakeningList(heroId) {
+  return HERO_DEATH_AWAKENINGS[heroId] || [];
+}
+
+function tryHeroDeathAwakening(game) {
+  const player = game.player;
+  const hero = HEROES[game.heroIndex ?? 0] ?? HEROES[0];
+  const stagesList = getHeroAwakeningList(hero.id);
+  const currentStage = player.awakeningStage ?? 0;
+  if (currentStage >= stagesList.length) return false;
+
+  const nextStage = currentStage + 1;
+  const spec = stagesList[currentStage];
+  player.awakeningStage = nextStage;
+  player.maxAwakenings = stagesList.length;
+  player.hp = player.sansHero ? 1 : player.maxHp;
+  player.invincible = nextStage >= 2 ? 2.8 : 2.3;
+  player.damage *= spec.dmgMult ?? 1.32;
+  player.fireRate *= spec.fireMult ?? 1.18;
+  player.speed += spec.speedAdd ?? 20;
+  player.critChance = Math.min(0.9, (player.critChance ?? 0.1) + (nextStage >= 2 ? 0.12 : 0.06));
+  player.ultCharge = nextStage >= 2 ? 100 : Math.min(100, (player.ultCharge ?? 0) + 55);
+
+  // Clear threatening enemy bullets around the player & unleash awakening shockwave!
+  game.enemyBullets = (game.enemyBullets ?? []).filter((eb) => distance(player, eb) > 520);
+  game.bullets.push({
+    x: player.x,
+    y: player.y,
+    vx: 0,
+    vy: 0,
+    radius: 70,
+    damage: getPlayerDamage(player, nextStage >= 2 ? 320 : 180),
+    life: 0.46,
+    maxLife: 0.46,
+    pierce: 999,
+    color: spec.color,
+    spin: 0,
+    type: 'shockwave',
+    blast: (nextStage >= 2 ? 520 : 420) * player.area,
+    hitIds: new Set(),
+  });
+
+  // On 2nd Super-Awakening, also immediately awaken the equipped weapon!
+  if (nextStage >= 2) {
+    const w = weapons[player.weaponIndex];
+    if (w) {
+      game.weaponLevels[w.id] = Math.max(game.weaponLevels[w.id] ?? 0, 5);
+      game.awakenedWeapons[w.id] = true;
+      if (w.id === 'gaster') applySansAwakening(game);
+    }
+  }
+
+  game.deathAwakenFlash = 2.6;
+  game.deathAwakenStage = nextStage;
+  game.deathAwakenTitle = spec.title;
+  game.deathAwakenQuote = spec.quote;
+  game.deathAwakenColor = spec.color;
+  game.shake = nextStage >= 2 ? 24 : 18;
+  addParticles(game, player.x, player.y, spec.color, nextStage >= 2 ? 56 : 38);
+  addFloatingText(
+    game,
+    player.x,
+    player.y - 42,
+    nextStage >= 2 ? '⚡ 2차 초각성!!' : '🔥 1차 각성!!',
+    spec.color,
+    24,
+  );
+  queueSound(game, 'bossClear');
+  return true;
+}
+
 function createGame(startStage = 0, bmEquipped = {}, heroIndex = 0, lobbyMeta = DEFAULT_LOBBY_META) {
   const bm = bmEquipped && typeof bmEquipped === 'object' ? { ...bmEquipped } : {};
   const meta = lobbyMeta && typeof lobbyMeta === 'object' ? lobbyMeta : DEFAULT_LOBBY_META;
   const up = meta.upgrades ?? {};
   const hero = HEROES[clamp(heroIndex, 0, HEROES.length - 1)] ?? HEROES[0];
   const hs = hero.stats ?? {};
-  const baseMaxHp = hs.sansHero ? 1 : (hs.maxHp ?? 100) + (up.hp ?? 0) * 15;
-  const maxHp = hs.sansHero ? 1 : bm.immortal ? 999 : baseMaxHp;
+  const isCanonFixedHp = Boolean(
+    hs.sansHero || hs.asrielHero || hs.charaHero || hs.floweyHero || hs.undyingHero || hs.neoHero,
+  );
+  const baseMaxHp = isCanonFixedHp
+    ? hs.maxHp
+    : (hs.maxHp ?? 100) + (up.hp ?? 0) * 15;
+  const maxHp = isCanonFixedHp ? hs.maxHp : bm.immortal ? 999 : baseMaxHp;
   const baseSpeed = Math.round((hs.speed ?? 245) * (1 + (up.speed ?? 0) * 0.04));
   const baseDamage = (hs.damage ?? 1) * (1 + (up.atk ?? 0) * 0.08);
   const baseFireRate = (hs.fireRate ?? 1) * (1 + (up.haste ?? 0) * 0.05);
@@ -937,6 +1479,11 @@ function createGame(startStage = 0, bmEquipped = {}, heroIndex = 0, lobbyMeta = 
     stageFlash: 0,
     awakenFlash: 0,
     awakenBannerCustom: '',
+    deathAwakenFlash: 0,
+    deathAwakenStage: 0,
+    deathAwakenTitle: '',
+    deathAwakenQuote: '',
+    deathAwakenColor: '#facc15',
     abilityAwakenFlash: 0,
     abilityAwakenName: '',
     ultFlash: 0,
@@ -1014,6 +1561,23 @@ function createGame(startStage = 0, bmEquipped = {}, heroIndex = 0, lobbyMeta = 
       forsakenHero: Boolean(hs.forsakenHero),
       forsakenTimer: 2.2,
       forsakenStep: 0,
+      asrielHero: Boolean(hs.asrielHero),
+      asrielStarTimer: 3.2,
+      asrielSynergyTimer: 3.8,
+      asrielRefuseCd: 0,
+      charaHero: Boolean(hs.charaHero),
+      charaSlashTimer: 3.2,
+      charaSynergyTimer: 3.8,
+      floweyHero: Boolean(hs.floweyHero),
+      floweyPelletTimer: 3.4,
+      floweySaveCd: 0,
+      undyingHero: Boolean(hs.undyingHero),
+      undyingSpearTimer: 3.2,
+      neoHero: Boolean(hs.neoHero),
+      neoShowTimer: 3.4,
+      canonFixedHp: isCanonFixedHp,
+      awakeningStage: 0,
+      maxAwakenings: getHeroAwakeningList(hero.id).length,
     },
     enemies: [],
     bullets: [],
@@ -1061,6 +1625,7 @@ function spawnChapterBoss(game, camera) {
     pattern: spec.pattern,
     worth: 95,
     boss: true,
+    bossId: spec.id,
     bossName: game.bossCycle > 0 ? `${spec.name} Mk.${game.bossCycle + 1}` : spec.name,
     bossTitle: spec.title,
     bossScore: Math.round(spec.score * cycleScale),
@@ -1376,6 +1941,10 @@ function applyUpgrade(game, id) {
         player.hp = 1;
         player.invincibleBonus += 0.08;
         player.damage *= 1.08;
+      } else if (player.canonFixedHp) {
+        player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.18));
+        player.armor += 2;
+        player.regen += 1.2;
       } else {
         player.maxHp += 24;
         player.hp = Math.min(player.maxHp, player.hp + 32);
@@ -1644,6 +2213,434 @@ function executeUltimatePayload(game) {
       hitIds: new Set(),
     });
     addFloatingText(game, player.x, player.y - 34, '🔱 POSEIDON WRATH!!', '#2dd4bf', 28);
+  } else if (wId === 'chaosSaber') {
+    // 🌈 GOD OF HYPERDEATH · HYPER GONER + STAR BLAZING + SHOCKER BREAKER!
+    const isAsrielSynergy = Boolean(player.asrielHero);
+    const rainbowPalette = ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a855f7', '#ec4899'];
+    if (!player.sansHero) {
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * (isAsrielSynergy ? 0.55 : 0.4)));
+    }
+    // 1. Hyper Goner pull vortex + rainbow shockwave
+    const vortexR = (isAsrielSynergy ? 520 : 460) * player.area;
+    game.enemies.forEach((enemy) => {
+      const d = distance(player, enemy);
+      if (d < vortexR + enemy.radius) {
+        const pullA = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+        const pullDist = Math.min(d * 0.48, enemy.boss ? 30 : 120);
+        enemy.x = clamp(enemy.x + Math.cos(pullA) * pullDist, 30, world.width - 30);
+        enemy.y = clamp(enemy.y + Math.sin(pullA) * pullDist, 30, world.height - 30);
+        applyDamageToEnemy(enemy, getPlayerDamage(player, isAsrielSynergy ? 360 : 280));
+        enemy.slow = Math.max(enemy.slow ?? 0, 2.2);
+      }
+    });
+    for (let r = 0; r < 2; r += 1) {
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: 75,
+        damage: getPlayerDamage(player, 260),
+        life: 0.44 + r * 0.14,
+        maxLife: 0.44 + r * 0.14,
+        pierce: 999,
+        color: r === 0 ? '#e879f9' : '#38bdf8',
+        spin: 0,
+        type: 'shockwave',
+        blast: vortexR - r * 70,
+        hitIds: new Set(),
+      });
+    }
+    // 2. Twin 360° Rainbow Chaos Saber Slash
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 300 * player.area,
+      damage: getPlayerDamage(player, isAsrielSynergy ? 420 : 340),
+      life: 0.38,
+      maxLife: 0.38,
+      pierce: 999,
+      color: '#ec4899',
+      spin: 0,
+      angle: aim,
+      arc: Math.PI * 2,
+      knockback: 140,
+      type: 'katana',
+      awakened: true,
+      rainbow: true,
+      hitIds: new Set(),
+    });
+    // 3. Star Blazing — 18 (or 24 with Synergy) Homing Exploding Rainbow Stars!
+    const starN = isAsrielSynergy ? 24 : 18;
+    for (let s = 0; s < starN; s += 1) {
+      const a = aim + (Math.PI * 2 * s) / starN;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 26,
+        y: player.y + Math.sin(a) * 26,
+        vx: Math.cos(a) * 760,
+        vy: Math.sin(a) * 760,
+        radius: 17 * player.area,
+        damage: getPlayerDamage(player, isAsrielSynergy ? 240 : 190),
+        life: 1.45,
+        pierce: 8,
+        slow: 1.0,
+        color: rainbowPalette[s % rainbowPalette.length],
+        spin: s * 0.4,
+        homing: true,
+        blast: 95 * player.area,
+        type: 'asrielStar',
+        awakened: true,
+        hitIds: new Set(),
+      });
+    }
+    // 4. Shocker Breaker — 12 (or 16 with Synergy) Rainbow Sky Lightning Strikes!
+    const targets = [...game.enemies]
+      .sort((a, b) => distance(player, a) - distance(player, b))
+      .slice(0, isAsrielSynergy ? 16 : 12);
+    targets.forEach((enemy, idx) => {
+      const clr = rainbowPalette[idx % rainbowPalette.length];
+      applyDamageToEnemy(enemy, getPlayerDamage(player, isAsrielSynergy ? 420 : 340));
+      enemy.slow = Math.max(enemy.slow ?? 0, 2.0);
+      game.lightningEffects.push({ x: enemy.x, y: enemy.y, color: clr, life: 0.4, maxLife: 0.4 });
+      addParticles(game, enemy.x, enemy.y, clr, 14);
+    });
+    addFloatingText(
+      game,
+      player.x,
+      player.y - 36,
+      isAsrielSynergy ? '🌈 HOPES AND DREAMS!!' : '🌈 STAR BLAZING!!',
+      '#facc15',
+      28,
+    );
+  } else if (wId === 'realKnife') {
+    // 🔪 THE REAL KNIFE ULTIMATE · ERASE (9999999 CRIMSON EXECUTION!)
+    const isCharaSynergy = Boolean(player.charaHero);
+    const execR = (isCharaSynergy ? 620 : 540) * player.area;
+    if (!player.sansHero) {
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * (isCharaSynergy ? 0.55 : 0.4)));
+    }
+    game.enemies.forEach((enemy) => {
+      if (distance(player, enemy) < execR + enemy.radius) {
+        const dmg = getPlayerDamage(player, isCharaSynergy ? 560 : 420);
+        applyDamageToEnemy(enemy, dmg);
+        if (enemy.boss) {
+          enemy.hp -= Math.min(950, enemy.maxHp * 0.025);
+        }
+        enemy.slow = Math.max(enemy.slow ?? 0, 2.0);
+        addParticles(game, enemy.x, enemy.y, '#ef4444', 12);
+      }
+    });
+    // Giant 360° Crimson Slash + Shockwave
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: (isCharaSynergy ? 400 : 350) * player.area,
+      damage: getPlayerDamage(player, isCharaSynergy ? 480 : 380),
+      life: 0.4,
+      maxLife: 0.4,
+      pierce: 999,
+      color: '#ef4444',
+      spin: 0,
+      angle: aim,
+      arc: Math.PI * 2,
+      knockback: 160,
+      type: 'katana',
+      awakened: true,
+      crimson: true,
+      hitIds: new Set(),
+    });
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 80,
+      damage: getPlayerDamage(player, 260),
+      life: 0.48,
+      maxLife: 0.48,
+      pierce: 999,
+      color: '#ef4444',
+      spin: 0,
+      type: 'shockwave',
+      blast: execR,
+      hitIds: new Set(),
+    });
+    // 20 (or 28 with Synergy) Homing Red Determination Knives!
+    const knifeN = isCharaSynergy ? 28 : 20;
+    for (let i = 0; i < knifeN; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / knifeN;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 26,
+        y: player.y + Math.sin(a) * 26,
+        vx: Math.cos(a) * 980,
+        vy: Math.sin(a) * 980,
+        radius: 15 * player.area,
+        damage: getPlayerDamage(player, isCharaSynergy ? 260 : 210),
+        life: 1.25,
+        pierce: 18,
+        color: '#ef4444',
+        spin: 0,
+        homing: true,
+        type: 'charaKnife',
+        awakened: true,
+      });
+    }
+    addFloatingText(
+      game,
+      player.x,
+      player.y - 38,
+      isCharaSynergy ? '🔪 9999999 · ERASE!!' : '🔪 999999!!',
+      '#ef4444',
+      30,
+    );
+  } else if (wId === 'voidBlade') {
+    // 👁️ FORSAKEN VOID BLADE ULTIMATE: 480px Corruption Void Explosion + 16 Corrupted Waves + 45% Heal!
+    const voidR = 480 * player.area;
+    if (!player.sansHero) {
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.45));
+    }
+    game.enemies.forEach((enemy) => {
+      if (distance(player, enemy) < voidR + enemy.radius) {
+        applyDamageToEnemy(enemy, getPlayerDamage(player, 420));
+        enemy.slow = Math.max(enemy.slow ?? 0, 2.4);
+        enemy.karmaTimer = Math.max(enemy.karmaTimer ?? 0, 3.6);
+        enemy.karmaDps = Math.max(enemy.karmaDps ?? 0, getPlayerDamage(player, 110));
+        addParticles(game, enemy.x, enemy.y, '#22c55e', 10);
+      }
+    });
+    for (let r = 0; r < 2; r += 1) {
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: 75,
+        damage: getPlayerDamage(player, 280),
+        life: 0.44 + r * 0.14,
+        maxLife: 0.44 + r * 0.14,
+        pierce: 999,
+        color: r === 0 ? '#ef4444' : '#22c55e',
+        spin: 0,
+        type: 'shockwave',
+        blast: voidR - r * 70,
+        hitIds: new Set(),
+      });
+    }
+    for (let i = 0; i < 16; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 16;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 26,
+        y: player.y + Math.sin(a) * 26,
+        vx: Math.cos(a) * 900,
+        vy: Math.sin(a) * 900,
+        radius: 24 * player.area,
+        damage: getPlayerDamage(player, 240),
+        life: 1.05,
+        pierce: 18,
+        slow: 1.5,
+        color: i % 2 === 0 ? '#ef4444' : '#22c55e',
+        spin: 0,
+        type: 'lightchaser',
+        awakened: true,
+      });
+    }
+    addFloatingText(game, player.x, player.y - 38, '👁️ FORSAKEN VOID!!', '#22c55e', 28);
+  } else if (wId === 'floweyArsenal') {
+    // 🌻 OMEGA FLOWEY ULTIMATE: SAVE & LOAD Full Heal + 6 Human Soul Mega Beams + 10 Nuke Bombs + 18 Friendliness Pellets!
+    const soulColors = ['#ef4444', '#fb923c', '#facc15', '#22c55e', '#38bdf8', '#a855f7'];
+    if (!player.sansHero) {
+      player.hp = player.maxHp;
+    }
+    // 6 Human Soul Mega Lasers radiating from around Flowey!
+    for (let i = 0; i < 6; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 6;
+      const sx = clamp(player.x + Math.cos(a) * 65, 40, world.width - 40);
+      const sy = clamp(player.y + Math.sin(a) * 65, 40, world.height - 40);
+      game.bullets.push({
+        x: sx,
+        y: sy,
+        vx: 0,
+        vy: 0,
+        angle: a,
+        radius: 46 * player.area,
+        beamLength: 880,
+        charge: 0.14 + i * 0.04,
+        maxCharge: 0.14 + i * 0.04,
+        fired: false,
+        damage: getPlayerDamage(player, 260),
+        life: 1.05 + i * 0.04,
+        maxLife: 1.05 + i * 0.04,
+        pierce: 9999,
+        color: soulColors[i],
+        spin: 0,
+        type: 'gaster',
+        awakened: true,
+        hitCooldowns: new Map(),
+      });
+    }
+    // 10 Homing Omega Flowey Nuke Bombs!
+    for (let m = 0; m < 10; m += 1) {
+      const ma = aim + (Math.PI * 2 * m) / 10;
+      game.skillProjectiles.push({
+        kind: 'rocket',
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(ma) * 580,
+        vy: Math.sin(ma) * 580,
+        radius: 17,
+        blast: 170 * player.area,
+        damage: getPlayerDamage(player, 320),
+        life: 2.3,
+        awakened: true,
+      });
+    }
+    // 18 Friendliness Pellets!
+    for (let p = 0; p < 18; p += 1) {
+      const pa = aim + (Math.PI * 2 * p) / 18;
+      game.bullets.push({
+        x: player.x + Math.cos(pa) * 26,
+        y: player.y + Math.sin(pa) * 26,
+        vx: Math.cos(pa) * 760,
+        vy: Math.sin(pa) * 760,
+        radius: 12 * player.area,
+        damage: getPlayerDamage(player, 185),
+        life: 1.25,
+        pierce: 10,
+        color: '#fef08a',
+        spin: p,
+        homing: p % 2 === 0,
+        type: 'floweyPellet',
+        awakened: true,
+      });
+    }
+    addFloatingText(game, player.x, player.y - 40, '🌻 SAVE & LOAD · FULL HP!!', '#facc15', 26);
+  } else if (wId === 'justiceSpear') {
+    // 🛡️ UNDYNE THE UNDYING ULTIMATE (BUFFED): 28 Mega Spears 360° + 14 Encircling Spears + 520px Green Soul Shield Nova + 240,000 HP Surge!
+    if (player.undyingHero) {
+      player.hp = Math.min(player.maxHp, player.hp + 4600);
+    } else if (!player.sansHero) {
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.4));
+    }
+    for (let i = 0; i < 28; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 28;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 26,
+        y: player.y + Math.sin(a) * 26,
+        vx: Math.cos(a) * 1160,
+        vy: Math.sin(a) * 1160,
+        radius: 22 * player.area,
+        damage: getPlayerDamage(player, 4920),
+        life: 1.4,
+        pierce: 28,
+        slow: 1.6,
+        color: i % 2 === 0 ? '#38bdf8' : '#fef08a',
+        spin: 0,
+        type: 'justiceSpear',
+        awakened: true,
+      });
+    }
+    const anchor = [...game.enemies]
+      .sort((a, b) => distance(player, a) - distance(player, b))[0] || {
+      x: clamp(player.x + Math.cos(aim) * 200, 80, world.width - 80),
+      y: clamp(player.y + Math.sin(aim) * 200, 80, world.height - 80),
+    };
+    for (let s = 0; s < 14; s += 1) {
+      const sa = (Math.PI * 2 * s) / 14;
+      const sx = clamp(anchor.x + Math.cos(sa) * 220, 36, world.width - 36);
+      const sy = clamp(anchor.y + Math.sin(sa) * 220, 36, world.height - 36);
+      const inA = Math.atan2(anchor.y - sy, anchor.x - sx);
+      game.bullets.push({
+        x: sx,
+        y: sy,
+        vx: Math.cos(inA) * 780,
+        vy: Math.sin(inA) * 780,
+        radius: 20 * player.area,
+        damage: getPlayerDamage(player, 4920),
+        life: 0.78,
+        pierce: 20,
+        color: '#22c55e',
+        spin: 0,
+        type: 'justiceSpear',
+        awakened: true,
+      });
+    }
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 90,
+      damage: getPlayerDamage(player, 12300),
+      life: 0.5,
+      maxLife: 0.5,
+      pierce: 999,
+      color: '#22c55e',
+      spin: 0,
+      type: 'shockwave',
+      blast: 520 * player.area,
+      hitIds: new Set(),
+    });
+    addFloatingText(game, player.x, player.y - 40, '🛡️ TRUE HERO · SPEAR OF JUSTICE!!', '#38bdf8', 26);
+  } else if (wId === 'neoCannon') {
+    // 🌟 METTATON NEO ULTIMATE: 18-Way NEO Plasma Starburst + 6 Homing Disco Bombs + 480px Glamour Spotlight Nova!
+    if (!player.sansHero) {
+      player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.35));
+    }
+    for (let i = 0; i < 18; i += 1) {
+      const a = aim + (Math.PI * 2 * i) / 18;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 28,
+        y: player.y + Math.sin(a) * 28,
+        vx: Math.cos(a) * 980,
+        vy: Math.sin(a) * 980,
+        radius: 18 * player.area,
+        damage: getPlayerDamage(player, 260),
+        life: 1.3,
+        pierce: 16,
+        color: i % 3 === 0 ? '#ec4899' : i % 3 === 1 ? '#facc15' : '#38bdf8',
+        spin: i * 0.4,
+        type: 'neoStar',
+        awakened: true,
+      });
+    }
+    for (let b = 0; b < 6; b += 1) {
+      const ba = aim + (Math.PI * 2 * b) / 6;
+      game.skillProjectiles.push({
+        kind: 'rocket',
+        x: player.x + Math.cos(ba) * 30,
+        y: player.y + Math.sin(ba) * 30,
+        vx: Math.cos(ba) * 520,
+        vy: Math.sin(ba) * 520,
+        radius: 15,
+        blast: 170 * player.area,
+        damage: getPlayerDamage(player, 240),
+        life: 2.2,
+        homing: true,
+        color: b % 2 === 0 ? '#ec4899' : '#facc15',
+        awakened: true,
+      });
+    }
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: 85,
+      damage: getPlayerDamage(player, 310),
+      life: 0.48,
+      maxLife: 0.48,
+      pierce: 999,
+      color: '#ec4899',
+      spin: 0,
+      type: 'shockwave',
+      blast: 480 * player.area,
+      hitIds: new Set(),
+    });
+    addFloatingText(game, player.x, player.y - 40, '🌟 POWER OF "NEO" · OH YES!!', '#f472b6', 26);
   } else if (wId === 'blaster') {
     // 🔫 하이퍼 플라즈마 난사: 24 homing plasma bolts (16 radial + 8 aimed)
     for (let i = 0; i < 24; i += 1) {
@@ -1998,27 +2995,77 @@ function triggerUltimate(game) {
   const ultSpec = WEAPON_ULTIMATES[weapon.id] ?? WEAPON_ULTIMATES.blaster;
   const isSans = weapon.id === 'gaster';
   const isSansSynergy = Boolean(player.sansHero && isSans);
+  const isAsrielSynergy = Boolean(player.asrielHero && weapon.id === 'chaosSaber');
+  const isCharaSynergy = Boolean(player.charaHero && weapon.id === 'realKnife');
 
   player.ultCharge = 0;
   player.invincible = Math.max(player.invincible, 2.6);
   game.enemyBullets = (game.enemyBullets ?? []).filter((eb) => distance(player, eb) > 420);
 
+  const activeHero = HEROES[game.heroIndex ?? 0] ?? HEROES[0];
+  const isForsakenSynergy = Boolean(player.forsakenHero && weapon.id === 'voidBlade');
+  const isFloweySynergy = Boolean(player.floweyHero && weapon.id === 'floweyArsenal');
+  const isUndyingSynergy = Boolean(player.undyingHero && weapon.id === 'justiceSpear');
+  const isNeoSynergy = Boolean(player.neoHero && weapon.id === 'neoCannon');
+
   // Launch epic anime-style WEAPON Ultimate Cutscene!
   game.ultCutscene = {
-    timer: 1.15,
-    maxTimer: 1.15,
-    impactAt: 0.42,
+    timer: 1.75,
+    maxTimer: 1.75,
+    impactAt: 0.48,
     executed: false,
+    heroId: activeHero.id,
+    heroName: activeHero.name,
+    heroIcon: activeHero.icon,
     weaponId: weapon.id,
-    weaponName: isSansSynergy ? '시너지 · 샌즈 × 가스터' : (weapon.displayName ?? weapon.name),
+    weaponName: isSansSynergy
+      ? '시너지 · 샌즈 × 가스터'
+      : isAsrielSynergy
+        ? '시너지 · 아스리엘 × 카오스 세이버'
+        : isCharaSynergy
+          ? '시너지 · 차라 × 진정한 칼'
+          : isForsakenSynergy
+            ? '시너지 · 포세이큰 × 부패의 검'
+            : isFloweySynergy
+              ? '시너지 · 오메가 플라위 × 악몽의 덩굴포'
+              : isUndyingSynergy
+                ? '시너지 · 불사의 언다인 × 정의의 창'
+                : isNeoSynergy
+                  ? '시너지 · 메타톤 NEO × NEO 암 캐논'
+                  : (weapon.displayName ?? weapon.name),
     ultIcon: ultSpec.icon,
-    ultName: isSansSynergy ? '심판의 회랑 · 메갈로바니아' : ultSpec.name,
-    ultSub: isSansSynergy ? 'SYNERGY OVERDRIVE · JUDGEMENT HALL' : ultSpec.sub,
-    ultQuote: isSansSynergy ? '* 심판의 시간이다... 끔찍한 시간을 보내게 될 거야.' : ultSpec.quote,
+    ultName: isSansSynergy
+      ? '심판의 회랑 · 메갈로바니아'
+      : isAsrielSynergy
+        ? '호프 앤 드림즈 · 하이퍼 고너'
+        : isCharaSynergy
+          ? '세계 삭제 · ERASE (9999999)'
+          : ultSpec.name,
+    ultSub: isSansSynergy
+      ? 'SYNERGY OVERDRIVE · JUDGEMENT HALL'
+      : isAsrielSynergy
+        ? 'SYNERGY OVERDRIVE · HOPES AND DREAMS'
+        : isCharaSynergy
+          ? 'SYNERGY OVERDRIVE · DETERMINATION LV.20'
+          : ultSpec.sub,
+    ultQuote: activeHero.ultQuote || ultSpec.quote,
     accent: ultSpec.accent,
     bg: ultSpec.bg,
     sansMode: isSans,
-    synergyMode: isSansSynergy,
+    synergyMode:
+      isSansSynergy ||
+      isAsrielSynergy ||
+      isCharaSynergy ||
+      isForsakenSynergy ||
+      isFloweySynergy ||
+      isUndyingSynergy ||
+      isNeoSynergy,
+    rainbowMode: weapon.id === 'chaosSaber',
+    charaMode: weapon.id === 'realKnife',
+    forsakenMode: weapon.id === 'voidBlade',
+    floweyMode: weapon.id === 'floweyArsenal',
+    undyingMode: weapon.id === 'justiceSpear',
+    neoMode: weapon.id === 'neoCannon',
   };
   game.ultBannerName = `${ultSpec.icon} ${ultSpec.name}!`;
   game.shake = 10;
@@ -2445,6 +3492,606 @@ function fireWeapon(game) {
     return;
   }
 
+  if (weapon.id === 'chaosSaber') {
+    const rainbowPalette = ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a855f7', '#ec4899'];
+    let baseAngle = player.aimAngle ?? 0;
+    const nearest = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    if (game.aimMode !== 'manual' && nearest) {
+      baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    }
+
+    if (awakened) {
+      const pattern = (game.asrielPatternIndex ?? 0) % 3;
+      game.asrielPatternIndex = (game.asrielPatternIndex ?? 0) + 1;
+
+      if (pattern === 0) {
+        // ⚔️ CHAOS SABER & BUSTER: 360° Giant Rainbow Dual Saber + Twin Chaos Buster Beams!
+        game.bullets.push({
+          x: player.x,
+          y: player.y,
+          vx: 0,
+          vy: 0,
+          radius: weapon.radius * player.area * 1.48,
+          damage: getPlayerDamage(player, weapon.damage * boost * 1.35),
+          life: 0.34,
+          maxLife: 0.34,
+          pierce: 999,
+          color: '#ec4899',
+          spin: 0,
+          angle: baseAngle,
+          arc: Math.PI * 2,
+          knockback: 110,
+          type: 'katana',
+          awakened: true,
+          rainbow: true,
+          hitIds: new Set(),
+        });
+        [-1, 1].forEach((side) => {
+          const perp = baseAngle + Math.PI / 2;
+          const sx = clamp(player.x + Math.cos(baseAngle) * 44 + Math.cos(perp) * side * 52, 40, world.width - 40);
+          const sy = clamp(player.y + Math.sin(baseAngle) * 44 + Math.sin(perp) * side * 52, 40, world.height - 40);
+          game.bullets.push({
+            x: sx,
+            y: sy,
+            vx: 0,
+            vy: 0,
+            angle: baseAngle + side * 0.06,
+            radius: 38 * player.area,
+            beamLength: 820,
+            charge: 0.14,
+            maxCharge: 0.14,
+            fired: false,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.25),
+            life: 0.72,
+            maxLife: 0.72,
+            pierce: 9999,
+            color: side < 0 ? '#ec4899' : '#38bdf8',
+            spin: 0,
+            type: 'gaster',
+            awakened: true,
+            hitCooldowns: new Map(),
+          });
+        });
+        addFloatingText(game, player.x, player.y - 34, '⚔️ CHAOS BUSTER!', '#ec4899', 19);
+      } else if (pattern === 1) {
+        // ⭐ STAR BLAZING: 12 Homing Exploding Rainbow Stars!
+        for (let s = 0; s < 12; s += 1) {
+          const a = baseAngle + (s / 11 - 0.5) * 1.5;
+          game.bullets.push({
+            x: player.x + Math.cos(a) * 24,
+            y: player.y + Math.sin(a) * 24,
+            vx: Math.cos(a) * 740,
+            vy: Math.sin(a) * 740,
+            radius: 16 * player.area,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.1),
+            life: 1.35,
+            pierce: 6,
+            slow: 0.9,
+            color: rainbowPalette[s % rainbowPalette.length],
+            spin: s * 0.5,
+            homing: true,
+            blast: 96 * player.area,
+            type: 'asrielStar',
+            awakened: true,
+            hitIds: new Set(),
+          });
+        }
+        addFloatingText(game, player.x, player.y - 34, '⭐ STAR BLAZING!', '#facc15', 19);
+      } else {
+        // ⚡ SHOCKER BREAKER: 8 Rainbow Sky Lightning Strikes + Rainbow Shockwave!
+        const targets = [...game.enemies]
+          .sort((a, b) => distance(player, a) - distance(player, b))
+          .slice(0, 8);
+        targets.forEach((enemy, idx) => {
+          const clr = rainbowPalette[idx % rainbowPalette.length];
+          applyDamageToEnemy(enemy, getPlayerDamage(player, weapon.damage * boost * 1.55));
+          enemy.slow = Math.max(enemy.slow ?? 0, 1.8);
+          game.lightningEffects.push({ x: enemy.x, y: enemy.y, color: clr, life: 0.34, maxLife: 0.34 });
+          addParticles(game, enemy.x, enemy.y, clr, 10);
+        });
+        game.bullets.push({
+          x: player.x,
+          y: player.y,
+          vx: 0,
+          vy: 0,
+          radius: 50,
+          damage: getPlayerDamage(player, weapon.damage * boost),
+          life: 0.38,
+          maxLife: 0.38,
+          pierce: 999,
+          color: '#a855f7',
+          spin: 0,
+          type: 'shockwave',
+          blast: 290 * player.area,
+          hitIds: new Set(),
+        });
+        addFloatingText(game, player.x, player.y - 34, '⚡ SHOCKER BREAKER!', '#38bdf8', 19);
+      }
+      game.shake = Math.max(game.shake, 7);
+      queueSound(game, 'bat');
+      return;
+    }
+
+    // Normal Chaos Saber: Dual Front & Back Rainbow Saber Slashes + 3 Homing Rainbow Stars!
+    [0, Math.PI].forEach((offset, idx) => {
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: weapon.radius * player.area,
+        damage: getPlayerDamage(player, weapon.damage * boost),
+        life: weapon.life,
+        maxLife: weapon.life,
+        pierce: 999,
+        color: idx === 0 ? '#ec4899' : '#38bdf8',
+        spin: 0,
+        angle: baseAngle + offset,
+        arc: weapon.arc,
+        knockback: weapon.knockback,
+        type: 'katana',
+        awakened: false,
+        rainbow: true,
+        hitIds: new Set(),
+      });
+    });
+    for (let s = -1; s <= 1; s += 1) {
+      const a = baseAngle + s * 0.24;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 24,
+        y: player.y + Math.sin(a) * 24,
+        vx: Math.cos(a) * 680,
+        vy: Math.sin(a) * 680,
+        radius: 13 * player.area,
+        damage: getPlayerDamage(player, weapon.damage * boost * 0.72),
+        life: 1.15,
+        pierce: 5,
+        slow: 0.5,
+        color: rainbowPalette[(Math.floor(game.time * 5) + s + 3) % rainbowPalette.length],
+        spin: s,
+        homing: true,
+        blast: 64 * player.area,
+        type: 'asrielStar',
+        awakened: false,
+        hitIds: new Set(),
+      });
+    }
+    queueSound(game, 'bat');
+    return;
+  }
+
+  if (weapon.id === 'realKnife') {
+    let baseAngle = player.aimAngle ?? 0;
+    const nearest = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    if (game.aimMode !== 'manual' && nearest) {
+      baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    }
+
+    // Main Crimson Determination Knife Slash (360° when awakened!)
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: weapon.radius * player.area * (awakened ? 1.48 : 1.08),
+      damage: getPlayerDamage(player, weapon.damage * boost * (awakened ? 1.45 : 1)),
+      life: weapon.life + (awakened ? 0.08 : 0),
+      maxLife: weapon.life + (awakened ? 0.08 : 0),
+      pierce: 999,
+      color: '#ef4444',
+      spin: 0,
+      angle: baseAngle,
+      arc: awakened ? Math.PI * 2 : weapon.arc,
+      knockback: weapon.knockback,
+      type: 'katana',
+      awakened,
+      crimson: true,
+      hitIds: new Set(),
+    });
+
+    // Red Determination Knife Waves (3 normally, 7 when awakened!)
+    const knifeCount = awakened ? 7 : 3;
+    const spread = awakened ? 1.05 : 0.34;
+    for (let i = 0; i < knifeCount; i += 1) {
+      const offset = knifeCount === 1 ? 0 : i / (knifeCount - 1) - 0.5;
+      const a = baseAngle + offset * spread;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 24,
+        y: player.y + Math.sin(a) * 24,
+        vx: Math.cos(a) * (awakened ? 960 : 860),
+        vy: Math.sin(a) * (awakened ? 960 : 860),
+        radius: (awakened ? 15 : 12) * player.area,
+        damage: getPlayerDamage(player, weapon.damage * boost * (awakened ? 1.15 : 0.85)),
+        life: 1.05,
+        pierce: awakened ? 16 : 8,
+        color: '#ef4444',
+        spin: 0,
+        homing: awakened && i % 2 === 0,
+        type: 'charaKnife',
+        awakened,
+      });
+    }
+
+    // Awakened 999999 Execution Strike on highest-HP nearby target!
+    if (awakened && game.enemies.length > 0) {
+      const execTarget = [...game.enemies]
+        .filter((e) => distance(player, e) < 380)
+        .sort((a, b) => b.hp - a.hp)[0];
+      if (execTarget) {
+        applyDamageToEnemy(execTarget, getPlayerDamage(player, weapon.damage * boost * 1.9));
+        if (execTarget.boss) {
+          execTarget.hp -= Math.min(360, execTarget.maxHp * 0.01);
+        }
+        addParticles(game, execTarget.x, execTarget.y, '#ef4444', 18);
+        addFloatingText(game, execTarget.x, execTarget.y - 26, '999999', '#ef4444', 22);
+      }
+    }
+
+    game.shake = Math.max(game.shake, awakened ? 8 : 3);
+    queueSound(game, 'bat');
+    return;
+  }
+
+  if (weapon.id === 'voidBlade') {
+    let baseAngle = player.aimAngle ?? 0;
+    const nearest = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    if (game.aimMode !== 'manual' && nearest) {
+      baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    }
+
+    // Main Dark Corrupted Void Slash (360° when awakened!)
+    game.bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      radius: weapon.radius * player.area * (awakened ? 1.45 : 1.08),
+      damage: getPlayerDamage(player, weapon.damage * boost * (awakened ? 1.4 : 1)),
+      life: weapon.life + (awakened ? 0.08 : 0),
+      maxLife: weapon.life + (awakened ? 0.08 : 0),
+      pierce: 999,
+      color: '#ef4444',
+      spin: 0,
+      angle: baseAngle,
+      arc: awakened ? Math.PI * 2 : weapon.arc,
+      knockback: weapon.knockback,
+      type: 'katana',
+      awakened,
+      hitIds: new Set(),
+    });
+
+    // Corrupted Crimson & Toxic-Green Glitch Sword Waves (3 normally, 7 when awakened!)
+    const waveCount = awakened ? 7 : 3;
+    const spread = awakened ? 1.15 : 0.42;
+    for (let i = 0; i < waveCount; i += 1) {
+      const offset = waveCount === 1 ? 0 : i / (waveCount - 1) - 0.5;
+      const a = baseAngle + offset * spread;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 24,
+        y: player.y + Math.sin(a) * 24,
+        vx: Math.cos(a) * (awakened ? 880 : 780),
+        vy: Math.sin(a) * (awakened ? 880 : 780),
+        radius: (awakened ? 24 : 19) * player.area,
+        damage: getPlayerDamage(player, weapon.damage * boost * (awakened ? 1.1 : 0.85)),
+        life: 0.95,
+        pierce: awakened ? 16 : 8,
+        slow: 1.2,
+        color: i % 2 === 0 ? '#ef4444' : '#22c55e',
+        spin: 0,
+        type: 'lightchaser',
+        awakened,
+      });
+    }
+
+    if (awakened) {
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: 45,
+        damage: getPlayerDamage(player, weapon.damage * boost * 0.9),
+        life: 0.34,
+        maxLife: 0.34,
+        pierce: 999,
+        color: '#22c55e',
+        spin: 0,
+        type: 'shockwave',
+        blast: 220 * player.area,
+        hitIds: new Set(),
+      });
+    }
+    game.shake = Math.max(game.shake, awakened ? 8 : 3);
+    queueSound(game, 'bat');
+    return;
+  }
+
+  if (weapon.id === 'floweyArsenal') {
+    let baseAngle = player.aimAngle ?? 0;
+    const nearest = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    if (game.aimMode !== 'manual' && nearest) {
+      baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    }
+
+    if (awakened) {
+      const pattern = (game.floweyPatternIndex ?? 0) % 3;
+      game.floweyPatternIndex = (game.floweyPatternIndex ?? 0) + 1;
+      const anchor =
+        nearest && distance(player, nearest) < 380
+          ? { x: nearest.x, y: nearest.y }
+          : {
+              x: clamp(player.x + Math.cos(baseAngle) * 180, 90, world.width - 90),
+              y: clamp(player.y + Math.sin(baseAngle) * 180, 90, world.height - 90),
+            };
+
+      if (pattern === 0) {
+        // 🌻 Pattern 1: 14 Closing-In Friendliness Pellets Ring + 6 Vine Waves!
+        for (let i = 0; i < 14; i += 1) {
+          const a = (Math.PI * 2 * i) / 14;
+          const px = clamp(anchor.x + Math.cos(a) * 195, 36, world.width - 36);
+          const py = clamp(anchor.y + Math.sin(a) * 195, 36, world.height - 36);
+          const inA = Math.atan2(anchor.y - py, anchor.x - px);
+          game.bullets.push({
+            x: px,
+            y: py,
+            vx: Math.cos(inA) * 520,
+            vy: Math.sin(inA) * 520,
+            radius: 13 * player.area,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.15),
+            life: 0.78,
+            pierce: 12,
+            color: '#fef08a',
+            spin: i,
+            type: 'floweyPellet',
+            awakened: true,
+          });
+        }
+        for (let v = 0; v < 6; v += 1) {
+          const va = baseAngle + (v / 5 - 0.5) * 1.1;
+          game.bullets.push({
+            x: player.x + Math.cos(va) * 24,
+            y: player.y + Math.sin(va) * 24,
+            vx: Math.cos(va) * 820,
+            vy: Math.sin(va) * 820,
+            radius: 20 * player.area,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.1),
+            life: 0.9,
+            pierce: 14,
+            slow: 1.0,
+            color: '#22c55e',
+            spin: 0,
+            type: 'lightchaser',
+            awakened: true,
+          });
+        }
+        addFloatingText(game, anchor.x, anchor.y - 34, '🌻 친절한 알갱이!', '#facc15', 19);
+      } else if (pattern === 1) {
+        // 💣 Pattern 2: 6 Homing Mega Flowey Nuke Bombs!
+        for (let m = 0; m < 6; m += 1) {
+          const ma = baseAngle + (m / 5 - 0.5) * 1.15;
+          game.skillProjectiles.push({
+            kind: 'rocket',
+            x: player.x,
+            y: player.y,
+            vx: Math.cos(ma) * 590,
+            vy: Math.sin(ma) * 590,
+            radius: 16,
+            blast: 165 * player.area,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.55),
+            life: 2.1,
+            awakened: true,
+          });
+        }
+        addFloatingText(game, player.x, player.y - 34, '💣 악몽의 핵폭격!', '#ef4444', 19);
+      } else {
+        // 📺 Pattern 3: Triple Omega TV Mega Beams!
+        [-1, 0, 1].forEach((side) => {
+          const perp = baseAngle + Math.PI / 2;
+          const sx = clamp(player.x + Math.cos(baseAngle) * 48 + Math.cos(perp) * side * 66, 40, world.width - 40);
+          const sy = clamp(player.y + Math.sin(baseAngle) * 48 + Math.sin(perp) * side * 66, 40, world.height - 40);
+          game.bullets.push({
+            x: sx,
+            y: sy,
+            vx: 0,
+            vy: 0,
+            angle: baseAngle + side * 0.08,
+            radius: 42 * player.area,
+            beamLength: 880,
+            charge: 0.16,
+            maxCharge: 0.16,
+            fired: false,
+            damage: getPlayerDamage(player, weapon.damage * boost * 1.45),
+            life: 0.82,
+            maxLife: 0.82,
+            pierce: 9999,
+            color: side === 0 ? '#ef4444' : '#facc15',
+            spin: 0,
+            type: 'gaster',
+            awakened: true,
+            hitCooldowns: new Map(),
+          });
+        });
+        addFloatingText(game, player.x, player.y - 34, '📺 TV 메가 레이저!', '#ef4444', 19);
+      }
+      queueSound(game, 'boom');
+      return;
+    }
+
+    // Normal Flowey Arsenal: 5-Way Friendliness Pellets + 2 Homing Nuke Bombs!
+    for (let i = 0; i < 5; i += 1) {
+      const a = baseAngle + (i / 4 - 0.5) * 0.62;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 22,
+        y: player.y + Math.sin(a) * 22,
+        vx: Math.cos(a) * weapon.speed,
+        vy: Math.sin(a) * weapon.speed,
+        radius: weapon.radius * player.area,
+        damage: getPlayerDamage(player, weapon.damage * boost),
+        life: weapon.life,
+        pierce: weapon.pierce,
+        color: '#fef08a',
+        spin: i,
+        type: 'floweyPellet',
+        awakened: false,
+      });
+    }
+    [-0.25, 0.25].forEach((off) => {
+      const ma = baseAngle + off;
+      game.skillProjectiles.push({
+        kind: 'rocket',
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(ma) * 520,
+        vy: Math.sin(ma) * 520,
+        radius: 13,
+        blast: 115 * player.area,
+        damage: getPlayerDamage(player, weapon.damage * boost * 1.15),
+        life: 1.9,
+        awakened: false,
+      });
+    });
+    queueSound(game, 'shoot');
+    return;
+  }
+
+  if (weapon.id === 'justiceSpear') {
+    let baseAngle = player.aimAngle ?? 0;
+    const nearest = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    if (game.aimMode !== 'manual' && nearest) {
+      baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    }
+
+    const spearCount = awakened ? 7 : 5;
+    const spread = awakened ? 0.96 : 0.62;
+    for (let i = 0; i < spearCount; i += 1) {
+      const offset = i / (spearCount - 1) - 0.5;
+      const a = baseAngle + offset * spread;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 24,
+        y: player.y + Math.sin(a) * 24,
+        vx: Math.cos(a) * (awakened ? 1080 : weapon.speed),
+        vy: Math.sin(a) * (awakened ? 1080 : weapon.speed),
+        radius: weapon.radius * player.area * (awakened ? 1.18 : 1),
+        damage: getPlayerDamage(player, weapon.damage * boost * (awakened ? 1.25 : 1)),
+        life: weapon.life,
+        pierce: awakened ? 14 : weapon.pierce,
+        slow: awakened ? 1.0 : 0.5,
+        color: awakened && i % 2 === 1 ? '#fef08a' : '#38bdf8',
+        spin: 0,
+        type: 'justiceSpear',
+        awakened,
+      });
+    }
+
+    if (awakened) {
+      // Awakened: 8 Encircling Spears around nearest enemy + Green Soul Knockback Ring!
+      const anchor = nearest || {
+        x: clamp(player.x + Math.cos(baseAngle) * 190, 80, world.width - 80),
+        y: clamp(player.y + Math.sin(baseAngle) * 190, 80, world.height - 80),
+      };
+      for (let s = 0; s < 8; s += 1) {
+        const sa = (Math.PI * 2 * s) / 8;
+        const sx = clamp(anchor.x + Math.cos(sa) * 195, 36, world.width - 36);
+        const sy = clamp(anchor.y + Math.sin(sa) * 195, 36, world.height - 36);
+        const inA = Math.atan2(anchor.y - sy, anchor.x - sx);
+        game.bullets.push({
+          x: sx,
+          y: sy,
+          vx: Math.cos(inA) * 680,
+          vy: Math.sin(inA) * 680,
+          radius: 15 * player.area,
+          damage: getPlayerDamage(player, weapon.damage * boost * 1.15),
+          life: 0.68,
+          pierce: 14,
+          color: '#22c55e',
+          spin: 0,
+          type: 'justiceSpear',
+          awakened: true,
+        });
+      }
+      game.bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        radius: 50,
+        damage: getPlayerDamage(player, weapon.damage * boost),
+        life: 0.34,
+        maxLife: 0.34,
+        pierce: 999,
+        color: '#22c55e',
+        spin: 0,
+        type: 'shockwave',
+        blast: 260 * player.area,
+        hitIds: new Set(),
+      });
+    }
+    queueSound(game, 'trident');
+    return;
+  }
+
+  if (weapon.id === 'neoCannon') {
+    let baseAngle = player.aimAngle ?? 0;
+    const nearest = game.enemies
+      .map((enemy) => ({ enemy, dist: distance(player, enemy) }))
+      .sort((a, b) => a.dist - b.dist)[0]?.enemy;
+    if (game.aimMode !== 'manual' && nearest) {
+      baseAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    }
+
+    const boltCount = awakened ? 5 : 3;
+    const spread = awakened ? 0.66 : 0.36;
+    for (let i = 0; i < boltCount; i += 1) {
+      const offset = i / (boltCount - 1) - 0.5;
+      const a = baseAngle + offset * spread;
+      game.bullets.push({
+        x: player.x + Math.cos(a) * 24,
+        y: player.y + Math.sin(a) * 24,
+        vx: Math.cos(a) * (awakened ? 980 : weapon.speed),
+        vy: Math.sin(a) * (awakened ? 980 : weapon.speed),
+        radius: weapon.radius * player.area * (awakened ? 1.25 : 1),
+        damage: getPlayerDamage(player, weapon.damage * boost * (awakened ? 1.32 : 1)),
+        life: weapon.life,
+        pierce: awakened ? 14 : weapon.pierce,
+        color: i % 2 === 0 ? '#ec4899' : '#facc15',
+        spin: i * 0.5,
+        type: 'neoStar',
+        awakened,
+      });
+    }
+    if (awakened) {
+      for (let b = 0; b < 2; b += 1) {
+        const ba = baseAngle + (b === 0 ? -0.45 : 0.45);
+        game.skillProjectiles.push({
+          kind: 'rocket',
+          x: player.x + Math.cos(ba) * 22,
+          y: player.y + Math.sin(ba) * 22,
+          vx: Math.cos(ba) * 460,
+          vy: Math.sin(ba) * 460,
+          radius: 12,
+          blast: 120 * player.area,
+          damage: getPlayerDamage(player, weapon.damage * boost * 1.1),
+          life: 1.9,
+          homing: true,
+          color: '#ec4899',
+          awakened: true,
+        });
+      }
+    }
+    queueSound(game, 'railgun');
+    return;
+  }
+
   let baseAngle = player.aimAngle ?? 0;
   if (game.aimMode !== 'manual') {
     const nearest = game.enemies
@@ -2527,7 +4174,7 @@ function updateOrbit(game, delta) {
   }
 }
 
-function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins) {
+function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins, onChapterClear) {
   if (!game.running || game.pausedForUpgrade || game.over) return;
 
   let delta = rawDelta;
@@ -2551,6 +4198,7 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
   game.shake = Math.max(0, game.shake - rawDelta * 18);
   game.stageFlash = Math.max(0, game.stageFlash - delta);
   game.awakenFlash = Math.max(0, game.awakenFlash - delta);
+  game.deathAwakenFlash = Math.max(0, (game.deathAwakenFlash ?? 0) - delta);
   game.abilityAwakenFlash = Math.max(0, (game.abilityAwakenFlash ?? 0) - delta);
   game.ultFlash = Math.max(0, (game.ultFlash ?? 0) - delta);
   game.bossFlash = Math.max(0, (game.bossFlash ?? 0) - delta);
@@ -2583,7 +4231,7 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
             vx: Math.cos(a) * 720,
             vy: Math.sin(a) * 720,
             radius: 14 * player.area,
-            damage: getPlayerDamage(player, 48),
+            damage: getPlayerDamage(player, 32),
             life: 1.0,
             pierce: 99,
             slow: isBlue ? 1.2 : 0.4,
@@ -2801,6 +4449,262 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
       }
     }
   }
+
+  // 🌈 ASRIEL DREEMURR PASSIVE STAR BLAZING + CHAOS SABER SYNERGY (HYPER GONER!)
+  if (player.asrielHero && game.enemies.length > 0) {
+    const rainbowPalette = ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a855f7', '#ec4899'];
+    player.asrielStarTimer = (player.asrielStarTimer ?? 2.5) - delta;
+    if (player.asrielStarTimer <= 0) {
+      player.asrielStarTimer = 2.5;
+      const nearest = game.enemies
+        .map((e) => ({ e, dist: distance(player, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      const aimA = nearest
+        ? Math.atan2(nearest.y - player.y, nearest.x - player.x)
+        : (player.aimAngle ?? 0);
+      for (let i = 0; i < 5; i += 1) {
+        const a = aimA + (i / 4 - 0.5) * 0.9;
+        game.bullets.push({
+          x: player.x + Math.cos(a) * 22,
+          y: player.y + Math.sin(a) * 22,
+          vx: Math.cos(a) * 720,
+          vy: Math.sin(a) * 720,
+          radius: 14 * player.area,
+          damage: getPlayerDamage(player, 92),
+          life: 1.2,
+          pierce: 6,
+          slow: 0.7,
+          color: rainbowPalette[i % rainbowPalette.length],
+          spin: i * 0.6,
+          homing: true,
+          blast: 72 * player.area,
+          type: 'asrielStar',
+          awakened: true,
+          hitIds: new Set(),
+        });
+      }
+      addFloatingText(game, player.x, player.y - 32, '⭐ 스타 블레이징!', '#facc15', 18);
+    }
+
+    if (weapons[player.weaponIndex]?.id === 'chaosSaber') {
+      player.asrielSynergyTimer = (player.asrielSynergyTimer ?? 3.2) - delta;
+      if (player.asrielSynergyTimer <= 0) {
+        player.asrielSynergyTimer = 3.2;
+        const vortexR = 380 * player.area;
+        game.enemies.forEach((enemy) => {
+          const d = distance(player, enemy);
+          if (d < vortexR + enemy.radius) {
+            const pullA = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+            const pullDist = Math.min(d * 0.42, enemy.boss ? 24 : 115);
+            enemy.x = clamp(enemy.x + Math.cos(pullA) * pullDist, 30, world.width - 30);
+            enemy.y = clamp(enemy.y + Math.sin(pullA) * pullDist, 30, world.height - 30);
+            applyDamageToEnemy(enemy, getPlayerDamage(player, 155));
+            enemy.slow = Math.max(enemy.slow ?? 0, 1.8);
+          }
+        });
+        game.bullets.push({
+          x: player.x,
+          y: player.y,
+          vx: 0,
+          vy: 0,
+          radius: 65,
+          damage: getPlayerDamage(player, 110),
+          life: 0.42,
+          maxLife: 0.42,
+          pierce: 999,
+          color: '#e879f9',
+          spin: 0,
+          type: 'shockwave',
+          blast: vortexR,
+          hitIds: new Set(),
+        });
+        const targets = [...game.enemies]
+          .sort((a, b) => distance(player, a) - distance(player, b))
+          .slice(0, 6);
+        targets.forEach((enemy, idx) => {
+          const clr = rainbowPalette[idx % rainbowPalette.length];
+          applyDamageToEnemy(enemy, getPlayerDamage(player, 180));
+          game.lightningEffects.push({ x: enemy.x, y: enemy.y, color: clr, life: 0.3, maxLife: 0.3 });
+          addParticles(game, enemy.x, enemy.y, clr, 10);
+        });
+        player.hp = Math.min(player.maxHp, player.hp + 12);
+        addFloatingText(game, player.x, player.y - 38, '🌈 시너지 · 하이퍼 고너!', '#e879f9', 21);
+        game.shake = Math.max(game.shake, 10);
+        queueSound(game, 'boom');
+      }
+    }
+  }
+
+  // 🔪 CHARA PASSIVE 999999 EXECUTION + REAL KNIFE SYNERGY (ERASE!)
+  if (player.charaHero && game.enemies.length > 0) {
+    player.charaSlashTimer = (player.charaSlashTimer ?? 2.4) - delta;
+    if (player.charaSlashTimer <= 0) {
+      player.charaSlashTimer = 2.4;
+      const target = [...game.enemies]
+        .filter((e) => distance(player, e) < 420)
+        .sort((a, b) => b.hp - a.hp)[0];
+      if (target) {
+        const execR = 135 * player.area;
+        game.enemies.forEach((enemy) => {
+          if (distance(target, enemy) < execR + enemy.radius) {
+            applyDamageToEnemy(enemy, getPlayerDamage(player, 210));
+            addParticles(game, enemy.x, enemy.y, '#ef4444', 10);
+          }
+        });
+        addFloatingText(game, target.x, target.y - 24, '999999', '#ef4444', 24);
+        queueSound(game, 'bat');
+      }
+    }
+
+    if (weapons[player.weaponIndex]?.id === 'realKnife') {
+      player.charaSynergyTimer = (player.charaSynergyTimer ?? 3.0) - delta;
+      if (player.charaSynergyTimer <= 0) {
+        player.charaSynergyTimer = 3.0;
+        const aimA = player.aimAngle ?? 0;
+        // Triple giant crossing crimson slashes!
+        [0, Math.PI / 3, -Math.PI / 3].forEach((off) => {
+          game.bullets.push({
+            x: player.x,
+            y: player.y,
+            vx: 0,
+            vy: 0,
+            radius: 265 * player.area,
+            damage: getPlayerDamage(player, 220),
+            life: 0.34,
+            maxLife: 0.34,
+            pierce: 999,
+            color: '#ef4444',
+            spin: 0,
+            angle: aimA + off,
+            arc: Math.PI * 0.9,
+            knockback: 110,
+            type: 'katana',
+            awakened: true,
+            crimson: true,
+            hitIds: new Set(),
+          });
+        });
+        // 10 homing Red Determination Knives!
+        for (let k = 0; k < 10; k += 1) {
+          const ka = aimA + (Math.PI * 2 * k) / 10;
+          game.bullets.push({
+            x: player.x + Math.cos(ka) * 24,
+            y: player.y + Math.sin(ka) * 24,
+            vx: Math.cos(ka) * 920,
+            vy: Math.sin(ka) * 920,
+            radius: 14 * player.area,
+            damage: getPlayerDamage(player, 155),
+            life: 1.15,
+            pierce: 14,
+            color: '#ef4444',
+            spin: 0,
+            homing: true,
+            type: 'charaKnife',
+            awakened: true,
+          });
+        }
+        player.hp = Math.min(player.maxHp, player.hp + 12);
+        addFloatingText(game, player.x, player.y - 38, '🔪 시너지 · ERASE (9999999)!', '#ef4444', 22);
+        game.shake = Math.max(game.shake, 11);
+        queueSound(game, 'bat');
+      }
+    }
+  }
+
+  // 🌻 OMEGA FLOWEY PASSIVE: 6-Soul Friendliness Pellet Ring + SAVE & LOAD Heal every 2.5s!
+  if (player.floweyHero && game.enemies.length > 0) {
+    player.floweyPelletTimer = (player.floweyPelletTimer ?? 2.5) - delta;
+    if (player.floweyPelletTimer <= 0) {
+      player.floweyPelletTimer = 2.5;
+      const target = game.enemies
+        .map((e) => ({ e, dist: distance(player, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      if (target) {
+        for (let i = 0; i < 10; i += 1) {
+          const a = (Math.PI * 2 * i) / 10;
+          const px = clamp(target.x + Math.cos(a) * 165, 36, world.width - 36);
+          const py = clamp(target.y + Math.sin(a) * 165, 36, world.height - 36);
+          const inA = Math.atan2(target.y - py, target.x - px);
+          game.bullets.push({
+            x: px,
+            y: py,
+            vx: Math.cos(inA) * 480,
+            vy: Math.sin(inA) * 480,
+            radius: 12 * player.area,
+            damage: getPlayerDamage(player, 115),
+            life: 0.72,
+            pierce: 8,
+            color: '#fef08a',
+            spin: i,
+            type: 'floweyPellet',
+            awakened: true,
+          });
+        }
+        player.hp = Math.min(player.maxHp, player.hp + 8);
+        addFloatingText(game, target.x, target.y - 30, '🌻 포위 알갱이!', '#facc15', 18);
+      }
+    }
+  }
+
+  // 🛡️ UNDYNE THE UNDYING PASSIVE (BALANCED): 6 Encircling Spears of Justice every 3.2s!
+  if (player.undyingHero && game.enemies.length > 0) {
+    player.undyingSpearTimer = (player.undyingSpearTimer ?? 3.2) - delta;
+    if (player.undyingSpearTimer <= 0) {
+      player.undyingSpearTimer = 3.2;
+      const target = game.enemies
+        .map((e) => ({ e, dist: distance(player, e) }))
+        .sort((a, b) => a.dist - b.dist)[0]?.e;
+      if (target) {
+        for (let i = 0; i < 6; i += 1) {
+          const a = (Math.PI * 2 * i) / 6;
+          const sx = clamp(target.x + Math.cos(a) * 185, 36, world.width - 36);
+          const sy = clamp(target.y + Math.sin(a) * 185, 36, world.height - 36);
+          const inA = Math.atan2(target.y - sy, target.x - sx);
+          game.bullets.push({
+            x: sx,
+            y: sy,
+            vx: Math.cos(inA) * 700,
+            vy: Math.sin(inA) * 700,
+            radius: 15 * player.area,
+            damage: getPlayerDamage(player, 4920),
+            life: 0.72,
+            pierce: 8,
+            color: '#38bdf8',
+            spin: 0,
+            type: 'justiceSpear',
+            awakened: true,
+          });
+        }
+        addFloatingText(game, target.x, target.y - 30, '🛡️ 정의의 창 포위!', '#38bdf8', 18);
+      }
+    }
+  }
+
+  // 🌟 METTATON NEO PASSIVE (BALANCED): 6 Disco Starlight Bolts every 3.4s!
+  if (player.neoHero && game.enemies.length > 0) {
+    player.neoShowTimer = (player.neoShowTimer ?? 3.4) - delta;
+    if (player.neoShowTimer <= 0) {
+      player.neoShowTimer = 3.4;
+      for (let i = 0; i < 6; i += 1) {
+        const a = game.time * 1.6 + (Math.PI * 2 * i) / 6;
+        game.bullets.push({
+          x: player.x + Math.cos(a) * 24,
+          y: player.y + Math.sin(a) * 24,
+          vx: Math.cos(a) * 740,
+          vy: Math.sin(a) * 740,
+          radius: 13 * player.area,
+          damage: getPlayerDamage(player, 32),
+          life: 0.95,
+          pierce: 5,
+          color: i % 2 === 0 ? '#ec4899' : '#38bdf8',
+          spin: i * 0.6,
+          type: 'neoStar',
+          awakened: true,
+        });
+      }
+      addFloatingText(game, player.x, player.y - 34, '🌟 OH YES!! GLAMOUR!!', '#f472b6', 18);
+    }
+  }
   const playerSpeedFactor = player.slowTimer > 0 ? 0.62 : 1;
   const moveX = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch.x;
   const moveY = (input.down ? 1 : 0) - (input.up ? 1 : 0) + input.touch.y;
@@ -2813,6 +4717,8 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
   player.x = clamp(player.x + (totalMoveX / moveLength) * player.speed * playerSpeedFactor * delta, 24, world.width - 24);
   player.y = clamp(player.y + (totalMoveY / moveLength) * player.speed * playerSpeedFactor * delta, 24, world.height - 24);
   player.invincible = Math.max(0, player.invincible - delta);
+  player.floweySaveCd = Math.max(0, (player.floweySaveCd ?? 0) - delta);
+  player.asrielRefuseCd = Math.max(0, (player.asrielRefuseCd ?? 0) - delta);
   player.ultCharge = Math.min(100, (player.ultCharge ?? 0) + delta * 3.8);
   if (player.regen > 0 && player.hp > 0) {
     player.hp = Math.min(player.maxHp, player.hp + player.regen * delta);
@@ -3468,6 +5374,31 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
       return bullet.life > 0 && bullet.x > 0 && bullet.y > 0 && bullet.x < world.width && bullet.y < world.height;
     }
 
+    if (bullet.type === 'asrielStar') {
+      if (Math.random() < 0.5) {
+        addParticles(game, bullet.x, bullet.y, bullet.color || '#facc15', 1);
+      }
+      game.enemies.forEach((enemy) => {
+        if (bullet.hitIds.has(enemy)) return;
+        if (distance(bullet, enemy) < bullet.radius + enemy.radius) {
+          bullet.hitIds.add(enemy);
+          applyDamageToEnemy(enemy, bullet.damage);
+          enemy.slow = Math.max(enemy.slow ?? 0, bullet.slow ?? 0.6);
+          addParticles(game, enemy.x, enemy.y, bullet.color || '#facc15', 10);
+          const blastR = bullet.blast ?? 70;
+          game.enemies.forEach((near) => {
+            if (near !== enemy && distance(enemy, near) < blastR) {
+              applyDamageToEnemy(near, bullet.damage * 0.55);
+              addParticles(game, near.x, near.y, bullet.color || '#ec4899', 3);
+            }
+          });
+          bullet.pierce -= 1;
+          if (Math.random() < 0.25) queueSound(game, 'hit');
+        }
+      });
+      return bullet.pierce > 0 && bullet.life > 0 && bullet.x > 0 && bullet.y > 0 && bullet.x < world.width && bullet.y < world.height;
+    }
+
     if (bullet.type === 'trident') {
       bullet.outboundTime = Math.max(0, (bullet.outboundTime ?? 0) - delta);
       const hitWall =
@@ -3946,14 +5877,32 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
       } else if (trySansDodge(game)) {
         // Dodged with Sans MISS!
       } else if (player.invincible <= 0) {
-        player.hp = Math.max(0, player.hp - Math.max(1, enemy.damage - player.armor));
+        const baseHit = Math.max(1, enemy.damage - player.armor);
+        const dmgTaken = player.neoHero
+          ? Math.round(Math.max(12, enemy.damage) * 250)
+          : player.undyingHero
+            ? Math.round(Math.max(10, enemy.damage) * 130)
+            : player.floweyHero
+              ? Math.round(Math.max(10, enemy.damage) * 48)
+              : baseHit;
+        player.hp = Math.max(0, player.hp - dmgTaken);
+        if (player.neoHero) addFloatingText(game, player.x, player.y - 28, `-${dmgTaken.toLocaleString()} (NEO 약점!)`, '#f472b6', 17);
         player.invincible = 0.55 + player.invincibleBonus;
         game.shake = 11;
         addParticles(game, player.x, player.y, '#f87171', 12);
         queueSound(game, 'hurt');
+        if (player.floweyHero && player.hp > 0 && player.hp <= player.maxHp * 0.25 && (player.floweySaveCd ?? 0) <= 0) {
+          player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.35));
+          player.floweySaveCd = 35;
+          player.invincible = 1.4;
+          addFloatingText(game, player.x, player.y - 42, '📁 LOAD FILE (+35% HP)', '#facc15', 20);
+          queueSound(game, 'level');
+        }
         if (player.hp <= 0) {
-          game.over = true;
-          game.running = false;
+          if (!tryHeroDeathAwakening(game)) {
+            game.over = true;
+            game.running = false;
+          }
         }
       }
     }
@@ -3981,7 +5930,7 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
       onEarnGold?.(enemy.bossGold ?? 15);
       const bossCoins = Math.round(120 * (player.coinBonus ?? 1));
       game.runCoins = (game.runCoins ?? 0) + bossCoins;
-      onEarnLobbyCoins?.(bossCoins);
+      onEarnLobbyCoins?.(bossCoins, { kills: 1, boss: 1 });
       player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.35));
       for (let g = 0; g < 12; g += 1) {
         const ga = (Math.PI * 2 * g) / 12;
@@ -3998,6 +5947,19 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
       queueSound(game, 'bossClear');
       game.bossClearFlash = 2.8;
       game.chapterTime = 0;
+      onChapterClear?.(activeHero?.id);
+
+      // 🌈 Asriel Dreemurr Special Twist: 10% chance to fade away (die) at the end of every chapter!
+      if (player.asrielHero && Math.random() < 0.1) {
+        player.hp = 0;
+        game.over = true;
+        game.running = false;
+        game.bossClearText = '🌸 챕터 종료 10% 확률 발동 · 아스리엘의 영혼이 흩어져 사망했습니다...';
+        addParticles(game, player.x, player.y, '#e879f9', 48);
+        addFloatingText(game, player.x, player.y - 44, '🌸 10% 소멸 발동 · 아스리엘 사망...', '#e879f9', 22);
+        queueSound(game, 'hurt');
+        return false;
+      }
 
       if (game.stageIndex < stages.length - 1) {
         game.stageIndex += 1;
@@ -4020,13 +5982,31 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
         } else if (trySansDodge(game)) {
           // Dodged with Sans MISS!
         } else if (player.invincible <= 0) {
-          player.hp = Math.max(0, player.hp - Math.max(1, enemy.damage - player.armor));
+          const baseHit = Math.max(1, enemy.damage - player.armor);
+          const dmgTaken = player.neoHero
+            ? Math.round(Math.max(15, enemy.damage) * 250)
+            : player.undyingHero
+              ? Math.round(Math.max(12, enemy.damage) * 130)
+              : player.floweyHero
+                ? Math.round(Math.max(12, enemy.damage) * 48)
+                : baseHit;
+          player.hp = Math.max(0, player.hp - dmgTaken);
+          if (player.neoHero) addFloatingText(game, player.x, player.y - 28, `-${dmgTaken.toLocaleString()} (NEO 약점!)`, '#f472b6', 17);
           player.invincible = 0.55 + player.invincibleBonus;
           game.shake = 12;
           queueSound(game, 'hurt');
+          if (player.floweyHero && player.hp > 0 && player.hp <= player.maxHp * 0.25 && (player.floweySaveCd ?? 0) <= 0) {
+            player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.35));
+            player.floweySaveCd = 35;
+            player.invincible = 1.4;
+            addFloatingText(game, player.x, player.y - 42, '📁 LOAD FILE (+35% HP)', '#facc15', 20);
+            queueSound(game, 'level');
+          }
           if (player.hp <= 0) {
-            game.over = true;
-            game.running = false;
+            if (!tryHeroDeathAwakening(game)) {
+              game.over = true;
+              game.running = false;
+            }
           }
         }
       }
@@ -4054,7 +6034,7 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
     game.score += enemy.elite ? 120 : 35;
     const coinDrop = Math.max(1, Math.round((enemy.elite ? 15 : 2) * (player.coinBonus ?? 1)));
     game.runCoins = (game.runCoins ?? 0) + coinDrop;
-    onEarnLobbyCoins?.(coinDrop);
+    onEarnLobbyCoins?.(coinDrop, { kills: 1, elite: enemy.elite ? 1 : 0 });
     if (enemy.elite) {
       onEarnGold?.(3);
     } else {
@@ -4092,15 +6072,33 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
         return false;
       }
       if (player.invincible <= 0) {
-        player.hp = Math.max(0, player.hp - Math.max(1, eb.damage - player.armor));
+        const baseHit = Math.max(1, eb.damage - player.armor);
+        const dmgTaken = player.neoHero
+          ? Math.round(Math.max(12, eb.damage) * 250)
+          : player.undyingHero
+            ? Math.round(Math.max(10, eb.damage) * 130)
+            : player.floweyHero
+              ? Math.round(Math.max(10, eb.damage) * 48)
+              : baseHit;
+        player.hp = Math.max(0, player.hp - dmgTaken);
+        if (player.neoHero) addFloatingText(game, player.x, player.y - 28, `-${dmgTaken.toLocaleString()} (NEO 약점!)`, '#f472b6', 17);
         player.invincible = 0.5 + player.invincibleBonus;
         if (eb.chill) player.slowTimer = Math.max(player.slowTimer ?? 0, 1.5);
         game.shake = 10;
         addParticles(game, player.x, player.y, eb.color, 12);
         queueSound(game, 'hurt');
+        if (player.floweyHero && player.hp > 0 && player.hp <= player.maxHp * 0.25 && (player.floweySaveCd ?? 0) <= 0) {
+          player.hp = Math.min(player.maxHp, player.hp + Math.round(player.maxHp * 0.35));
+          player.floweySaveCd = 35;
+          player.invincible = 1.4;
+          addFloatingText(game, player.x, player.y - 42, '📁 LOAD FILE (+35% HP)', '#facc15', 20);
+          queueSound(game, 'level');
+        }
         if (player.hp <= 0) {
-          game.over = true;
-          game.running = false;
+          if (!tryHeroDeathAwakening(game)) {
+            game.over = true;
+            game.running = false;
+          }
         }
       }
       return false;
@@ -4125,10 +6123,10 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
         game.level += 1;
         game.nextXp += 40;
         // Automatic Level-Up 효과업!
-        if (!player.sansHero) {
+        if (!player.canonFixedHp) {
           player.maxHp += 6;
           player.hp = Math.min(player.maxHp, player.hp + 12);
-        } else {
+        } else if (player.sansHero) {
           player.maxHp = 1;
           player.hp = 1;
         }
@@ -4153,6 +6151,3059 @@ function updateGame(game, input, canvas, rawDelta, onEarnGold, onEarnLobbyCoins)
     particle.vy *= 0.92;
     return particle.life > 0;
   });
+}
+
+function drawHeartShape(context, x, y, size) {
+  context.beginPath();
+  context.moveTo(x, y + size * 0.72);
+  context.bezierCurveTo(x - size * 1.15, y - size * 0.05, x - size * 0.9, y - size * 0.95, x, y - size * 0.34);
+  context.bezierCurveTo(x + size * 0.9, y - size * 0.95, x + size * 1.15, y - size * 0.05, x, y + size * 0.72);
+  context.closePath();
+}
+
+function drawEnemyArt(context, enemy, game, player) {
+  const hpRatio = clamp(enemy.hp / enemy.maxHp, 0, 1);
+  const toPlayer = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+  const faceDir = Math.cos(toPlayer) < 0 ? -1 : 1;
+  const phase = (enemy.x * 0.03 + enemy.y * 0.02);
+  const bob = Math.sin(game.time * (enemy.kind === 'runner' ? 14 : 8) + phase) * (enemy.boss ? 3.5 : 2.2);
+  const frozen = enemy.slow > 0;
+  const r = enemy.radius;
+
+  if (enemy.boss) {
+    const enraged = enemy.hp < enemy.maxHp * 0.5;
+    const bossKey = enemy.bossId || (
+      enemy.pattern === 'neonRing' ? 'neon-overlord'
+        : enemy.pattern === 'boulderBurst' ? 'sand-titan'
+          : enemy.pattern === 'frostSpiral' ? 'frost-lich'
+            : 'inferno-lord'
+    );
+    context.save();
+
+    // Dash telegraph laser line
+    if (enemy.dashWindup > 0) {
+      context.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+      context.lineWidth = 6;
+      context.setLineDash([14, 8]);
+      context.beginPath();
+      context.moveTo(enemy.x, enemy.y);
+      context.lineTo(enemy.x + Math.cos(enemy.dashAngle) * 340, enemy.y + Math.sin(enemy.dashAngle) * 340);
+      context.stroke();
+      context.setLineDash([]);
+    }
+
+    // Ground shadow
+    context.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    context.beginPath();
+    context.ellipse(enemy.x, enemy.y + r * 0.92, r * 0.95, r * 0.3, 0, 0, Math.PI * 2);
+    context.fill();
+
+    // Outer boss aura ring
+    context.strokeStyle = enraged ? '#facc15' : enemy.glow || '#f87171';
+    context.lineWidth = enraged ? 6 : 4;
+    context.globalAlpha = 0.52 + Math.sin(game.time * 8) * 0.24;
+    context.beginPath();
+    context.arc(enemy.x, enemy.y, r + 14 + Math.sin(game.time * 6) * 4, 0, Math.PI * 2);
+    context.stroke();
+    context.globalAlpha = 1;
+
+    context.translate(enemy.x, enemy.y + bob);
+
+    if (bossKey === 'neon-overlord') {
+      // 🤖 CH.1 BOSS: NEON OVERLORD — Cybernetic Mech Warlord!
+      // Rotating cyber energy ring & 4 plasma nodes
+      context.save();
+      context.rotate(game.time * 1.4);
+      context.strokeStyle = enraged ? '#facc15' : '#38bdf8';
+      context.lineWidth = 3;
+      context.setLineDash([12, 10]);
+      context.beginPath();
+      context.arc(0, 0, r * 1.15, 0, Math.PI * 2);
+      context.stroke();
+      context.setLineDash([]);
+      for (let i = 0; i < 4; i += 1) {
+        const a = (Math.PI * 2 * i) / 4;
+        context.fillStyle = enraged ? '#fde047' : '#7dd3fc';
+        context.beginPath();
+        context.arc(Math.cos(a) * r * 1.15, Math.sin(a) * r * 1.15, 6, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.restore();
+
+      // Twin Shoulder Plasma Cannons
+      [-1, 1].forEach((side) => {
+        context.fillStyle = '#0f172a';
+        context.strokeStyle = '#38bdf8';
+        context.lineWidth = 3;
+        context.beginPath();
+        context.roundRect(side * r * 0.72 - 14, -r * 0.55, 28, r * 0.78, 6);
+        context.fill();
+        context.stroke();
+        context.fillStyle = enraged ? '#facc15' : '#38bdf8';
+        context.fillRect(side * r * 0.72 - 8, -r * 0.72, 16, 12);
+      });
+
+      // Hexagonal Armored Mech Chassis
+      context.shadowColor = enraged ? '#facc15' : '#38bdf8';
+      context.shadowBlur = 22;
+      context.fillStyle = frozen ? '#bae6fd' : '#0c4a6e';
+      context.strokeStyle = enraged ? '#fde047' : '#e0f2fe';
+      context.lineWidth = 4;
+      context.beginPath();
+      for (let i = 0; i < 6; i += 1) {
+        const a = (Math.PI * 2 * i) / 6 - Math.PI / 6;
+        const px = Math.cos(a) * r * 0.94;
+        const py = Math.sin(a) * r * 0.94;
+        if (i === 0) context.moveTo(px, py);
+        else context.lineTo(px, py);
+      }
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+
+      // Cyber V-Crest Crown
+      context.fillStyle = enraged ? '#facc15' : '#38bdf8';
+      context.beginPath();
+      context.moveTo(0, -r * 0.78);
+      context.lineTo(-r * 0.56, -r * 1.16);
+      context.lineTo(-r * 0.28, -r * 0.62);
+      context.lineTo(0, -r * 1.05);
+      context.lineTo(r * 0.28, -r * 0.62);
+      context.lineTo(r * 0.56, -r * 1.16);
+      context.closePath();
+      context.fill();
+
+      // Visor Plate & Scanning Glowing Eye
+      context.fillStyle = '#020617';
+      context.beginPath();
+      context.roundRect(-r * 0.58, -r * 0.34, r * 1.16, r * 0.34, 8);
+      context.fill();
+      const scanX = Math.sin(game.time * 4.5) * r * 0.22;
+      context.shadowColor = enraged ? '#ef4444' : '#38bdf8';
+      context.shadowBlur = 16;
+      context.fillStyle = enraged ? '#ef4444' : '#38bdf8';
+      context.beginPath();
+      context.ellipse(scanX, -r * 0.17, r * 0.24, r * 0.11, 0, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(scanX, -r * 0.17, r * 0.07, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+
+      // Chest Plasma Reactor Core
+      context.fillStyle = enraged ? '#fef08a' : '#7dd3fc';
+      context.beginPath();
+      context.arc(0, r * 0.34, r * 0.2, 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2.5;
+      context.stroke();
+    } else if (bossKey === 'sand-titan') {
+      // 🏜️ CH.2 BOSS: SAND TITAN — Ancient Runic Desert Colossus!
+      // Orbiting ancient rune stone monoliths
+      for (let i = 0; i < 4; i += 1) {
+        const a = game.time * 1.1 + (Math.PI * 2 * i) / 4;
+        const rx = Math.cos(a) * (r * 1.18);
+        const ry = Math.sin(a) * (r * 1.18);
+        context.fillStyle = '#78350f';
+        context.strokeStyle = '#fbbf24';
+        context.lineWidth = 2;
+        context.fillRect(rx - 8, ry - 11, 16, 22);
+        context.strokeRect(rx - 8, ry - 11, 16, 22);
+      }
+
+      // Massive Craggy Boulder Pauldrons
+      [-1, 1].forEach((side) => {
+        context.fillStyle = frozen ? '#bae6fd' : '#92400e';
+        context.strokeStyle = '#fbbf24';
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(side * r * 0.5, -r * 0.48);
+        context.lineTo(side * r * 1.16, -r * 0.22);
+        context.lineTo(side * r * 1.04, r * 0.45);
+        context.lineTo(side * r * 0.52, r * 0.35);
+        context.closePath();
+        context.fill();
+        context.stroke();
+      });
+
+      // Rugged Polygonal Golem Core
+      context.shadowColor = enraged ? '#f97316' : '#facc15';
+      context.shadowBlur = 22;
+      context.fillStyle = frozen ? '#bae6fd' : '#b45309';
+      context.strokeStyle = '#fef08a';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(0, -r * 1.04);
+      context.lineTo(r * 0.72, -r * 0.62);
+      context.lineTo(r * 0.92, r * 0.16);
+      context.lineTo(r * 0.56, r * 0.86);
+      context.lineTo(-r * 0.56, r * 0.86);
+      context.lineTo(-r * 0.92, r * 0.16);
+      context.lineTo(-r * 0.72, -r * 0.62);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+
+      // Glowing Magma Fissure Cracks
+      context.strokeStyle = enraged ? '#fef08a' : '#fb923c';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(-r * 0.45, -r * 0.55);
+      context.lineTo(-r * 0.12, -r * 0.1);
+      context.lineTo(0, r * 0.45);
+      context.moveTo(r * 0.48, -r * 0.45);
+      context.lineTo(r * 0.16, r * 0.05);
+      context.stroke();
+
+      // Golden Pharaoh / Titan Forehead Crest
+      context.fillStyle = '#facc15';
+      context.beginPath();
+      context.moveTo(0, -r * 1.24);
+      context.lineTo(r * 0.26, -r * 0.74);
+      context.lineTo(0, -r * 0.56);
+      context.lineTo(-r * 0.26, -r * 0.74);
+      context.closePath();
+      context.fill();
+
+      // Blazing Amber Golem Eyes + Grim Stone Jaw
+      context.shadowColor = '#facc15';
+      context.shadowBlur = 14;
+      context.fillStyle = enraged ? '#ef4444' : '#fef08a';
+      context.beginPath();
+      context.moveTo(-r * 0.46, -r * 0.22);
+      context.lineTo(-r * 0.12, -r * 0.08);
+      context.lineTo(-r * 0.42, 0);
+      context.closePath();
+      context.moveTo(r * 0.46, -r * 0.22);
+      context.lineTo(r * 0.12, -r * 0.08);
+      context.lineTo(r * 0.42, 0);
+      context.closePath();
+      context.fill();
+      context.shadowBlur = 0;
+    } else if (bossKey === 'frost-lich') {
+      // ❄️ CH.3 BOSS: FROST LICH — Glacial Undead Ice Sovereign!
+      // Orbiting Razor Icicle Shards
+      for (let i = 0; i < 6; i += 1) {
+        const a = game.time * 1.8 + (Math.PI * 2 * i) / 6;
+        const ix = Math.cos(a) * (r * 1.18);
+        const iy = Math.sin(a) * (r * 1.18);
+        context.save();
+        context.translate(ix, iy);
+        context.rotate(a + Math.PI / 2);
+        context.fillStyle = '#e0f2fe';
+        context.strokeStyle = '#38bdf8';
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(0, -12);
+        context.lineTo(6, 6);
+        context.lineTo(0, 11);
+        context.lineTo(-6, 6);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.restore();
+      }
+
+      // Tattered Spectral Midnight Cloak & Frost Mantle
+      context.fillStyle = '#1e3a8a';
+      context.strokeStyle = '#7dd3fc';
+      context.lineWidth = 3.5;
+      context.beginPath();
+      context.moveTo(-r * 0.92, -r * 0.2);
+      context.quadraticCurveTo(0, -r * 1.05, r * 0.92, -r * 0.2);
+      context.lineTo(r * 0.96, r * 0.95);
+      context.lineTo(r * 0.45, r * 0.65);
+      context.lineTo(0, r * 1.04);
+      context.lineTo(-r * 0.45, r * 0.65);
+      context.lineTo(-r * 0.96, r * 0.95);
+      context.closePath();
+      context.fill();
+      context.stroke();
+
+      // Jagged Ice-Crystal Crown
+      context.shadowColor = '#7dd3fc';
+      context.shadowBlur = 20;
+      context.fillStyle = '#bae6fd';
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2.5;
+      context.beginPath();
+      context.moveTo(-r * 0.62, -r * 0.56);
+      context.lineTo(-r * 0.5, -r * 1.24);
+      context.lineTo(-r * 0.2, -r * 0.8);
+      context.lineTo(0, -r * 1.38);
+      context.lineTo(r * 0.2, -r * 0.8);
+      context.lineTo(r * 0.5, -r * 1.24);
+      context.lineTo(r * 0.62, -r * 0.56);
+      context.closePath();
+      context.fill();
+      context.stroke();
+
+      // Pale Glacial Skull Visage
+      context.fillStyle = '#e0f2fe';
+      context.strokeStyle = '#0284c7';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(0, -r * 0.14, r * 0.54, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.fillRect(-r * 0.28, r * 0.2, r * 0.56, r * 0.28);
+      context.strokeRect(-r * 0.28, r * 0.2, r * 0.56, r * 0.28);
+
+      // Hollow Black Sockets + Piercing Cyan Lich Flames
+      context.fillStyle = '#020617';
+      context.beginPath();
+      context.ellipse(-r * 0.22, -r * 0.18, r * 0.14, r * 0.16, -0.15, 0, Math.PI * 2);
+      context.ellipse(r * 0.22, -r * 0.18, r * 0.14, r * 0.16, 0.15, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = enraged ? '#facc15' : '#38bdf8';
+      context.beginPath();
+      context.arc(-r * 0.22, -r * 0.18, r * 0.075, 0, Math.PI * 2);
+      context.arc(r * 0.22, -r * 0.18, r * 0.075, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+    } else {
+      // 🔥 FINAL BOSS: INFERNO LORD — Demonic Winged Overlord of Ember Core!
+      const wingFlap = Math.sin(game.time * 7) * 0.18;
+      // Massive Flapping Demon Wings
+      [-1, 1].forEach((side) => {
+        context.save();
+        context.rotate(side * wingFlap);
+        context.fillStyle = '#450a0a';
+        context.strokeStyle = enraged ? '#facc15' : '#ef4444';
+        context.lineWidth = 3.5;
+        context.beginPath();
+        context.moveTo(side * r * 0.45, -r * 0.1);
+        context.lineTo(side * r * 1.55, -r * 0.85);
+        context.lineTo(side * r * 1.35, -r * 0.12);
+        context.lineTo(side * r * 1.48, r * 0.36);
+        context.lineTo(side * r * 0.82, r * 0.22);
+        context.lineTo(side * r * 0.52, r * 0.55);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.restore();
+      });
+
+      // Curved Obsidian Demon Horns
+      [-1, 1].forEach((side) => {
+        context.fillStyle = '#18181b';
+        context.strokeStyle = enraged ? '#fde047' : '#f97316';
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(side * r * 0.36, -r * 0.65);
+        context.quadraticCurveTo(side * r * 1.15, -r * 1.05, side * r * 0.72, -r * 1.48);
+        context.quadraticCurveTo(side * r * 0.74, -r * 0.92, side * r * 0.14, -r * 0.78);
+        context.closePath();
+        context.fill();
+        context.stroke();
+      });
+
+      // Armored Volcanic Demon Body
+      context.shadowColor = enraged ? '#facc15' : '#ef4444';
+      context.shadowBlur = 28;
+      context.fillStyle = frozen ? '#bae6fd' : '#7f1d1d';
+      context.strokeStyle = enraged ? '#fef08a' : '#fb7185';
+      context.lineWidth = 4.5;
+      context.beginPath();
+      context.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+
+      // Glowing Hellfire Chest Sigil
+      context.fillStyle = enraged ? '#fef08a' : '#f97316';
+      context.beginPath();
+      context.moveTo(0, r * 0.12);
+      context.lineTo(r * 0.24, r * 0.44);
+      context.lineTo(0, r * 0.72);
+      context.lineTo(-r * 0.24, r * 0.44);
+      context.closePath();
+      context.fill();
+
+      // Terrifying Slanted Demon Eyes + Fanged Roaring Maw
+      context.shadowColor = '#facc15';
+      context.shadowBlur = 14;
+      context.fillStyle = '#fef08a';
+      context.beginPath();
+      context.moveTo(-r * 0.5, -r * 0.28);
+      context.lineTo(-r * 0.12, -r * 0.1);
+      context.lineTo(-r * 0.44, -r * 0.04);
+      context.closePath();
+      context.moveTo(r * 0.5, -r * 0.28);
+      context.lineTo(r * 0.12, -r * 0.1);
+      context.lineTo(r * 0.44, -r * 0.04);
+      context.closePath();
+      context.fill();
+      context.shadowBlur = 0;
+
+      // Fanged mouth
+      context.fillStyle = '#09090b';
+      context.beginPath();
+      context.ellipse(0, r * 0.14, r * 0.38, r * 0.16, 0, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#ffffff';
+      [-0.24, -0.08, 0.08, 0.24].forEach((fx) => {
+        context.beginPath();
+        context.moveTo(fx * r - 4, r * 0.04);
+        context.lineTo(fx * r, r * 0.18);
+        context.lineTo(fx * r + 4, r * 0.04);
+        context.closePath();
+        context.fill();
+      });
+    }
+
+    context.restore();
+
+    // Boss HP Bar
+    context.save();
+    context.fillStyle = '#111827';
+    context.fillRect(enemy.x - r, enemy.y + r + 14, r * 2, 9);
+    context.fillStyle = enraged ? '#facc15' : '#ef4444';
+    context.fillRect(enemy.x - r, enemy.y + r + 14, r * 2 * hpRatio, 9);
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 1.5;
+    context.strokeRect(enemy.x - r, enemy.y + r + 14, r * 2, 9);
+    context.restore();
+    return;
+  }
+
+  // ===== REGULAR & ELITE MONSTERS =====
+  context.save();
+
+  // Ground drop shadow
+  context.fillStyle = 'rgba(0, 0, 0, 0.34)';
+  context.beginPath();
+  context.ellipse(enemy.x, enemy.y + r * 0.88, r * 0.85, r * 0.28, 0, 0, Math.PI * 2);
+  context.fill();
+
+  // Elite pulsing golden/violet halo
+  if (enemy.elite) {
+    context.strokeStyle = '#facc15';
+    context.lineWidth = 3;
+    context.shadowColor = '#c026d3';
+    context.shadowBlur = 14;
+    context.beginPath();
+    context.arc(enemy.x, enemy.y, r + 6 + Math.sin(game.time * 9) * 2, 0, Math.PI * 2);
+    context.stroke();
+    context.shadowBlur = 0;
+  }
+
+  context.translate(enemy.x, enemy.y + bob);
+
+  if (enemy.kind === 'shooter') {
+    // 👁️ Arcane Floating Beholder / Void Eye Turret!
+    context.save();
+    context.rotate(game.time * 1.9);
+    context.strokeStyle = '#e879f9';
+    context.lineWidth = 2.5;
+    context.beginPath();
+    context.arc(0, 0, r * 1.15, 0, Math.PI * 2);
+    context.stroke();
+    // 4 Floating Arcane Crystal Prongs
+    for (let i = 0; i < 4; i += 1) {
+      const a = (Math.PI * 2 * i) / 4;
+      context.fillStyle = frozen ? '#bae6fd' : '#f0abfc';
+      context.beginPath();
+      context.moveTo(Math.cos(a) * (r * 1.48), Math.sin(a) * (r * 1.48));
+      context.lineTo(Math.cos(a + 0.35) * (r * 0.96), Math.sin(a + 0.35) * (r * 0.96));
+      context.lineTo(Math.cos(a - 0.35) * (r * 0.96), Math.sin(a - 0.35) * (r * 0.96));
+      context.closePath();
+      context.fill();
+    }
+    context.restore();
+
+    // Beholder body + tracking pupil
+    context.fillStyle = frozen ? '#bae6fd' : enemy.color;
+    context.strokeStyle = '#f5d0fe';
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.ellipse(0, 0, r * 0.56, r * 0.42, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#c026d3';
+    context.beginPath();
+    context.arc(Math.cos(toPlayer) * 3.5, Math.sin(toPlayer) * 3.5, r * 0.25, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#09090b';
+    context.beginPath();
+    context.ellipse(Math.cos(toPlayer) * 4, Math.sin(toPlayer) * 4, r * 0.08, r * 0.2, 0, 0, Math.PI * 2);
+    context.fill();
+  } else if (enemy.kind === 'bomber') {
+    // 💣 Volatile Bob-omb / Blast Fiend!
+    const pulse = 0.92 + Math.sin(game.time * 16) * 0.1;
+    context.scale(pulse, pulse);
+    // Brass wind-up key on back
+    context.strokeStyle = '#facc15';
+    context.lineWidth = 2.5;
+    context.beginPath();
+    context.moveTo(-faceDir * r * 0.85, 0);
+    context.lineTo(-faceDir * (r + 7), 0);
+    context.stroke();
+    context.beginPath();
+    context.arc(-faceDir * (r + 9), -4, 3.5, 0, Math.PI * 2);
+    context.arc(-faceDir * (r + 9), 4, 3.5, 0, Math.PI * 2);
+    context.stroke();
+
+    // Glossy dark iron bomb body
+    context.fillStyle = frozen ? '#bae6fd' : '#18181b';
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(0, 0, r, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    // Specular shine
+    context.fillStyle = 'rgba(255,255,255,0.22)';
+    context.beginPath();
+    context.ellipse(-r * 0.34, -r * 0.36, r * 0.26, r * 0.14, -0.6, 0, Math.PI * 2);
+    context.fill();
+    // Fuse cap + lit sizzling spark
+    context.fillStyle = '#64748b';
+    context.fillRect(-5, -r - 3, 10, 6);
+    context.strokeStyle = '#d97706';
+    context.lineWidth = 2.5;
+    context.beginPath();
+    context.moveTo(0, -r - 3);
+    context.quadraticCurveTo(6, -r - 12, 11, -r - 9);
+    context.stroke();
+    context.shadowColor = '#facc15';
+    context.shadowBlur = 10;
+    context.fillStyle = Math.sin(game.time * 28) > 0 ? '#fef08a' : '#ef4444';
+    context.beginPath();
+    context.arc(11, -r - 9, 4.5, 0, Math.PI * 2);
+    context.fill();
+    context.shadowBlur = 0;
+
+    // Fierce glowing white cartoon eyes + skull warning
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.ellipse(faceDir * 3 - 5, -2, 3.2, 5, 0, 0, Math.PI * 2);
+    context.ellipse(faceDir * 3 + 5, -2, 3.2, 5, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ef4444';
+    context.beginPath();
+    context.arc(faceDir * 4 - 5, -1, 1.8, 0, Math.PI * 2);
+    context.arc(faceDir * 4 + 5, -1, 1.8, 0, Math.PI * 2);
+    context.fill();
+  } else if (enemy.kind === 'splitter' || enemy.kind === 'miniSlime') {
+    // 🟢 Glossy King / Toxic Gel Slime!
+    const squishX = 1 + Math.sin(game.time * 8 + phase) * 0.1;
+    const squishY = 1 - Math.sin(game.time * 8 + phase) * 0.1;
+    context.scale(squishX, squishY);
+    context.globalAlpha = 0.9;
+    context.fillStyle = frozen ? '#bae6fd' : enemy.color;
+    context.strokeStyle = '#d1fae5';
+    context.lineWidth = 2.8;
+    // Classic flat-bottomed dome slime silhouette
+    context.beginPath();
+    context.moveTo(-r, r * 0.45);
+    context.quadraticCurveTo(-r * 1.04, -r * 0.95, 0, -r * 0.98);
+    context.quadraticCurveTo(r * 1.04, -r * 0.95, r, r * 0.45);
+    context.quadraticCurveTo(0, r * 0.82, -r, r * 0.45);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    // Translucent inner core & bubbles
+    context.fillStyle = 'rgba(6, 78, 59, 0.35)';
+    context.beginPath();
+    context.arc(0, r * 0.08, r * 0.42, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    context.beginPath();
+    context.ellipse(-r * 0.38, -r * 0.38, r * 0.22, r * 0.12, -0.5, 0, Math.PI * 2);
+    context.fill();
+    // Slime fierce cute eyes
+    context.globalAlpha = 1;
+    context.fillStyle = '#022c22';
+    context.beginPath();
+    context.arc(-r * 0.28, -r * 0.02, r * 0.14, 0, Math.PI * 2);
+    context.arc(r * 0.28, -r * 0.02, r * 0.14, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(-r * 0.32, -r * 0.06, r * 0.055, 0, Math.PI * 2);
+    context.arc(r * 0.24, -r * 0.06, r * 0.055, 0, Math.PI * 2);
+    context.fill();
+  } else if (enemy.kind === 'shielder') {
+    // 🛡️ Heavy Riot-Knight Mech Golem!
+    // Armored shoulder pauldrons
+    context.fillStyle = '#334155';
+    context.strokeStyle = '#cbd5e1';
+    context.lineWidth = 2.5;
+    context.beginPath();
+    context.roundRect(-r * 1.15, -r * 0.5, r * 2.3, r * 1.15, 6);
+    context.fill();
+    context.stroke();
+    // Knight Helmet Core
+    context.fillStyle = frozen ? '#bae6fd' : enemy.color;
+    context.strokeStyle = '#e2e8f0';
+    context.lineWidth = 3;
+    context.beginPath();
+    context.roundRect(-r * 0.78, -r * 0.92, r * 1.56, r * 1.72, 8);
+    context.fill();
+    context.stroke();
+    // Helmet crest plume
+    context.fillStyle = '#38bdf8';
+    context.beginPath();
+    context.moveTo(0, -r * 1.24);
+    context.lineTo(6, -r * 0.85);
+    context.lineTo(-6, -r * 0.85);
+    context.closePath();
+    context.fill();
+    // Glowing cyan visor slit
+    context.fillStyle = '#0f172a';
+    context.fillRect(-r * 0.56, -r * 0.32, r * 1.12, r * 0.3);
+    context.shadowColor = '#38bdf8';
+    context.shadowBlur = 10;
+    context.fillStyle = '#38bdf8';
+    context.fillRect(-r * 0.44, -r * 0.22, r * 0.88, r * 0.12);
+    context.shadowBlur = 0;
+
+    // Holographic Riot Energy Shield facing player!
+    context.save();
+    context.rotate(toPlayer);
+    context.shadowColor = '#38bdf8';
+    context.shadowBlur = 14;
+    context.strokeStyle = '#38bdf8';
+    context.lineWidth = 5.5;
+    context.beginPath();
+    context.arc(0, 0, r + 7, -0.92, 0.92);
+    context.stroke();
+    context.strokeStyle = '#e0f2fe';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(0, 0, r + 9, -0.82, 0.82);
+    context.stroke();
+    context.restore();
+  } else if (enemy.kind === 'ghost') {
+    // 👻 Hooded Phantom Wraith Reaper!
+    context.globalAlpha = (enemy.phaseDash ?? 0) > 0 ? 0.48 : 0.86;
+    const wave = Math.sin(game.time * 10 + phase) * 3;
+    context.shadowColor = '#818cf8';
+    context.shadowBlur = 14;
+    context.fillStyle = frozen ? '#bae6fd' : enemy.color;
+    context.strokeStyle = '#e0e7ff';
+    context.lineWidth = 2.5;
+    // Pointed Wraith Hood + Flowing Wavy Spectral Cloak
+    context.beginPath();
+    context.moveTo(0, -r * 1.25);
+    context.quadraticCurveTo(r * 1.05, -r * 0.55, r * 0.95, r * 0.72);
+    context.lineTo(r * 0.45, r * 0.42 + wave);
+    context.lineTo(0, r * 0.98 - wave);
+    context.lineTo(-r * 0.45, r * 0.42 + wave);
+    context.lineTo(-r * 0.95, r * 0.72);
+    context.quadraticCurveTo(-r * 1.05, -r * 0.55, 0, -r * 1.25);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.shadowBlur = 0;
+    // Dark Empty Hood Cavity
+    context.fillStyle = '#0f172a';
+    context.beginPath();
+    context.ellipse(0, -r * 0.16, r * 0.5, r * 0.46, 0, 0, Math.PI * 2);
+    context.fill();
+    // Eerie Glowing Spectral Eyes
+    context.shadowColor = '#fef08a';
+    context.shadowBlur = 10;
+    context.fillStyle = '#fef08a';
+    context.beginPath();
+    context.ellipse(-r * 0.2, -r * 0.18, 3.2, 2.2, 0.25, 0, Math.PI * 2);
+    context.ellipse(r * 0.2, -r * 0.18, 3.2, 2.2, -0.25, 0, Math.PI * 2);
+    context.fill();
+    context.shadowBlur = 0;
+  } else if (enemy.kind === 'brute') {
+    // 👹 Horned Minotaur / Armored Ogre Crusher!
+    // Massive curved horns
+    [-1, 1].forEach((side) => {
+      context.fillStyle = '#fef3c7';
+      context.strokeStyle = '#78350f';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(side * r * 0.48, -r * 0.62);
+      context.quadraticCurveTo(side * r * 1.18, -r * 0.88, side * r * 0.85, -r * 1.32);
+      context.quadraticCurveTo(side * r * 0.75, -r * 0.82, side * r * 0.24, -r * 0.78);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    });
+    // Spiked shoulder armor
+    context.fillStyle = '#334155';
+    context.strokeStyle = '#0f172a';
+    context.lineWidth = 2.5;
+    context.beginPath();
+    context.ellipse(0, r * 0.18, r * 1.15, r * 0.78, 0, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    // Muscular body + angry face
+    context.fillStyle = frozen ? '#bae6fd' : enemy.color;
+    context.strokeStyle = enemy.elite ? '#fde047' : '#111827';
+    context.lineWidth = 3.2;
+    context.beginPath();
+    context.arc(0, -r * 0.06, r * 0.88, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    // Slanted angry eyes + sharp tusks
+    context.fillStyle = '#fef08a';
+    context.beginPath();
+    context.moveTo(-r * 0.46, -r * 0.28);
+    context.lineTo(-r * 0.12, -r * 0.12);
+    context.lineTo(-r * 0.42, -r * 0.06);
+    context.closePath();
+    context.moveTo(r * 0.46, -r * 0.28);
+    context.lineTo(r * 0.12, -r * 0.12);
+    context.lineTo(r * 0.42, -r * 0.06);
+    context.closePath();
+    context.fill();
+    context.fillStyle = '#ffffff';
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.moveTo(side * r * 0.26, r * 0.34);
+      context.lineTo(side * r * 0.36, r * 0.08);
+      context.lineTo(side * r * 0.14, r * 0.32);
+      context.closePath();
+      context.fill();
+    });
+  } else if (enemy.kind === 'runner') {
+    // 🐺 Swift Shadow-Imp / Hellhound Dasher!
+    context.save();
+    context.rotate(toPlayer);
+    // Fiery speed-tail streaming behind
+    context.fillStyle = 'rgba(251, 146, 60, 0.55)';
+    context.beginPath();
+    context.moveTo(-r * 0.6, -r * 0.45);
+    context.lineTo(-r * 1.65, 0);
+    context.lineTo(-r * 0.6, r * 0.45);
+    context.closePath();
+    context.fill();
+    // Sleek arrow-head beast body with swept-back ears
+    context.fillStyle = frozen ? '#bae6fd' : enemy.color;
+    context.strokeStyle = enemy.elite ? '#fde047' : '#111827';
+    context.lineWidth = 2.8;
+    context.beginPath();
+    context.moveTo(r * 1.18, 0);
+    context.lineTo(r * 0.1, -r * 0.88);
+    context.lineTo(-r * 0.96, -r * 1.04);
+    context.lineTo(-r * 0.62, 0);
+    context.lineTo(-r * 0.96, r * 1.04);
+    context.lineTo(r * 0.1, r * 0.88);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    // Narrow predator eyes
+    context.fillStyle = '#fef08a';
+    context.beginPath();
+    context.ellipse(r * 0.36, -r * 0.28, 3.6, 2, -0.3, 0, Math.PI * 2);
+    context.ellipse(r * 0.36, r * 0.28, 3.6, 2, 0.3, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  } else {
+    // 👾 Normal Imp / Goblin Monster Grunt!
+    // Pointy goblin ears
+    context.fillStyle = frozen ? '#bae6fd' : enemy.color;
+    context.strokeStyle = enemy.elite ? '#fde047' : '#111827';
+    context.lineWidth = 2.5;
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.moveTo(side * r * 0.65, -r * 0.2);
+      context.lineTo(side * r * 1.32, -r * 0.62);
+      context.lineTo(side * r * 0.82, r * 0.15);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    });
+    // Head / body
+    context.beginPath();
+    context.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    // Little horn nubs
+    context.fillStyle = '#fef3c7';
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.moveTo(side * r * 0.3, -r * 0.72);
+      context.lineTo(side * r * 0.45, -r * 1.15);
+      context.lineTo(side * r * 0.12, -r * 0.84);
+      context.closePath();
+      context.fill();
+    });
+    // Fierce glowing eyes + mischievous fanged grin
+    context.fillStyle = '#fef08a';
+    context.beginPath();
+    context.arc(-r * 0.3, -r * 0.14, r * 0.18, 0, Math.PI * 2);
+    context.arc(r * 0.3, -r * 0.14, r * 0.18, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#991b1b';
+    context.beginPath();
+    context.arc(-r * 0.3 + faceDir * 1.2, -r * 0.14, r * 0.08, 0, Math.PI * 2);
+    context.arc(r * 0.3 + faceDir * 1.2, -r * 0.14, r * 0.08, 0, Math.PI * 2);
+    context.fill();
+    // Angry slanted brows
+    context.strokeStyle = '#111827';
+    context.lineWidth = 2.2;
+    context.beginPath();
+    context.moveTo(-r * 0.5, -r * 0.38);
+    context.lineTo(-r * 0.1, -r * 0.22);
+    context.moveTo(r * 0.5, -r * 0.38);
+    context.lineTo(r * 0.1, -r * 0.22);
+    context.stroke();
+    // Fanged mouth
+    context.fillStyle = '#111827';
+    context.beginPath();
+    context.arc(0, r * 0.24, r * 0.34, 0, Math.PI);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.fillRect(-r * 0.22, r * 0.24, 3, 4);
+    context.fillRect(r * 0.1, r * 0.24, 3, 4);
+  }
+
+  // Golden Elite Crown on top of any elite monster!
+  if (enemy.elite) {
+    context.fillStyle = '#facc15';
+    context.strokeStyle = '#78350f';
+    context.lineWidth = 1.6;
+    context.beginPath();
+    context.moveTo(-10, -r - 4);
+    context.lineTo(-12, -r - 14);
+    context.lineTo(-5, -r - 9);
+    context.lineTo(0, -r - 17);
+    context.lineTo(5, -r - 9);
+    context.lineTo(12, -r - 14);
+    context.lineTo(10, -r - 4);
+    context.closePath();
+    context.fill();
+    context.stroke();
+  }
+
+  context.restore();
+
+  if ((enemy.karmaTimer ?? 0) > 0) {
+    context.save();
+    context.strokeStyle = '#d946ef';
+    context.lineWidth = 2.5;
+    context.shadowColor = '#c026d3';
+    context.shadowBlur = 12;
+    context.beginPath();
+    context.arc(enemy.x, enemy.y, r + 5, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
+
+  context.fillStyle = '#111827';
+  context.fillRect(enemy.x - r, enemy.y + r + 8, r * 2, 5);
+  context.fillStyle = (enemy.karmaTimer ?? 0) > 0 ? '#d946ef' : '#22c55e';
+  context.fillRect(enemy.x - r, enemy.y + r + 8, r * 2 * hpRatio, 5);
+}
+
+function drawHeroArt(context, player, hero, game, weapon) {
+  const t = game.time;
+  const idleBob = Math.sin(t * 7.5) * 1.8;
+  const hitFlash = player.invincible > 0 && Math.floor(t * 24) % 2 === 0;
+
+  context.save();
+
+  // Ground drop shadow
+  context.fillStyle = 'rgba(0, 0, 0, 0.38)';
+  context.beginPath();
+  context.ellipse(player.x, player.y + 22, 18, 6.5, 0, 0, Math.PI * 2);
+  context.fill();
+
+  // Immortal Black Market Aura
+  if (game.bm?.immortal) {
+    context.save();
+    context.strokeStyle = '#ec4899';
+    context.lineWidth = 3.5;
+    context.shadowColor = '#a855f7';
+    context.shadowBlur = 16;
+    context.beginPath();
+    context.arc(player.x, player.y, 31 + Math.sin(t * 6) * 3, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
+
+  // Awakened Golden Weapon Ring
+  if (game.awakenedWeapons[weapon?.id]) {
+    context.save();
+    context.strokeStyle = '#facc15';
+    context.lineWidth = 3;
+    context.globalAlpha = 0.72;
+    context.beginPath();
+    context.arc(player.x, player.y, 36 + Math.sin(t * 8) * 4, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
+
+  // Death Awakening Aura (1st Awakening = Blazing Flame Ring / 2nd Super-Awakening = Double Rotating Hyper Halo!)
+  if ((player.awakeningStage ?? 0) >= 1) {
+    const isSuper = player.awakeningStage >= 2;
+    const auraClr = isSuper ? '#facc15' : (hero.ultColor || '#f97316');
+    context.save();
+    context.strokeStyle = auraClr;
+    context.lineWidth = isSuper ? 4 : 3;
+    context.shadowColor = auraClr;
+    context.shadowBlur = isSuper ? 24 : 16;
+    context.globalAlpha = 0.78 + Math.sin(t * 14) * 0.18;
+    context.beginPath();
+    context.arc(player.x, player.y, (isSuper ? 41 : 33) + Math.sin(t * 12) * 3, 0, Math.PI * 2);
+    context.stroke();
+    if (isSuper) {
+      context.setLineDash([10, 8]);
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2.4;
+      context.beginPath();
+      context.arc(player.x, player.y, 48 + Math.cos(t * 10) * 3, t * 2.4, t * 2.4 + Math.PI * 2);
+      context.stroke();
+      context.setLineDash([]);
+    }
+    context.restore();
+  }
+
+  context.translate(player.x, player.y + idleBob);
+  if (hitFlash) {
+    context.globalAlpha = 0.72;
+  }
+
+  if (hero.id === 'sans') {
+    // 💀 AUTHENTIC UNDERTALE SANS: Iconic Skull Cheekbones, Blue Open Hoodie, Fluffy Fur Collar, Shorts & Pink Slippers!
+    // Pink slippers & dark shorts
+    context.fillStyle = '#0f172a';
+    context.fillRect(-10, 14, 8, 6);
+    context.fillRect(2, 14, 8, 6);
+    context.fillStyle = '#f8fafc';
+    context.fillRect(-10, 15, 2, 4);
+    context.fillRect(8, 15, 2, 4);
+    context.fillStyle = '#f472b6';
+    context.beginPath();
+    context.ellipse(-6, 21, 5.5, 3, 0, 0, Math.PI * 2);
+    context.ellipse(6, 21, 5.5, 3, 0, 0, Math.PI * 2);
+    context.fill();
+
+    // Classic Blue Zip-Up Hoodie Torso + White T-Shirt Center
+    context.fillStyle = '#2563eb';
+    context.strokeStyle = '#0f172a';
+    context.lineWidth = 2.2;
+    context.beginPath();
+    context.roundRect(-16, 1, 32, 16, 7);
+    context.fill();
+    context.stroke();
+    // White inner t-shirt
+    context.fillStyle = '#e2e8f0';
+    context.fillRect(-5, 3, 10, 13);
+    // Hoodie zip edge lines & pockets (hands tucked in!)
+    context.strokeStyle = '#1e3a8a';
+    context.lineWidth = 1.6;
+    context.beginPath();
+    context.moveTo(-5, 3);
+    context.lineTo(-5, 16);
+    context.moveTo(5, 3);
+    context.lineTo(5, 16);
+    context.stroke();
+
+    // Fluffy Off-White Hood Fur Trim around neck
+    context.fillStyle = '#cbd5e1';
+    context.strokeStyle = '#475569';
+    context.lineWidth = 1.5;
+    [-11, -6, 0, 6, 11].forEach((fx) => {
+      context.beginPath();
+      context.arc(fx, 2, 4.4, 0, Math.PI * 2);
+      context.fill();
+    });
+
+    // Iconic Sculpted White Sans Skeleton Skull (wider cheeks + jaw!)
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#020617';
+    context.lineWidth = 2.4;
+    context.beginPath();
+    context.arc(0, -10, 13.5, Math.PI, 0);
+    context.quadraticCurveTo(15.5, -2, 12.5, 1);
+    context.lineTo(8.5, 3.5);
+    context.lineTo(-8.5, 3.5);
+    context.lineTo(-12.5, 1);
+    context.quadraticCurveTo(-15.5, -2, -13.5, -10);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    // Hollow Black Oval Eye Sockets
+    context.fillStyle = '#020617';
+    context.beginPath();
+    context.ellipse(-5.5, -10.5, 4, 4.2, -0.08, 0, Math.PI * 2);
+    context.ellipse(5.5, -10.5, 4.2, 4.4, 0.08, 0, Math.PI * 2);
+    context.fill();
+    // Right eye tiny white pupil
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(-5.2, -10.5, 1.3, 0, Math.PI * 2);
+    context.fill();
+
+    // Inverted-heart/triangle skull nose cavity
+    context.fillStyle = '#020617';
+    context.beginPath();
+    context.moveTo(0, -6.5);
+    context.lineTo(-2.3, -3.2);
+    context.lineTo(2.3, -3.2);
+    context.closePath();
+    context.fill();
+
+    // Wide Iconic Skeletal Toothy Grin
+    context.strokeStyle = '#020617';
+    context.lineWidth = 1.9;
+    context.beginPath();
+    context.moveTo(-9, -1.2);
+    context.quadraticCurveTo(0, 3.6, 9, -1.2);
+    context.stroke();
+    [-5.5, -2.2, 1.2, 4.8].forEach((tx) => {
+      context.beginPath();
+      context.moveTo(tx, -1.4);
+      context.lineTo(tx, 2.2);
+      context.stroke();
+    });
+
+    // Blazing Cyan/Yellow Bad-Time Left Eye Flame!
+    const eyeFlash = Math.sin(t * 24) > 0 ? '#38bdf8' : '#facc15';
+    context.save();
+    context.shadowColor = eyeFlash;
+    context.shadowBlur = 18;
+    context.fillStyle = eyeFlash;
+    context.beginPath();
+    context.arc(5.5, -10.5, 3.6, 0, Math.PI * 2);
+    context.fill();
+    context.beginPath();
+    context.moveTo(5.5, -14);
+    context.quadraticCurveTo(17, -18 + Math.sin(t * 18) * 3, 26, -24 + Math.cos(t * 14) * 3);
+    context.quadraticCurveTo(15, -8, 5.5, -7);
+    context.closePath();
+    context.fillStyle = 'rgba(56, 189, 248, 0.8)';
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(5.5, -10.5, 1.6, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  } else if (hero.id === 'asriel') {
+    // 🌈 AUTHENTIC UNDERTALE ASRIEL DREEMURR (GOD OF HYPERDEATH): Rainbow Prism Wings + Goat-Dragon Head + Delta Rune Robe!
+    const hueBase = (t * 200) % 360;
+    const rainbow1 = `hsl(${Math.floor(hueBase)}, 95%, 64%)`;
+    const rainbow2 = `hsl(${Math.floor((hueBase + 120) % 360)}, 95%, 64%)`;
+    const rainbow3 = `hsl(${Math.floor((hueBase + 240) % 360)}, 95%, 64%)`;
+
+    // Shimmering 6-Blade Rainbow Hyperdeath Wings behind back!
+    context.save();
+    context.shadowColor = rainbow1;
+    context.shadowBlur = 18;
+    [-1, 1].forEach((side) => {
+      [
+        { ang: -0.45, len: 34, clr: rainbow1 },
+        { ang: 0.02, len: 30, clr: rainbow2 },
+        { ang: 0.48, len: 24, clr: rainbow3 },
+      ].forEach((w, idx) => {
+        const flap = Math.sin(t * 6 + idx) * 0.1;
+        context.save();
+        context.rotate(side * (w.ang + flap));
+        context.fillStyle = w.clr;
+        context.globalAlpha = 0.78;
+        context.beginPath();
+        context.moveTo(side * 8, -2);
+        context.lineTo(side * (10 + w.len), -10);
+        context.lineTo(side * (6 + w.len * 0.78), 4);
+        context.closePath();
+        context.fill();
+        context.restore();
+      });
+    });
+    context.restore();
+
+    // Royal Black-and-Violet Delta Rune Robe + Wide Shoulder Pauldrons
+    context.fillStyle = '#1e1b4b';
+    context.strokeStyle = '#a855f7';
+    context.lineWidth = 2.4;
+    context.beginPath();
+    context.moveTo(-17, 1);
+    context.lineTo(17, 1);
+    context.lineTo(15, 22);
+    context.lineTo(-15, 22);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    // White shoulder mantle collar
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#94a3b8';
+    context.lineWidth = 1.6;
+    context.beginPath();
+    context.moveTo(-19, 0);
+    context.lineTo(-8, 6);
+    context.lineTo(0, 10);
+    context.lineTo(8, 6);
+    context.lineTo(19, 0);
+    context.lineTo(14, -4);
+    context.lineTo(-14, -4);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    // Authentic Golden Delta Rune Emblem on Chest (Winged Orb + 3 Triangles)
+    context.fillStyle = '#facc15';
+    context.beginPath();
+    context.arc(0, 11, 2.5, 0, Math.PI * 2);
+    context.fill();
+    context.beginPath();
+    context.moveTo(-7, 10);
+    context.lineTo(-2.5, 11);
+    context.lineTo(-5, 13);
+    context.moveTo(7, 10);
+    context.lineTo(2.5, 11);
+    context.lineTo(5, 13);
+    context.fill();
+    context.beginPath();
+    context.moveTo(0, 14);
+    context.lineTo(-4.5, 19);
+    context.lineTo(4.5, 19);
+    context.closePath();
+    context.fill();
+
+    // Long White Floppy Dreemurr Goat Ears
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#64748b';
+    context.lineWidth = 2;
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.ellipse(side * 15.5, -5, 4.8, 11.5, side * 0.28, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+    });
+
+    // Sculpted Curved Hyperdeath Goat Horns
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#64748b';
+    context.lineWidth = 2;
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.moveTo(side * 6, -18);
+      context.quadraticCurveTo(side * 20, -28, side * 11, -34);
+      context.quadraticCurveTo(side * 13, -24, side * 2, -20);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    });
+
+    // Sculpted White Goat-Dragon Head & Snout
+    context.fillStyle = '#ffffff';
+    context.strokeStyle = '#0f172a';
+    context.lineWidth = 2.2;
+    context.beginPath();
+    context.arc(0, -11, 12.5, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+
+    // Iconic Vertical Black Hyperdeath Sclera Marks & Rainbow Glowing Eyes!
+    context.fillStyle = '#020617';
+    context.fillRect(-7.5, -16, 4.5, 11);
+    context.fillRect(3, -16, 4.5, 11);
+    context.shadowColor = rainbow2;
+    context.shadowBlur = 12;
+    context.fillStyle = rainbow2;
+    context.beginPath();
+    context.arc(-5.2, -11.5, 2.2, 0, Math.PI * 2);
+    context.arc(5.2, -11.5, 2.2, 0, Math.PI * 2);
+    context.fill();
+    context.shadowBlur = 0;
+
+    // Snout nose & confident smile
+    context.fillStyle = '#0f172a';
+    context.beginPath();
+    context.moveTo(-2, -6.5);
+    context.lineTo(2, -6.5);
+    context.lineTo(0, -4.5);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = '#0f172a';
+    context.lineWidth = 1.6;
+    context.beginPath();
+    context.moveTo(-4.5, -2.5);
+    context.quadraticCurveTo(0, 0.8, 4.5, -2.5);
+    context.stroke();
+  } else if (hero.id === 'chara') {
+    // 🔪 AUTHENTIC UNDERTALE CHARA: Lime-Green & Yellow Striped Sweater + Golden Heart Locket + Brown Bob + Red Eyes + Real Knife!
+    // Pulsing Crimson Determination Aura
+    context.save();
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 2.5;
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 18;
+    context.beginPath();
+    context.arc(0, 0, 27 + Math.sin(t * 10) * 2.5, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+
+    // Dark brown pants & boots
+    context.fillStyle = '#451a03';
+    context.fillRect(-9, 14, 7, 7);
+    context.fillRect(2, 14, 7, 7);
+
+    // Iconic Lime-Green Sweater + Single Thick Bright Yellow Stripe!
+    context.fillStyle = '#22c55e';
+    context.strokeStyle = '#052e16';
+    context.lineWidth = 2.2;
+    context.beginPath();
+    context.roundRect(-14, 0, 28, 16, 5);
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#facc15';
+    context.fillRect(-13, 6.5, 26, 4.5);
+
+    // Golden Heart Locket gleaming at chest!
+    context.fillStyle = '#fde047';
+    context.strokeStyle = '#92400e';
+    context.lineWidth = 1.2;
+    drawHeartShape(context, 0, 4.5, 3.8);
+    context.fill();
+    context.stroke();
+
+    // Gleaming Crimson Real Knife held at right side!
+    context.save();
+    context.translate(16, 8);
+    context.rotate(-0.4 + Math.sin(t * 9) * 0.12);
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 10;
+    context.fillStyle = '#fef2f2';
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 1.8;
+    context.beginPath();
+    context.moveTo(0, -17);
+    context.lineTo(4.5, -2);
+    context.lineTo(-2.5, -2);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#facc15';
+    context.fillRect(-4, -2, 9, 2.5);
+    context.fillStyle = '#1f2937';
+    context.fillRect(-1.5, 0.5, 3.5, 7);
+    context.restore();
+
+    // Pale Head + Chin-Length Brown Bob Hair
+    context.fillStyle = '#78350f';
+    context.strokeStyle = '#451a03';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(0, -11, 14.5, Math.PI * 0.88, Math.PI * 2.12);
+    context.lineTo(15, 2);
+    context.lineTo(-15, 2);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    // Face
+    context.fillStyle = '#fef3c7';
+    context.beginPath();
+    context.arc(0, -9.5, 11.2, 0, Math.PI * 2);
+    context.fill();
+
+    // Brown Bangs sweeping across forehead
+    context.fillStyle = '#78350f';
+    context.beginPath();
+    context.arc(0, -12, 12.2, Math.PI, 0);
+    context.lineTo(11, -11);
+    context.lineTo(5, -14.5);
+    context.lineTo(1, -10.5);
+    context.lineTo(-4, -14.5);
+    context.lineTo(-11, -11);
+    context.closePath();
+    context.fill();
+
+    // Iconic Bright Rosy Pink Cheeks
+    context.fillStyle = '#fb7185';
+    context.beginPath();
+    context.ellipse(-7.5, -6, 3.2, 2.2, 0, 0, Math.PI * 2);
+    context.ellipse(7.5, -6, 3.2, 2.2, 0, 0, Math.PI * 2);
+    context.fill();
+
+    // Intense Glowing Crimson Determination Eyes
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 10;
+    context.fillStyle = '#dc2626';
+    context.fillRect(-6.5, -12.5, 3.8, 4.8);
+    context.fillRect(2.7, -12.5, 3.8, 4.8);
+    context.fillStyle = '#ffffff';
+    context.fillRect(-5.6, -11.6, 1.3, 1.4);
+    context.fillRect(3.6, -11.6, 1.3, 1.4);
+    context.shadowBlur = 0;
+
+    // Haunting Wide Smile
+    context.strokeStyle = '#450a0a';
+    context.lineWidth = 1.8;
+    context.beginPath();
+    context.moveTo(-5.5, -4);
+    context.quadraticCurveTo(0, 0, 5.5, -4);
+    context.stroke();
+  } else if (hero.id === 'omegaFlowey') {
+    // 🌻 AUTHENTIC OMEGA (PHOTOSHOP) FLOWEY: 6 Orbiting Heart Human Souls + Thrashing Thorny Vines + Giant Flytrap Maw + CRT TV Head!
+    const soulColors = ['#ef4444', '#fb923c', '#facc15', '#22c55e', '#38bdf8', '#a855f7'];
+    // 6 Orbiting Authentic Heart-Shaped Human Souls!
+    soulColors.forEach((sc, idx) => {
+      const sa = t * 2.5 + (Math.PI * 2 * idx) / 6;
+      const sx = Math.cos(sa) * 34;
+      const sy = Math.sin(sa) * 34;
+      context.save();
+      context.shadowColor = sc;
+      context.shadowBlur = 12;
+      context.fillStyle = sc;
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 1.2;
+      drawHeartShape(context, sx, sy, 5.4);
+      context.fill();
+      context.stroke();
+      context.restore();
+    });
+
+    // Thrashing Dark-Green Thorny Plant-Arms / Vines on Left & Right
+    [-1, 1].forEach((side) => {
+      const sway = Math.sin(t * 9 + side * 2) * 5;
+      context.strokeStyle = '#15803d';
+      context.lineWidth = 5;
+      context.lineCap = 'round';
+      context.beginPath();
+      context.moveTo(side * 12, 4);
+      context.quadraticCurveTo(side * 26, -6 + sway, side * 34, 8 - sway * 0.6);
+      context.stroke();
+      // Vine claws / thorns
+      context.fillStyle = '#84cc16';
+      context.beginPath();
+      context.arc(side * 34, 8 - sway * 0.6, 4.5, 0, Math.PI * 2);
+      context.fill();
+    });
+
+    // Organic-Mechanical Base Stem & Red Ribbed Pipes
+    context.fillStyle = '#14532d';
+    context.strokeStyle = '#22c55e';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.roundRect(-14, 3, 28, 17, 6);
+    context.fill();
+    context.stroke();
+    // Red nightmare pipes
+    context.strokeStyle = '#dc2626';
+    context.lineWidth = 3;
+    context.beginPath();
+    context.moveTo(-14, 8);
+    context.quadraticCurveTo(-22, 14, -12, 20);
+    context.moveTo(14, 8);
+    context.quadraticCurveTo(22, 14, 12, 20);
+    context.stroke();
+
+    // Giant Toothed Venus-Flytrap Lower Maw!
+    context.fillStyle = '#450a0a';
+    context.beginPath();
+    context.ellipse(0, 12, 11, 6, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    [-7, -2.5, 2.5, 7].forEach((tx) => {
+      context.beginPath();
+      context.moveTo(tx - 2, 7.5);
+      context.lineTo(tx, 12);
+      context.lineTo(tx + 2, 7.5);
+      context.closePath();
+      context.fill();
+    });
+
+    // Golden Jagged Petals framing the CRT TV Head
+    context.fillStyle = '#facc15';
+    context.strokeStyle = '#a16207';
+    context.lineWidth = 1.5;
+    for (let p = 0; p < 6; p += 1) {
+      const pa = (Math.PI * 2 * p) / 6 + Math.sin(t * 3) * 0.1;
+      context.beginPath();
+      context.arc(Math.cos(pa) * 18, -8 + Math.sin(pa) * 15, 6.2, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+    }
+
+    // CRT TV Rabbit-Ear Antennas!
+    context.strokeStyle = '#cbd5e1';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(-4, -22);
+    context.lineTo(-14, -32);
+    context.moveTo(4, -22);
+    context.lineTo(14, -32);
+    context.stroke();
+    context.fillStyle = '#ef4444';
+    context.beginPath();
+    context.arc(-14, -32, 2.4, 0, Math.PI * 2);
+    context.arc(14, -32, 2.4, 0, Math.PI * 2);
+    context.fill();
+
+    // Iconic Heavy Retro CRT TV Monitor Head!
+    context.fillStyle = '#1e293b';
+    context.strokeStyle = '#94a3b8';
+    context.lineWidth = 2.6;
+    context.beginPath();
+    context.roundRect(-17, -23, 34, 26, 5);
+    context.fill();
+    context.stroke();
+    // Flickering Static CRT Screen
+    const staticFlash = Math.sin(t * 32) > 0;
+    context.fillStyle = staticFlash ? '#f8fafc' : '#cbd5e1';
+    context.fillRect(-13.5, -19.5, 27, 19);
+    // Scanlines
+    context.fillStyle = 'rgba(15, 23, 42, 0.12)';
+    for (let sy = -18; sy < 0; sy += 3) {
+      context.fillRect(-13.5, sy, 27, 1);
+    }
+    // Creepy Wide Manic Eyes & Laughing Jagged Grin on TV Screen!
+    context.fillStyle = '#0f172a';
+    context.fillRect(-10, -16, 6.5, 6);
+    context.fillRect(3.5, -16, 6.5, 6);
+    context.fillStyle = '#ef4444';
+    context.fillRect(-8, -14.5, 3, 3);
+    context.fillRect(5.5, -14.5, 3, 3);
+    context.fillStyle = '#0f172a';
+    context.beginPath();
+    context.moveTo(-10, -7);
+    context.quadraticCurveTo(0, -1, 10, -7);
+    context.quadraticCurveTo(0, -4, -10, -7);
+    context.fill();
+  } else if (hero.id === 'undying') {
+    // 🛡️ AUTHENTIC UNDYNE THE UNDYING: Green Soul Fortress + Spiked Royal Guard Armor + Red Ponytail + Red Side-Fins + Blazing Left-Eye Spear!
+    // Green Soul Immovable Fortress Barrier Ring at feet
+    context.save();
+    context.strokeStyle = '#22c55e';
+    context.lineWidth = 3.5;
+    context.shadowColor = '#22c55e';
+    context.shadowBlur = 18;
+    context.beginPath();
+    context.arc(0, 2, 31, 0, Math.PI * 2);
+    context.stroke();
+    context.setLineDash([7, 7]);
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(0, 2, 38, t * 1.6, t * 1.6 + Math.PI * 2);
+    context.stroke();
+    context.setLineDash([]);
+    // Glowing Green Soul Heart emblem in front
+    context.fillStyle = '#22c55e';
+    drawHeartShape(context, 0, 27, 5);
+    context.fill();
+    context.restore();
+
+    // Glowing Cyan Spear of Justice held diagonally at her side!
+    context.save();
+    context.translate(18, 2);
+    context.rotate(-0.55);
+    context.shadowColor = '#38bdf8';
+    context.shadowBlur = 14;
+    context.strokeStyle = '#38bdf8';
+    context.lineWidth = 3.2;
+    context.beginPath();
+    context.moveTo(0, 18);
+    context.lineTo(0, -24);
+    context.stroke();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.moveTo(0, -32);
+    context.lineTo(5, -20);
+    context.lineTo(0, -23);
+    context.lineTo(-5, -20);
+    context.closePath();
+    context.fill();
+    context.restore();
+
+    // Huge Streaming Fiery Crimson Ponytail!
+    context.fillStyle = '#dc2626';
+    context.strokeStyle = '#7f1d1d';
+    context.lineWidth = 1.8;
+    context.beginPath();
+    context.moveTo(-2, -21);
+    context.quadraticCurveTo(-18, -36 + Math.sin(t * 10) * 3, -30, -20 + Math.cos(t * 9) * 3);
+    context.quadraticCurveTo(-17, -14, -3, -16);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    // Dark Metallic Spiked Royal Guard Armor Torso + Shoulder Pauldrons!
+    context.fillStyle = '#1e293b';
+    context.strokeStyle = '#94a3b8';
+    context.lineWidth = 2.2;
+    // Spiked shoulder plates
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.moveTo(side * 10, 0);
+      context.lineTo(side * 22, -4);
+      context.lineTo(side * 18, 8);
+      context.lineTo(side * 10, 8);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    });
+    // Chestplate
+    context.beginPath();
+    context.roundRect(-13, 0, 26, 20, 5);
+    context.fill();
+    context.stroke();
+    // Iconic White Heart Crest on Armor Chest!
+    context.fillStyle = '#ffffff';
+    drawHeartShape(context, 0, 9.5, 5.2);
+    context.fill();
+
+    // Red Aquatic Side-Fins on both sides of head!
+    context.fillStyle = '#ef4444';
+    context.strokeStyle = '#7f1d1d';
+    context.lineWidth = 1.5;
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.moveTo(side * 10, -13);
+      context.lineTo(side * 19, -16);
+      context.lineTo(side * 17, -8);
+      context.lineTo(side * 10, -7);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    });
+
+    // Cyan-Blue Scaly Warrior Head
+    context.fillStyle = '#38bdf8';
+    context.strokeStyle = '#0c4a6e';
+    context.lineWidth = 2.2;
+    context.beginPath();
+    context.arc(0, -11, 11.8, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    // Red hair swept across top
+    context.fillStyle = '#dc2626';
+    context.beginPath();
+    context.arc(0, -14, 11.5, Math.PI * 1.1, Math.PI * 1.9);
+    context.closePath();
+    context.fill();
+
+    // Fierce Yellow Cat-Slit Right Eye
+    context.fillStyle = '#facc15';
+    context.beginPath();
+    context.ellipse(-5, -11, 3.6, 2.6, 0.15, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#0f172a';
+    context.fillRect(-5.6, -13, 1.4, 4);
+
+    // Fierce Fanged Warrior Grin!
+    context.fillStyle = '#ffffff';
+    context.strokeStyle = '#0f172a';
+    context.lineWidth = 1.4;
+    context.beginPath();
+    context.moveTo(-6, -5);
+    context.quadraticCurveTo(0, -2, 6, -5);
+    context.lineTo(4, -2.5);
+    context.lineTo(-4, -2.5);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    // ICONIC UNDYING BLAZING CYAN SPEAR OF LIGHT BURSTING FROM LEFT EYE!
+    context.save();
+    context.shadowColor = '#38bdf8';
+    context.shadowBlur = 22;
+    context.strokeStyle = '#38bdf8';
+    context.lineWidth = 3.8;
+    context.beginPath();
+    context.moveTo(4, -11);
+    context.lineTo(30, -18 + Math.sin(t * 22) * 1.6);
+    context.stroke();
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 1.6;
+    context.beginPath();
+    context.moveTo(4, -11);
+    context.lineTo(27, -17 + Math.sin(t * 22) * 1.6);
+    context.stroke();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(5, -11, 3.8, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  } else if (hero.id === 'mettatonNeo') {
+    // 🌟 AUTHENTIC METTATON NEO: Giant Hot-Pink Mechanical NEO Wings + Spiked Pauldrons + Glowing Pink Heart Core + NEO Arm Cannon + Swept Black Hair!
+    // Glamorous Hot-Pink & Gold Stage Spotlight Aura
+    context.save();
+    context.strokeStyle = Math.sin(t * 14) > 0 ? '#ec4899' : '#facc15';
+    context.lineWidth = 2.4;
+    context.shadowColor = '#ec4899';
+    context.shadowBlur = 16;
+    context.beginPath();
+    context.arc(0, 0, 29 + Math.sin(t * 9) * 2.2, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+
+    // Giant Jagged Hot-Pink Mechanical NEO Wings flaring behind back!
+    context.save();
+    context.shadowColor = '#ec4899';
+    context.shadowBlur = 16;
+    [-1, 1].forEach((side) => {
+      const wingSway = Math.sin(t * 7 + side) * 0.08;
+      context.save();
+      context.rotate(side * wingSway);
+      context.fillStyle = '#ec4899';
+      context.strokeStyle = '#fdf2f8';
+      context.lineWidth = 1.8;
+      context.beginPath();
+      context.moveTo(side * 8, -2);
+      context.lineTo(side * 36, -18);
+      context.lineTo(side * 28, -4);
+      context.lineTo(side * 38, 4);
+      context.lineTo(side * 22, 7);
+      context.lineTo(side * 30, 17);
+      context.lineTo(side * 10, 10);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+    });
+    context.restore();
+
+    // High-Heeled Hot-Pink Armored Legs
+    context.fillStyle = '#18181b';
+    context.fillRect(-7, 15, 5, 7);
+    context.fillRect(2, 15, 5, 7);
+    context.fillStyle = '#ec4899';
+    context.fillRect(-7, 19, 5, 3);
+    context.fillRect(2, 19, 5, 3);
+
+    // Sleek Black Metallic Armor Torso + Sharp Winged Shoulder Pauldrons
+    context.fillStyle = '#18181b';
+    context.strokeStyle = '#f472b6';
+    context.lineWidth = 2.2;
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.moveTo(side * 9, 0);
+      context.lineTo(side * 22, -7);
+      context.lineTo(side * 19, 6);
+      context.lineTo(side * 9, 7);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    });
+    context.beginPath();
+    context.roundRect(-12, 0, 24, 17, 5);
+    context.fill();
+    context.stroke();
+    // Iconic Glowing Hot-Pink Heart Core in Chest!
+    context.save();
+    context.shadowColor = '#ec4899';
+    context.shadowBlur = 12;
+    context.fillStyle = '#ec4899';
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 1.2;
+    drawHeartShape(context, 0, 8.5, 4.8);
+    context.fill();
+    context.stroke();
+    context.restore();
+
+    // Glowing NEO Arm Cannon on Right Arm!
+    context.save();
+    context.translate(15, 5);
+    context.rotate(-0.2);
+    context.fillStyle = '#334155';
+    context.strokeStyle = '#ec4899';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.roundRect(-3, -4, 18, 9, 3);
+    context.fill();
+    context.stroke();
+    context.shadowColor = '#38bdf8';
+    context.shadowBlur = 12;
+    context.fillStyle = '#38bdf8';
+    context.beginPath();
+    context.arc(16, 0.5, 3.6, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+
+    // Pale Metallic Robot Face
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#18181b';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(0, -11, 11.2, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+
+    // Iconic Dramatic Swept Black Hair Covering Right Eye!
+    context.fillStyle = '#09090b';
+    context.beginPath();
+    context.arc(0, -13, 12.2, Math.PI * 0.9, Math.PI * 2.08);
+    context.lineTo(13, -6);
+    context.lineTo(7, -14);
+    context.lineTo(1, -5);
+    context.lineTo(-10, -4);
+    context.lineTo(-13, -9);
+    context.closePath();
+    context.fill();
+
+    // Piercing Glowing Hot-Pink Left Eye + Star Glint!
+    context.save();
+    context.shadowColor = '#ec4899';
+    context.shadowBlur = 12;
+    context.fillStyle = '#ec4899';
+    context.beginPath();
+    context.ellipse(5, -10.5, 3.4, 2.4, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(5, -10.5, 1.3, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+
+    // Confident Glam Showman Grin
+    context.strokeStyle = '#09090b';
+    context.lineWidth = 1.6;
+    context.beginPath();
+    context.moveTo(-4, -5);
+    context.quadraticCurveTo(1, -2.5, 6, -5.5);
+    context.stroke();
+  } else if (hero.id === 'forsaken') {
+    // 👁️ AUTHENTIC FORSAKEN: Corrupted Glitch Aura + Tattered Void Cloak + Jagged Obsidian Crown + Single Piercing Crimson Void Eye!
+    // Pulsing Crimson/Toxic-Green Glitch Aura
+    context.save();
+    context.strokeStyle = Math.sin(t * 16) > 0 ? '#ef4444' : '#22c55e';
+    context.lineWidth = 2.6;
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 18;
+    context.beginPath();
+    context.arc(0, 0, 28 + Math.sin(t * 10) * 2.5, 0, Math.PI * 2);
+    context.stroke();
+    // Floating Glitch Artifact Bars
+    context.fillStyle = '#22c55e';
+    context.fillRect(-26, -8 + Math.sin(t * 24) * 5, 8, 2.5);
+    context.fillRect(19, 9 + Math.cos(t * 20) * 4, 7, 2.5);
+    context.fillStyle = '#ef4444';
+    context.fillRect(18, -11 + Math.cos(t * 22) * 5, 9, 2.5);
+    context.fillRect(-24, 10 + Math.sin(t * 19) * 4, 7, 2.5);
+    context.restore();
+
+    // Tattered Pitch-Black Void Cloak with Glowing Crimson Rim
+    context.fillStyle = '#09090b';
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 2.2;
+    context.beginPath();
+    context.moveTo(-16, -2);
+    context.lineTo(16, -2);
+    context.lineTo(19, 22);
+    context.lineTo(9, 16);
+    context.lineTo(0, 24);
+    context.lineTo(-9, 16);
+    context.lineTo(-19, 22);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    // Floating Dark Void Blade beside them
+    context.save();
+    context.translate(20, 4 + Math.sin(t * 8) * 3);
+    context.rotate(0.28);
+    context.shadowColor = '#22c55e';
+    context.shadowBlur = 12;
+    context.fillStyle = '#18181b';
+    context.strokeStyle = '#22c55e';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(0, -19);
+    context.lineTo(4.5, 2);
+    context.lineTo(0, 7);
+    context.lineTo(-4.5, 2);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.restore();
+
+    // Void Hooded Head
+    context.fillStyle = '#09090b';
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 2.4;
+    context.beginPath();
+    context.arc(0, -10, 13.2, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+
+    // Hovering Jagged Shadow Crown
+    context.fillStyle = '#18181b';
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(-13, -19);
+    context.lineTo(-11, -33);
+    context.lineTo(-4, -24);
+    context.lineTo(0, -36);
+    context.lineTo(4, -24);
+    context.lineTo(11, -33);
+    context.lineTo(13, -19);
+    context.closePath();
+    context.fill();
+    context.stroke();
+
+    // Single Massive Piercing Crimson Eye of the Void!
+    context.save();
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 18;
+    context.fillStyle = '#ef4444';
+    context.beginPath();
+    context.ellipse(0, -10, 9.2, 5.4, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#fef2f2';
+    context.beginPath();
+    context.ellipse(0, -10, 4.5, 4.4, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#09090b';
+    context.beginPath();
+    context.ellipse(0, -10, 1.8, 4.4, 0, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  } else {
+    // ===== UPGRADED 6 BASE HEROES (Full Head + Armored/Styled Torso + Iconic Gear!) =====
+    // Torso / Outfit
+    context.fillStyle = hero.body;
+    context.strokeStyle = hero.stroke;
+    context.lineWidth = 2.4;
+    context.beginPath();
+    context.roundRect(-13, 1, 26, 18, 6);
+    context.fill();
+    context.stroke();
+
+    // Hero-specific Back Cloaks / Weapons / Gear behind head
+    if (hero.id === 'ninja') {
+      // Crossed twin katana hilts behind back
+      context.strokeStyle = '#e2e8f0';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(-15, -20);
+      context.lineTo(14, 12);
+      context.moveTo(15, -20);
+      context.lineTo(-14, 12);
+      context.stroke();
+      // Fluttering crimson ninja scarf tail
+      context.fillStyle = '#ef4444';
+      context.beginPath();
+      context.moveTo(11, -6);
+      context.lineTo(29, -12 + Math.sin(t * 14) * 3.5);
+      context.lineTo(25, -1 + Math.cos(t * 12) * 2.5);
+      context.closePath();
+      context.fill();
+    } else if (hero.id === 'vampire') {
+      // High-collared aristocratic bat-wing crimson cape!
+      context.fillStyle = '#881337';
+      context.strokeStyle = '#fda4af';
+      context.lineWidth = 1.8;
+      context.beginPath();
+      context.moveTo(-15, 2);
+      context.lineTo(-26, -15);
+      context.lineTo(-10, -7);
+      context.lineTo(10, -7);
+      context.lineTo(26, -15);
+      context.lineTo(15, 2);
+      context.lineTo(20, 19);
+      context.lineTo(0, 14);
+      context.lineTo(-20, 19);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    } else if (hero.id === 'titan') {
+      // Massive broad steel juggernaut shoulder pauldrons
+      context.fillStyle = '#115e59';
+      context.strokeStyle = '#99f6e4';
+      context.lineWidth = 2.2;
+      context.beginPath();
+      context.roundRect(-21, -1, 11, 13, 4);
+      context.roundRect(10, -1, 11, 13, 4);
+      context.fill();
+      context.stroke();
+      // Glowing emerald chest core
+      context.fillStyle = '#34d399';
+      context.beginPath();
+      context.arc(0, 10, 4, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    // Head Base
+    const skinTone = hero.id === 'vampire' ? '#f1f5f9'
+      : hero.id === 'commando' ? '#fde68a'
+        : hero.body;
+    context.fillStyle = skinTone;
+    context.strokeStyle = hero.stroke;
+    context.lineWidth = 2.4;
+    context.beginPath();
+    context.arc(0, -10, 12.2, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+
+    // Hero-specific Helmets, Hats, Visors & Faces
+    if (hero.id === 'commando') {
+      // Tactical Combat Helmet + Golden Band & Star
+      context.fillStyle = '#1d4ed8';
+      context.beginPath();
+      context.arc(0, -12, 13, Math.PI, 0);
+      context.closePath();
+      context.fill();
+      context.fillStyle = '#facc15';
+      context.fillRect(-13, -14, 26, 4);
+      // Determined eyes
+      context.fillStyle = '#0f172a';
+      context.fillRect(-6, -9, 3.6, 3.6);
+      context.fillRect(2.4, -9, 3.6, 3.6);
+    } else if (hero.id === 'ninja') {
+      // Dark Shinobi Hood & Crimson Headband
+      context.fillStyle = '#ef4444';
+      context.fillRect(-12, -16, 24, 4.5);
+      // Glowing golden ninja eyes in dark slit
+      context.fillStyle = '#020617';
+      context.fillRect(-9, -11, 18, 5);
+      context.fillStyle = '#fef08a';
+      context.fillRect(-6.5, -9.8, 4.5, 2.5);
+      context.fillRect(2, -9.8, 4.5, 2.5);
+    } else if (hero.id === 'titan') {
+      // Armored Horned Helmet + Glowing Emerald T-Visor
+      context.fillStyle = '#99f6e4';
+      [-1, 1].forEach((side) => {
+        context.beginPath();
+        context.moveTo(side * 9, -16);
+        context.lineTo(side * 17, -26);
+        context.lineTo(side * 5, -20);
+        context.closePath();
+        context.fill();
+      });
+      context.fillStyle = '#0f172a';
+      context.fillRect(-9, -13, 18, 6);
+      context.fillRect(-3, -10, 6, 8);
+      context.fillStyle = '#34d399';
+      context.fillRect(-7.5, -11.5, 15, 3);
+    } else if (hero.id === 'pyro') {
+      // Blazing Flame Crown & Fiery Battle-Mage Eyes!
+      context.shadowColor = '#f97316';
+      context.shadowBlur = 12;
+      context.fillStyle = '#facc15';
+      context.beginPath();
+      context.moveTo(-11, -17);
+      context.lineTo(-7, -30 + Math.sin(t * 16) * 2);
+      context.lineTo(-1, -21);
+      context.lineTo(3, -32 + Math.cos(t * 14) * 2);
+      context.lineTo(9, -22);
+      context.lineTo(12, -28);
+      context.lineTo(11, -17);
+      context.closePath();
+      context.fill();
+      context.shadowBlur = 0;
+      context.fillStyle = '#fef08a';
+      context.fillRect(-6.5, -11, 4, 3.5);
+      context.fillRect(2.5, -11, 4, 3.5);
+    } else if (hero.id === 'cyber') {
+      // Sleek Chrome-Cyan Cyber Visor + Antenna
+      context.strokeStyle = '#38bdf8';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(10, -16);
+      context.lineTo(15, -27);
+      context.stroke();
+      context.fillStyle = '#38bdf8';
+      context.beginPath();
+      context.arc(15, -27, 2.5, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#0f172a';
+      context.beginPath();
+      context.roundRect(-11, -14, 22, 8, 3);
+      context.fill();
+      context.shadowColor = '#38bdf8';
+      context.shadowBlur = 10;
+      context.fillStyle = '#38bdf8';
+      context.fillRect(-9, -11.5, 18, 3.2);
+      context.shadowBlur = 0;
+    } else if (hero.id === 'vampire') {
+      // Slicked dark hair with Widow's Peak + Ruby Eyes + Fangs!
+      context.fillStyle = '#1e1b4b';
+      context.beginPath();
+      context.arc(0, -13, 12.5, Math.PI, 0);
+      context.lineTo(6, -13);
+      context.lineTo(0, -10);
+      context.lineTo(-6, -13);
+      context.closePath();
+      context.fill();
+      context.shadowColor = '#f43f5e';
+      context.shadowBlur = 8;
+      context.fillStyle = '#f43f5e';
+      context.fillRect(-6.5, -10.5, 3.8, 3.2);
+      context.fillRect(2.7, -10.5, 3.8, 3.2);
+      context.shadowBlur = 0;
+      context.fillStyle = '#ffffff';
+      context.fillRect(-4, -5, 2, 3);
+      context.fillRect(2, -5, 2, 3);
+    }
+
+    // Awakened Gaster Blaster eye flame if a base hero wields Gaster Blaster
+    if (player.sansMode && weapon?.id === 'gaster') {
+      const eyeFlash = Math.sin(t * 24) > 0 ? '#38bdf8' : '#facc15';
+      context.save();
+      context.shadowColor = eyeFlash;
+      context.shadowBlur = 16;
+      context.fillStyle = eyeFlash;
+      context.beginPath();
+      context.arc(4.5, -10, 3.6, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+  }
+
+  context.restore();
+}
+
+function drawUltimateCutscene(context, cs, w, h) {
+  const elapsed = cs.maxTimer - cs.timer;
+  const enterT = clamp(elapsed / 0.16, 0, 1);
+  const exitT = cs.timer < 0.3 ? clamp(cs.timer / 0.3, 0, 1) : 1;
+  const easeOut = 1 - Math.pow(1 - enterT, 3);
+  const impactElapsed = cs.impactAt - cs.timer;
+  const impactActive = impactElapsed >= 0;
+  const impactBurstT = impactActive ? clamp(impactElapsed / 0.28, 0, 1) : 0;
+  const alpha = exitT;
+  const cy = h * 0.5;
+
+  // Dynamic micro camera shake on entrance slam & impact detonation
+  let shakeMag = 0;
+  if (elapsed < 0.18) shakeMag = (1 - elapsed / 0.18) * 10;
+  else if (impactActive && impactElapsed < 0.22) shakeMag = (1 - impactElapsed / 0.22) * 14;
+  else if (cs.charaMode || cs.floweyMode || cs.forsakenMode) shakeMag = 2.2;
+  const sxOff = shakeMag ? Math.sin(elapsed * 95) * shakeMag : 0;
+  const syOff = shakeMag ? Math.cos(elapsed * 83) * shakeMag * 0.7 : 0;
+
+  const dynAccent = cs.rainbowMode
+    ? `hsl(${Math.floor((elapsed * 320) % 360)}, 95%, 64%)`
+    : cs.accent;
+  const dynAccent2 = cs.rainbowMode
+    ? `hsl(${Math.floor((elapsed * 320 + 150) % 360)}, 95%, 64%)`
+    : cs.forsakenMode
+      ? '#22c55e'
+      : cs.undyingMode
+        ? '#22c55e'
+        : '#ffffff';
+
+  context.save();
+  context.globalAlpha = alpha;
+  context.translate(sxOff, syOff);
+
+  // 1. Deep Atmospheric Dramatic Backdrop + Radial Spotlight
+  const bgGrad = context.createRadialGradient(w * 0.25, cy, 20, w * 0.5, cy, Math.max(w, h) * 0.85);
+  bgGrad.addColorStop(0, cs.bg);
+  bgGrad.addColorStop(0.55, 'rgba(2, 6, 23, 0.9)');
+  bgGrad.addColorStop(1, 'rgba(0, 0, 0, 0.96)');
+  context.fillStyle = bgGrad;
+  context.fillRect(-24, -24, w + 48, h + 48);
+
+  // 1B. Character-Specific Full-Screen Environmental Stage VFX!
+  context.save();
+  if (cs.sansMode) {
+    // Golden Judgment Hall diagonal cathedral light shafts!
+    for (let p = 0; p < 5; p += 1) {
+      const bx = w * (0.06 + p * 0.22);
+      const shaftGrad = context.createLinearGradient(bx, 0, bx + 120, h);
+      shaftGrad.addColorStop(0, 'rgba(250, 204, 21, 0.24)');
+      shaftGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.10)');
+      shaftGrad.addColorStop(1, 'rgba(2, 6, 23, 0)');
+      context.fillStyle = shaftGrad;
+      context.beginPath();
+      context.moveTo(bx, 0);
+      context.lineTo(bx + 76, 0);
+      context.lineTo(bx + 190, h);
+      context.lineTo(bx + 90, h);
+      context.closePath();
+      context.fill();
+    }
+  } else if (cs.rainbowMode) {
+    // Asriel Cosmic Prismatic Aurora Waves & Twinkling Stars!
+    for (let i = 0; i < 6; i += 1) {
+      const hue = Math.floor((elapsed * 260 + i * 60) % 360);
+      context.strokeStyle = `hsla(${hue}, 95%, 64%, 0.22)`;
+      context.lineWidth = 22;
+      context.beginPath();
+      context.moveTo(-20, h * (0.14 + i * 0.14) + Math.sin(elapsed * 6 + i) * 34);
+      context.bezierCurveTo(
+        w * 0.33,
+        h * (0.08 + i * 0.15) - Math.cos(elapsed * 5 + i) * 48,
+        w * 0.66,
+        h * (0.2 + i * 0.12) + Math.sin(elapsed * 7 + i) * 42,
+        w + 20,
+        h * (0.12 + i * 0.14),
+      );
+      context.stroke();
+    }
+  } else if (cs.charaMode) {
+    // Chara Cascading Crimson "9999999" Genocide Matrix & Red Screen Glitch!
+    context.font = '900 22px monospace';
+    context.fillStyle = 'rgba(239, 68, 68, 0.22)';
+    for (let r = 0; r < 10; r += 1) {
+      const yPos = ((r * 74 + elapsed * 240) % (h + 60)) - 30;
+      const xShift = Math.sin(elapsed * 26 + r) * 14;
+      context.fillText('9999999   ERASE   9999999   LV.20   9999999   9999999', -40 + xShift, yPos);
+    }
+  } else if (cs.floweyMode) {
+    // Omega Flowey TV Static Glitch Bars + Flashing SAVE / LOAD Watermarks!
+    for (let g = 0; g < 16; g += 1) {
+      const gy = ((g * 53 + Math.floor(elapsed * 420)) % h);
+      context.fillStyle = g % 3 === 0 ? 'rgba(239, 68, 68, 0.22)' : 'rgba(250, 204, 21, 0.14)';
+      context.fillRect(0, gy, w, 3 + (g % 4) * 2);
+    }
+    context.font = '900 34px monospace';
+    context.fillStyle = Math.sin(elapsed * 32) > 0 ? 'rgba(250, 204, 21, 0.24)' : 'rgba(239, 68, 68, 0.24)';
+    context.fillText('SAVE FILE LOADED // YOUR BEST NIGHTMARE', w * 0.12, h * 0.2);
+    context.fillText('HAHAHA // SAVE // LOAD // HAHAHA', w * 0.22, h * 0.84);
+  } else if (cs.forsakenMode) {
+    // Forsaken Corrupted Crimson & Toxic-Green Void Glitch Tears!
+    for (let g = 0; g < 14; g += 1) {
+      const gy = ((g * 61 + Math.floor(elapsed * 300)) % h);
+      const gx = ((g * 197 + Math.floor(elapsed * 900)) % w) - 100;
+      context.fillStyle = g % 2 === 0 ? 'rgba(239, 68, 68, 0.26)' : 'rgba(34, 197, 94, 0.24)';
+      context.fillRect(gx, gy, 160 + (g % 4) * 60, 4 + (g % 3) * 3);
+    }
+  } else if (cs.undyingMode) {
+    // Undyne Blazing Cyan Diagonal Heroic Spear-Light Beams!
+    for (let i = 0; i < 8; i += 1) {
+      const ox = ((i * 180 + elapsed * 580) % (w + 300)) - 150;
+      context.strokeStyle = i % 2 === 0 ? 'rgba(56, 189, 248, 0.26)' : 'rgba(34, 197, 94, 0.22)';
+      context.lineWidth = i % 2 === 0 ? 5 : 3;
+      context.beginPath();
+      context.moveTo(ox, 0);
+      context.lineTo(ox - 240, h);
+      context.stroke();
+    }
+  } else if (cs.neoMode) {
+    // Mettaton NEO Sweeping Glam Concert Spotlights & Ratings Marquee!
+    for (let i = 0; i < 4; i += 1) {
+      const sx = w * (0.15 + i * 0.24);
+      const sway = Math.sin(elapsed * 5 + i * 1.4) * 140;
+      const spotGrad = context.createLinearGradient(sx, 0, sx + sway, h);
+      spotGrad.addColorStop(0, i % 2 === 0 ? 'rgba(236, 72, 153, 0.32)' : 'rgba(56, 189, 248, 0.26)');
+      spotGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      context.fillStyle = spotGrad;
+      context.beginPath();
+      context.moveTo(sx - 28, 0);
+      context.lineTo(sx + 28, 0);
+      context.lineTo(sx + sway + 140, h);
+      context.lineTo(sx + sway - 140, h);
+      context.closePath();
+      context.fill();
+    }
+    context.font = '900 26px monospace';
+    context.fillStyle = 'rgba(250, 204, 21, 0.24)';
+    context.fillText('★ RATINGS: 999999 ★ SHOWTIME ★ POWER OF "NEO" ★', w * 0.14, h * 0.2);
+  }
+  context.restore();
+
+  // 2. High-Contrast Anime Manga Radial Speed-Lines (56 dynamic rays!)
+  context.save();
+  context.translate(w * 0.24, cy);
+  for (let i = 0; i < 56; i += 1) {
+    const a = (Math.PI * 2 * i) / 56 + elapsed * 1.65;
+    const inner = 68 + ((i * 41) % 105);
+    const outer = Math.max(w, h) * 1.2;
+    context.strokeStyle = i % 4 === 0 ? '#ffffff' : i % 2 === 0 ? dynAccent : dynAccent2;
+    context.globalAlpha = alpha * (i % 4 === 0 ? 0.42 : i % 2 === 0 ? 0.24 : 0.14);
+    context.lineWidth = i % 5 === 0 ? 4.2 : i % 2 === 0 ? 2.1 : 1.1;
+    context.beginPath();
+    context.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+    context.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+    context.stroke();
+  }
+  context.restore();
+
+  // 3. Dramatic Diagonal Cut-In Slash Band (Wider, sharper, cinematic glow!)
+  const bandHalfH = (h * 0.275) * easeOut;
+  const tilt = h * 0.085;
+  context.save();
+  const bandGrad = context.createLinearGradient(0, cy - bandHalfH, w, cy + bandHalfH);
+  bandGrad.addColorStop(0, cs.bg);
+  bandGrad.addColorStop(0.42, cs.sansMode ? '#0b1636' : cs.bg);
+  bandGrad.addColorStop(0.85, '#090d1f');
+  bandGrad.addColorStop(1, '#020617');
+  context.fillStyle = bandGrad;
+  context.beginPath();
+  context.moveTo(-24, cy - bandHalfH + tilt);
+  context.lineTo(w + 24, cy - bandHalfH - tilt);
+  context.lineTo(w + 24, cy + bandHalfH - tilt);
+  context.lineTo(-24, cy + bandHalfH + tilt);
+  context.closePath();
+  context.fill();
+
+  // Clip high-speed streaks, geometric shards & hero portrait inside slash band
+  context.save();
+  context.clip();
+
+  // High-speed anime streak beams + flying glowing shards
+  for (let s = 0; s < 22; s += 1) {
+    const sy = cy - bandHalfH + ((s + 0.4) / 22) * (bandHalfH * 2);
+    const sx = ((elapsed * (2100 + (s % 4) * 420) + s * 167) % (w + 460)) - 320;
+    const slen = 120 + (s % 5) * 85;
+    context.fillStyle = s % 3 === 0 ? '#ffffff' : s % 2 === 0 ? dynAccent : dynAccent2;
+    context.globalAlpha = alpha * (s % 3 === 0 ? 0.45 : 0.28);
+    context.fillRect(sx, sy, slen, s % 4 === 0 ? 5 : 2.2);
+  }
+  // Flying diamond energy embers
+  for (let p = 0; p < 18; p += 1) {
+    const pxSpark = ((elapsed * (900 + p * 75) + p * 131) % (w + 160)) - 80;
+    const pySpark = cy + Math.sin(p * 1.9 + elapsed * 5) * (bandHalfH * 0.85);
+    const sz = 4 + (p % 4) * 2.5;
+    context.fillStyle = p % 2 === 0 ? '#ffffff' : dynAccent;
+    context.globalAlpha = alpha * 0.72;
+    context.beginPath();
+    context.moveTo(pxSpark, pySpark - sz);
+    context.lineTo(pxSpark + sz * 1.5, pySpark);
+    context.lineTo(pxSpark, pySpark + sz);
+    context.lineTo(pxSpark - sz * 1.5, pySpark);
+    context.closePath();
+    context.fill();
+  }
+  context.globalAlpha = alpha;
+
+  // 4. Giant Heroic Anime Close-Up Portrait + Rotating Sacred Circle on Left!
+  const px = w * 0.23 - (1 - easeOut) * 220;
+  const py = cy + 6;
+  const pr = Math.min(w, h) * 0.165;
+  context.save();
+  context.translate(px, py);
+
+  // Rotating Geometric Magic / Tech Seal behind portrait
+  context.save();
+  context.rotate(elapsed * 1.35);
+  context.strokeStyle = dynAccent;
+  context.globalAlpha = alpha * 0.55;
+  context.lineWidth = 3;
+  context.beginPath();
+  context.arc(0, 0, pr * 1.42, 0, Math.PI * 2);
+  context.stroke();
+  context.setLineDash([12, 8]);
+  context.lineWidth = 2;
+  context.beginPath();
+  context.arc(0, 0, pr * 1.24, 0, Math.PI * 2);
+  context.stroke();
+  context.setLineDash([]);
+  // Inscribed rotating 6-point star / geometric emblem
+  for (let k = 0; k < 2; k += 1) {
+    context.beginPath();
+    for (let v = 0; v < 3; v += 1) {
+      const ang = (Math.PI * 2 * v) / 3 + k * (Math.PI / 3);
+      const vx = Math.cos(ang) * pr * 1.24;
+      const vy = Math.sin(ang) * pr * 1.24;
+      if (v === 0) context.moveTo(vx, vy);
+      else context.lineTo(vx, vy);
+    }
+    context.closePath();
+    context.stroke();
+  }
+  context.restore();
+
+  // Radiant core glow behind portrait
+  context.save();
+  context.globalAlpha = alpha * 0.55;
+  const auraGrad = context.createRadialGradient(0, 0, pr * 0.15, 0, 0, pr * 1.85);
+  auraGrad.addColorStop(0, '#ffffff');
+  auraGrad.addColorStop(0.28, dynAccent);
+  auraGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = auraGrad;
+  context.beginPath();
+  context.arc(0, 0, pr * 1.85, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+
+  // ===== CHARACTER / WEAPON PORTRAIT ART =====
+  if (cs.weaponId === 'gaster') {
+    // 💀 SANS: Blue Hoodie + Giant Sculpted Skull + Twin Flanking Gaster Blasters + Crackling Cyan Eye Lightning!
+    // Flanking Gaster Blaster silhouettes firing energy!
+    [-1, 1].forEach((side) => {
+      context.save();
+      context.translate(side * pr * 1.08, -pr * 0.34);
+      context.rotate(side * 0.22);
+      context.shadowColor = '#38bdf8';
+      context.shadowBlur = 18;
+      context.fillStyle = '#f8fafc';
+      context.strokeStyle = '#020617';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.ellipse(0, 0, pr * 0.34, pr * 0.28, 0, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#38bdf8';
+      context.beginPath();
+      context.arc(-pr * 0.1, -pr * 0.04, pr * 0.07, 0, Math.PI * 2);
+      context.arc(pr * 0.1, -pr * 0.04, pr * 0.07, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    });
+
+    // Hoodie shoulders & fluffy white collar
+    context.fillStyle = '#2563eb';
+    context.strokeStyle = '#020617';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.ellipse(0, pr * 0.96, pr * 1.15, pr * 0.65, 0, Math.PI, 0);
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#cbd5e1';
+    for (let f = -3; f <= 3; f += 1) {
+      context.beginPath();
+      context.arc(f * pr * 0.24, pr * 0.68, pr * 0.18, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    // Iconic Sans Skull
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#020617';
+    context.lineWidth = 5;
+    context.beginPath();
+    context.ellipse(0, -pr * 0.12, pr * 0.94, pr * 0.78, 0, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.beginPath();
+    context.roundRect(-pr * 0.68, pr * 0.18, pr * 1.36, pr * 0.54, 18);
+    context.fill();
+    context.stroke();
+    // Wide skeletal grin
+    context.strokeStyle = '#020617';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(-pr * 0.54, pr * 0.44);
+    context.quadraticCurveTo(0, pr * 0.65, pr * 0.54, pr * 0.44);
+    context.stroke();
+    for (let ti = -3; ti <= 3; ti += 1) {
+      context.beginPath();
+      context.moveTo(ti * pr * 0.145, pr * 0.34);
+      context.lineTo(ti * pr * 0.145, pr * 0.57);
+      context.stroke();
+    }
+    // Hollow eye sockets + nose
+    context.fillStyle = '#020617';
+    context.beginPath();
+    context.ellipse(-pr * 0.34, -pr * 0.1, pr * 0.23, pr * 0.21, -0.1, 0, Math.PI * 2);
+    context.ellipse(pr * 0.34, -pr * 0.1, pr * 0.25, pr * 0.23, 0.1, 0, Math.PI * 2);
+    context.fill();
+    context.beginPath();
+    context.moveTo(0, pr * 0.06);
+    context.lineTo(-pr * 0.11, pr * 0.24);
+    context.lineTo(pr * 0.11, pr * 0.24);
+    context.closePath();
+    context.fill();
+    // Blazing Cyan/Yellow Bad-Time Eye + Jagged Lightning Flame!
+    const eyeClr = Math.sin(elapsed * 34) > 0 ? '#38bdf8' : '#facc15';
+    context.save();
+    context.shadowColor = eyeClr;
+    context.shadowBlur = 36;
+    context.fillStyle = eyeClr;
+    context.beginPath();
+    context.arc(pr * 0.34, -pr * 0.1, pr * 0.14, 0, Math.PI * 2);
+    context.fill();
+    // Massive anime eye flame ribbon sweeping right
+    context.beginPath();
+    context.moveTo(pr * 0.34, -pr * 0.26);
+    context.quadraticCurveTo(pr * 1.1, -pr * 0.56, pr * 1.85, -pr * 0.78);
+    context.quadraticCurveTo(pr * 1.05, -pr * 0.04, pr * 0.34, pr * 0.06);
+    context.closePath();
+    context.fillStyle = 'rgba(56, 189, 248, 0.9)';
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(pr * 0.34, -pr * 0.1, pr * 0.07, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  } else if (cs.weaponId === 'chaosSaber') {
+    // 🌈 ASRIEL DREEMURR (GOD OF HYPERDEATH): Massive Rainbow Wings + Goat-Dragon Close-Up + Crossed Chaos Sabers!
+    const h1 = Math.floor((elapsed * 420) % 360);
+    const h2 = (h1 + 140) % 360;
+    const h3 = (h1 + 260) % 360;
+    // Unfolding 6-blade Hyperdeath Rainbow Wings!
+    [-1, 1].forEach((side) => {
+      [
+        { ang: -0.42, len: 1.85, clr: `hsl(${h1},95%,64%)` },
+        { ang: 0.02, len: 1.65, clr: `hsl(${h2},95%,64%)` },
+        { ang: 0.44, len: 1.35, clr: `hsl(${h3},95%,64%)` },
+      ].forEach((wing, wi) => {
+        context.save();
+        context.rotate(side * (wing.ang + Math.sin(elapsed * 8 + wi) * 0.08));
+        context.shadowColor = wing.clr;
+        context.shadowBlur = 24;
+        context.fillStyle = wing.clr;
+        context.globalAlpha = alpha * 0.85;
+        context.beginPath();
+        context.moveTo(side * pr * 0.2, 0);
+        context.lineTo(side * pr * wing.len, -pr * 0.45);
+        context.lineTo(side * pr * (wing.len * 0.78), pr * 0.22);
+        context.closePath();
+        context.fill();
+        context.restore();
+      });
+    });
+
+    // Crossed Rainbow Chaos Sabers behind portrait!
+    [-0.65, 0.65].forEach((rot, idx) => {
+      context.save();
+      context.rotate(rot);
+      const bladeClr = `hsl(${idx === 0 ? h1 : h2}, 95%, 64%)`;
+      context.shadowColor = bladeClr;
+      context.shadowBlur = 26;
+      context.fillStyle = '#ffffff';
+      context.strokeStyle = bladeClr;
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(-pr * 1.15, -5);
+      context.lineTo(pr * 1.32, -9);
+      context.lineTo(pr * 1.45, 0);
+      context.lineTo(pr * 1.32, 9);
+      context.lineTo(-pr * 1.15, 5);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+    });
+
+    // Asriel Goat Ears + Curved Horns + Face
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#0f172a';
+    context.lineWidth = 4;
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.ellipse(side * pr * 0.88, pr * 0.14, pr * 0.26, pr * 0.62, side * 0.28, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.beginPath();
+      context.moveTo(side * pr * 0.34, -pr * 0.64);
+      context.quadraticCurveTo(side * pr * 1.15, -pr * 1.12, side * pr * 0.62, -pr * 1.48);
+      context.quadraticCurveTo(side * pr * 0.72, -pr * 0.94, side * pr * 0.12, -pr * 0.72);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    });
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(0, -pr * 0.04, pr * 0.72, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    // Black Hyperdeath vertical sclera + glowing rainbow eyes!
+    context.fillStyle = '#020617';
+    context.fillRect(-pr * 0.42, -pr * 0.36, pr * 0.24, pr * 0.64);
+    context.fillRect(pr * 0.18, -pr * 0.36, pr * 0.24, pr * 0.64);
+    context.save();
+    context.shadowColor = dynAccent;
+    context.shadowBlur = 22;
+    context.fillStyle = dynAccent;
+    context.beginPath();
+    context.arc(-pr * 0.3, -pr * 0.08, pr * 0.11, 0, Math.PI * 2);
+    context.arc(pr * 0.3, -pr * 0.08, pr * 0.11, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  } else if (cs.weaponId === 'realKnife') {
+    // 🔪 CHARA: Dramatic Anime Close-Up (Shadow over Brow + Glowing Crimson Eyes + Rosy Cheeks) + Giant Real Knife + Screen-Ripping Red Slash!
+    // Brown bob hair silhouette
+    context.fillStyle = '#78350f';
+    context.strokeStyle = '#020617';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.arc(0, -pr * 0.12, pr * 0.92, Math.PI * 0.85, Math.PI * 2.15);
+    context.lineTo(pr * 0.95, pr * 0.68);
+    context.lineTo(-pr * 0.95, pr * 0.68);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    // Pale face + forehead menace shadow
+    context.fillStyle = '#fef3c7';
+    context.beginPath();
+    context.arc(0, -pr * 0.04, pr * 0.72, 0, Math.PI * 2);
+    context.fill();
+    // Forehead dark anime shadow gradient!
+    const shadGrad = context.createLinearGradient(0, -pr * 0.76, 0, -pr * 0.05);
+    shadGrad.addColorStop(0, 'rgba(2, 6, 23, 0.86)');
+    shadGrad.addColorStop(1, 'rgba(2, 6, 23, 0)');
+    context.fillStyle = shadGrad;
+    context.beginPath();
+    context.arc(0, -pr * 0.04, pr * 0.72, Math.PI, 0);
+    context.fill();
+    // Bangs
+    context.fillStyle = '#78350f';
+    context.beginPath();
+    context.arc(0, -pr * 0.18, pr * 0.78, Math.PI, 0);
+    context.lineTo(pr * 0.7, -pr * 0.16);
+    context.lineTo(pr * 0.3, -pr * 0.36);
+    context.lineTo(0, -pr * 0.12);
+    context.lineTo(-pr * 0.3, -pr * 0.36);
+    context.lineTo(-pr * 0.7, -pr * 0.16);
+    context.closePath();
+    context.fill();
+    // Rosy cheeks
+    context.fillStyle = '#fb7185';
+    context.beginPath();
+    context.ellipse(-pr * 0.44, pr * 0.16, pr * 0.19, pr * 0.12, 0, 0, Math.PI * 2);
+    context.ellipse(pr * 0.44, pr * 0.16, pr * 0.19, pr * 0.12, 0, 0, Math.PI * 2);
+    context.fill();
+    // Piercing Blood-Red Determination Eyes!
+    context.save();
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 28;
+    context.fillStyle = '#dc2626';
+    context.fillRect(-pr * 0.38, -pr * 0.2, pr * 0.22, pr * 0.28);
+    context.fillRect(pr * 0.16, -pr * 0.2, pr * 0.22, pr * 0.28);
+    context.fillStyle = '#ffffff';
+    context.fillRect(-pr * 0.32, -pr * 0.14, pr * 0.08, pr * 0.09);
+    context.fillRect(pr * 0.22, -pr * 0.14, pr * 0.08, pr * 0.09);
+    context.restore();
+    // Haunting wide smile
+    context.strokeStyle = '#450a0a';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(-pr * 0.34, pr * 0.3);
+    context.quadraticCurveTo(0, pr * 0.56, pr * 0.34, pr * 0.3);
+    context.stroke();
+    // Giant Real Knife + Iconic Screen-Wide Crimson Battle Slash!
+    context.save();
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 14;
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 32;
+    context.beginPath();
+    context.moveTo(-pr * 1.45, pr * 1.05);
+    context.quadraticCurveTo(0, -pr * 0.12, pr * 1.65, -pr * 1.15);
+    context.stroke();
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 4;
+    context.stroke();
+    context.restore();
+  } else if (cs.weaponId === 'floweyArsenal') {
+    // 🌻 OMEGA FLOWEY: 6 Orbiting Giant Heart Human Souls + Massive CRT TV Monitor Head + Thrashing Vines!
+    const soulColors = ['#ef4444', '#fb923c', '#facc15', '#22c55e', '#38bdf8', '#a855f7'];
+    soulColors.forEach((sc, idx) => {
+      const a = elapsed * 3.8 + (Math.PI * 2 * idx) / 6;
+      context.save();
+      context.shadowColor = sc;
+      context.shadowBlur = 22;
+      context.fillStyle = sc;
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2;
+      drawHeartShape(context, Math.cos(a) * pr * 1.24, Math.sin(a) * pr * 1.24, pr * 0.2);
+      context.fill();
+      context.stroke();
+      context.restore();
+    });
+    // CRT TV Rabbit-Ear Antennas
+    context.strokeStyle = '#e2e8f0';
+    context.lineWidth = 5;
+    context.beginPath();
+    context.moveTo(-pr * 0.2, -pr * 0.72);
+    context.lineTo(-pr * 0.72, -pr * 1.28);
+    context.moveTo(pr * 0.2, -pr * 0.72);
+    context.lineTo(pr * 0.72, -pr * 1.28);
+    context.stroke();
+    // Heavy CRT TV Chassis
+    context.fillStyle = '#1e293b';
+    context.strokeStyle = '#facc15';
+    context.lineWidth = 6;
+    context.beginPath();
+    context.roundRect(-pr * 0.92, -pr * 0.74, pr * 1.84, pr * 1.46, 16);
+    context.fill();
+    context.stroke();
+    // Flickering Static Screen + Scanlines
+    context.fillStyle = Math.sin(elapsed * 45) > 0 ? '#f8fafc' : '#cbd5e1';
+    context.fillRect(-pr * 0.76, -pr * 0.58, pr * 1.52, pr * 1.14);
+    context.fillStyle = 'rgba(15, 23, 42, 0.16)';
+    for (let sy = -pr * 0.54; sy < pr * 0.54; sy += 8) {
+      context.fillRect(-pr * 0.76, sy, pr * 1.52, 2.5);
+    }
+    // Demonic Manic Eyes + Wide Jagged Laughing Maw!
+    context.save();
+    context.fillStyle = '#020617';
+    context.fillRect(-pr * 0.52, -pr * 0.34, pr * 0.36, pr * 0.34);
+    context.fillRect(pr * 0.16, -pr * 0.34, pr * 0.36, pr * 0.34);
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 22;
+    context.fillStyle = '#ef4444';
+    context.beginPath();
+    context.arc(-pr * 0.34, -pr * 0.17, pr * 0.11, 0, Math.PI * 2);
+    context.arc(pr * 0.34, -pr * 0.17, pr * 0.11, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+    context.fillStyle = '#020617';
+    context.beginPath();
+    context.moveTo(-pr * 0.56, pr * 0.14);
+    context.quadraticCurveTo(0, pr * 0.62, pr * 0.56, pr * 0.14);
+    context.quadraticCurveTo(0, pr * 0.32, -pr * 0.56, pr * 0.14);
+    context.fill();
+  } else if (cs.weaponId === 'justiceSpear') {
+    // 🛡️ UNDYNE THE UNDYING: Fiery Crimson Ponytail + Cyan Warrior Portrait + Green Soul Shield + Screen-Crossing Blazing Eye Spear!
+    // Glowing Green Soul Fortress Ring behind her
+    context.save();
+    context.strokeStyle = '#22c55e';
+    context.lineWidth = 7;
+    context.shadowColor = '#22c55e';
+    context.shadowBlur = 28;
+    context.beginPath();
+    context.arc(0, 0, pr * 1.15, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+    // Crossed Spears of Justice behind her
+    [-0.62, 0.62].forEach((rot) => {
+      context.save();
+      context.rotate(rot);
+      context.shadowColor = '#38bdf8';
+      context.shadowBlur = 24;
+      context.strokeStyle = '#38bdf8';
+      context.lineWidth = 7;
+      context.beginPath();
+      context.moveTo(-pr * 1.3, 0);
+      context.lineTo(pr * 1.2, 0);
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.moveTo(pr * 1.48, 0);
+      context.lineTo(pr * 0.96, -pr * 0.18);
+      context.lineTo(pr * 1.1, 0);
+      context.lineTo(pr * 0.96, pr * 0.18);
+      context.closePath();
+      context.fill();
+      context.restore();
+    });
+    // Streaming Crimson Ponytail
+    context.fillStyle = '#dc2626';
+    context.strokeStyle = '#450a0a';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(-pr * 0.1, -pr * 0.72);
+    context.quadraticCurveTo(-pr * 1.15, -pr * 1.38, -pr * 1.65, -pr * 0.52);
+    context.quadraticCurveTo(-pr * 0.92, -pr * 0.32, -pr * 0.1, -pr * 0.52);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    // Red Side-Fins + Cyan Warrior Face
+    context.fillStyle = '#ef4444';
+    [-1, 1].forEach((side) => {
+      context.beginPath();
+      context.moveTo(side * pr * 0.62, -pr * 0.25);
+      context.lineTo(side * pr * 1.18, -pr * 0.42);
+      context.lineTo(side * pr * 1.04, pr * 0.12);
+      context.lineTo(side * pr * 0.6, pr * 0.1);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    });
+    context.fillStyle = '#38bdf8';
+    context.strokeStyle = '#0c4a6e';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.arc(0, -pr * 0.04, pr * 0.72, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    // Yellow cat-slit right eye + fanged battle shout!
+    context.fillStyle = '#facc15';
+    context.beginPath();
+    context.ellipse(-pr * 0.3, -pr * 0.1, pr * 0.2, pr * 0.14, 0.15, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#020617';
+    context.fillRect(-pr * 0.33, -pr * 0.22, pr * 0.06, pr * 0.24);
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.moveTo(-pr * 0.38, pr * 0.24);
+    context.quadraticCurveTo(0, pr * 0.48, pr * 0.38, pr * 0.24);
+    context.lineTo(pr * 0.28, pr * 0.42);
+    context.lineTo(-pr * 0.28, pr * 0.42);
+    context.closePath();
+    context.fill();
+    // Blazing Cyan Spear-of-Light bursting out of Left Eye!
+    context.save();
+    context.shadowColor = '#38bdf8';
+    context.shadowBlur = 34;
+    context.strokeStyle = '#38bdf8';
+    context.lineWidth = 10;
+    context.beginPath();
+    context.moveTo(pr * 0.24, -pr * 0.1);
+    context.lineTo(pr * 2.1, -pr * 0.62);
+    context.stroke();
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 4;
+    context.stroke();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(pr * 0.28, -pr * 0.1, pr * 0.2, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  } else if (cs.weaponId === 'voidBlade') {
+    // 👁️ FORSAKEN: Jagged Obsidian Crown + Huge Piercing Crimson Eye of the Void + Crossed Void Blades!
+    [-0.6, 0.6].forEach((rot) => {
+      context.save();
+      context.rotate(rot);
+      context.shadowColor = '#22c55e';
+      context.shadowBlur = 24;
+      context.fillStyle = '#18181b';
+      context.strokeStyle = '#22c55e';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(-pr * 1.15, -6);
+      context.lineTo(pr * 1.35, 0);
+      context.lineTo(-pr * 1.15, 6);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+    });
+    // Void Silhouette Head + Jagged Crown
+    context.fillStyle = '#09090b';
+    context.strokeStyle = '#ef4444';
+    context.lineWidth = 5;
+    context.beginPath();
+    context.arc(0, pr * 0.02, pr * 0.78, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.beginPath();
+    context.moveTo(-pr * 0.76, -pr * 0.56);
+    context.lineTo(-pr * 0.62, -pr * 1.32);
+    context.lineTo(-pr * 0.24, -pr * 0.82);
+    context.lineTo(0, -pr * 1.48);
+    context.lineTo(pr * 0.24, -pr * 0.82);
+    context.lineTo(pr * 0.62, -pr * 1.32);
+    context.lineTo(pr * 0.76, -pr * 0.56);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    // Massive Glowing Crimson Eye of the Void!
+    context.save();
+    context.shadowColor = '#ef4444';
+    context.shadowBlur = 32;
+    context.fillStyle = '#ef4444';
+    context.beginPath();
+    context.ellipse(0, 0, pr * 0.62, pr * 0.36, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.ellipse(0, 0, pr * 0.3, pr * 0.3, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#09090b';
+    context.beginPath();
+    context.ellipse(0, 0, pr * 0.11, pr * 0.3, 0, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  } else if (cs.weaponId === 'neoCannon') {
+    // 🌟 METTATON NEO: Giant Jagged Hot-Pink NEO Wings + Swept Black Hair + Blazing Pink Star Eye + Heart Core!
+    [-1, 1].forEach((side) => {
+      context.save();
+      context.shadowColor = '#ec4899';
+      context.shadowBlur = 28;
+      context.fillStyle = '#ec4899';
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(side * pr * 0.25, 0);
+      context.lineTo(side * pr * 1.8, -pr * 0.78);
+      context.lineTo(side * pr * 1.35, -pr * 0.12);
+      context.lineTo(side * pr * 1.9, pr * 0.18);
+      context.lineTo(side * pr * 1.1, pr * 0.36);
+      context.lineTo(side * pr * 1.48, pr * 0.78);
+      context.lineTo(side * pr * 0.35, pr * 0.45);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+    });
+    // Pale face + iconic swept black hair
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#09090b';
+    context.lineWidth = 5;
+    context.beginPath();
+    context.arc(0, -pr * 0.06, pr * 0.72, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#09090b';
+    context.beginPath();
+    context.arc(0, -pr * 0.18, pr * 0.8, Math.PI * 0.88, Math.PI * 2.1);
+    context.lineTo(pr * 0.82, pr * 0.24);
+    context.lineTo(pr * 0.45, -pr * 0.26);
+    context.lineTo(pr * 0.05, pr * 0.28);
+    context.lineTo(-pr * 0.65, pr * 0.35);
+    context.lineTo(-pr * 0.84, -pr * 0.04);
+    context.closePath();
+    context.fill();
+    // Blazing Hot-Pink Left Star-Eye + Lens Flare!
+    context.save();
+    context.shadowColor = '#ec4899';
+    context.shadowBlur = 32;
+    context.fillStyle = '#ec4899';
+    context.beginPath();
+    context.ellipse(pr * 0.3, -pr * 0.08, pr * 0.22, pr * 0.15, 0, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.arc(pr * 0.3, -pr * 0.08, pr * 0.09, 0, Math.PI * 2);
+    context.fill();
+    // Glowing Pink Heart Core beneath chin!
+    context.fillStyle = '#ec4899';
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 3;
+    drawHeartShape(context, 0, pr * 0.82, pr * 0.32);
+    context.fill();
+    context.stroke();
+    context.restore();
+  } else if (cs.weaponId === 'trident') {
+    // 🔱 GIANT GOLDEN POSEIDON TRIDENT + LIGHTNING!
+    context.rotate(-0.42);
+    context.shadowColor = '#2dd4bf';
+    context.shadowBlur = 30;
+    context.strokeStyle = '#f59e0b';
+    context.lineWidth = 10;
+    context.lineCap = 'round';
+    context.beginPath();
+    context.moveTo(-pr * 1.1, 0);
+    context.lineTo(pr * 0.4, 0);
+    context.stroke();
+    context.strokeStyle = '#fef08a';
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(pr * 0.28, -pr * 0.5);
+    context.quadraticCurveTo(pr * 0.54, 0, pr * 0.28, pr * 0.5);
+    context.stroke();
+    context.fillStyle = '#fef08a';
+    context.beginPath();
+    context.moveTo(pr * 1.24, 0);
+    context.lineTo(pr * 0.56, -pr * 0.18);
+    context.lineTo(pr * 0.66, 0);
+    context.lineTo(pr * 0.56, pr * 0.18);
+    context.closePath();
+    context.fill();
+    [-1, 1].forEach((d) => {
+      context.beginPath();
+      context.moveTo(pr * 0.28, d * pr * 0.46);
+      context.quadraticCurveTo(pr * 0.7, d * pr * 0.5, pr * 1.02, d * pr * 0.3);
+      context.stroke();
+    });
+    context.fillStyle = '#2dd4bf';
+    context.beginPath();
+    context.arc(pr * 0.36, 0, pr * 0.14, 0, Math.PI * 2);
+    context.fill();
+    context.shadowBlur = 0;
+  } else if (cs.weaponId === 'katana' || cs.weaponId === 'lightchaser') {
+    context.rotate(-0.52);
+    context.shadowColor = cs.accent;
+    context.shadowBlur = 32;
+    context.fillStyle = '#ffffff';
+    context.beginPath();
+    context.moveTo(-pr * 0.9, 6);
+    context.lineTo(pr * 1.22, -6);
+    context.lineTo(pr * 0.96, 12);
+    context.lineTo(-pr * 0.9, 16);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = cs.accent;
+    context.lineWidth = 7;
+    context.beginPath();
+    context.arc(0, 0, pr * 0.96, -1.15, 1.15);
+    context.stroke();
+    context.fillStyle = '#facc15';
+    context.fillRect(-pr * 0.66, -22, 11, 48);
+    context.shadowBlur = 0;
+  } else {
+    // High-Craft Radiant Crest Emblem for all Base Weapons!
+    context.shadowColor = dynAccent;
+    context.shadowBlur = 34;
+    context.strokeStyle = dynAccent;
+    context.lineWidth = 8;
+    context.beginPath();
+    context.arc(0, 0, pr * 0.92, 0, Math.PI * 2);
+    context.stroke();
+    context.fillStyle = 'rgba(2, 6, 23, 0.8)';
+    context.fill();
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 2.8;
+    context.beginPath();
+    context.arc(0, 0, pr * 0.72, 0, Math.PI * 2);
+    context.stroke();
+    context.font = `900 ${Math.round(pr * 0.98)}px Arial`;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillStyle = '#ffffff';
+    context.fillText(cs.ultIcon || '⚡', 0, 5);
+    context.textBaseline = 'alphabetic';
+    context.shadowBlur = 0;
+  }
+  context.restore();
+  context.restore();
+
+  // Triple Neon Metallic Slash-Band Borders!
+  context.save();
+  context.strokeStyle = dynAccent;
+  context.lineWidth = 8;
+  context.shadowColor = dynAccent;
+  context.shadowBlur = 26;
+  context.beginPath();
+  context.moveTo(-24, cy - bandHalfH + tilt);
+  context.lineTo(w + 24, cy - bandHalfH - tilt);
+  context.moveTo(-24, cy + bandHalfH + tilt);
+  context.lineTo(w + 24, cy + bandHalfH - tilt);
+  context.stroke();
+  context.strokeStyle = '#ffffff';
+  context.lineWidth = 2.5;
+  context.stroke();
+  context.restore();
+  context.restore();
+
+  // 5. Kinetic Anime Typography + Metallic Gradient + Horizontal Lens Flare!
+  const textX = w * 0.62 + (1 - easeOut) * 260;
+  context.save();
+  context.textAlign = 'center';
+
+  // Angled glowing top badge pill
+  const badgeText = cs.synergyMode
+    ? cs.rainbowMode
+      ? '★ SYNERGY OVERDRIVE · HOPES AND DREAMS ★'
+      : cs.charaMode
+        ? '★ SYNERGY OVERDRIVE · ERASE (9999999) ★'
+        : cs.undyingMode
+          ? '★ TRUE HERO AWAKENED · BATTLE AGAINST A TRUE HERO ★'
+          : cs.floweyMode
+            ? '★ NIGHTMARE OVERDRIVE · SAVE & LOAD ★'
+            : cs.forsakenMode
+              ? '★ VOID CORRUPTION · FORSAKEN ★'
+              : cs.neoMode
+                ? '★ GLAMOUR OVERDRIVE · POWER OF "NEO" ★'
+                : '★ SYNERGY OVERDRIVE · 심판의 회랑 ★'
+    : `✦ ULTIMATE OVERDRIVE · ${cs.weaponName} ✦`;
+
+  context.font = '900 14px Arial';
+  const badgeW = Math.min(w * 0.56, context.measureText(badgeText).width + 34);
+  context.fillStyle = 'rgba(2, 6, 23, 0.85)';
+  context.strokeStyle = dynAccent;
+  context.lineWidth = 2;
+  context.beginPath();
+  context.roundRect(textX - badgeW / 2, cy - 82, badgeW, 26, 999);
+  context.fill();
+  context.stroke();
+  context.fillStyle = dynAccent;
+  context.fillText(badgeText, textX, cy - 64);
+
+  // Giant Italicized Metallic Skill Name with Chromatic Split + Heavy Stroke!
+  const titleSize = Math.min(58, Math.max(32, Math.round(w * 0.058)));
+  context.font = `italic 900 ${titleSize}px Arial`;
+  const titleText = `${cs.ultIcon} ${cs.ultName}`;
+  if (cs.sansMode || cs.charaMode || cs.forsakenMode || cs.floweyMode || cs.rainbowMode) {
+    // Subtle RGB chromatic aberration ghost shadow for ultra-cinematic punch!
+    context.globalAlpha = alpha * 0.55;
+    context.fillStyle = '#ef4444';
+    context.fillText(titleText, textX - 4, cy + 8);
+    context.fillStyle = '#38bdf8';
+    context.fillText(titleText, textX + 4, cy + 4);
+    context.globalAlpha = alpha;
+  }
+  context.lineWidth = 10;
+  context.strokeStyle = '#020617';
+  context.strokeText(titleText, textX, cy + 6);
+  const titleGrad = context.createLinearGradient(textX, cy - 42, textX, cy + 16);
+  titleGrad.addColorStop(0, '#ffffff');
+  titleGrad.addColorStop(0.55, '#fef9c3');
+  titleGrad.addColorStop(1, dynAccent);
+  context.shadowColor = dynAccent;
+  context.shadowBlur = 28;
+  context.fillStyle = titleGrad;
+  context.fillText(titleText, textX, cy + 6);
+  context.shadowBlur = 0;
+
+  // Razor-sharp horizontal anime lens-flare streak slicing across the title!
+  if (elapsed < 0.65) {
+    const flareAlpha = Math.sin((elapsed / 0.65) * Math.PI);
+    const flareGrad = context.createLinearGradient(textX - 280, cy - 8, textX + 280, cy - 8);
+    flareGrad.addColorStop(0, 'rgba(255,255,255,0)');
+    flareGrad.addColorStop(0.5, `rgba(255,255,255,${0.85 * flareAlpha})`);
+    flareGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = flareGrad;
+    context.fillRect(textX - 280, cy - 10, 560, 4);
+  }
+
+  // Wide-tracked neon subtitle
+  context.font = '900 13px Arial';
+  context.fillStyle = 'rgba(255,255,255,0.84)';
+  context.fillText(cs.ultSub, textX, cy + 34);
+
+  // Overdrive Power Surge Gauge Bar
+  const surgePct = clamp(elapsed / (cs.maxTimer - cs.impactAt), 0, 1);
+  const barW = Math.min(340, w * 0.36);
+  context.fillStyle = 'rgba(2, 6, 23, 0.85)';
+  context.fillRect(textX - barW / 2, cy + 50, barW, 8);
+  context.fillStyle = impactActive ? '#ffffff' : dynAccent;
+  context.fillRect(textX - barW / 2, cy + 50, barW * surgePct, 8);
+  context.strokeStyle = 'rgba(255,255,255,0.45)';
+  context.lineWidth = 1.5;
+  context.strokeRect(textX - barW / 2, cy + 50, barW, 8);
+  context.restore();
+
+  // 5B. Iconic Undertale-Style Character Dialogue Box with Typewriter Reveal!
+  const rawQuote = String(cs.ultQuote || '');
+  const quoteLines = rawQuote.split('\n');
+  const boxW = Math.min(w - 56, 740);
+  const boxH = quoteLines.length > 1 ? 94 : 68;
+  const boxX = (w - boxW) / 2;
+  const barHPreview = Math.round(h * 0.11 * easeOut);
+  const boxY = h - barHPreview - boxH - 14 + (1 - easeOut) * 42;
+  context.save();
+  context.fillStyle = 'rgba(0, 0, 0, 0.94)';
+  context.fillRect(boxX, boxY, boxW, boxH);
+  context.strokeStyle = '#ffffff';
+  context.lineWidth = 4;
+  context.strokeRect(boxX, boxY, boxW, boxH);
+  // Speaker name pill on top-left corner of dialogue box
+  const speakerLabel = `${cs.heroIcon || cs.ultIcon || '★'} ${cs.heroName || cs.weaponName}`;
+  context.font = '900 13px Arial';
+  const spW = context.measureText(speakerLabel).width + 22;
+  context.fillStyle = dynAccent;
+  context.fillRect(boxX + 12, boxY - 14, spW, 22);
+  context.fillStyle = '#020617';
+  context.textAlign = 'left';
+  context.fillText(speakerLabel, boxX + 22, boxY + 1);
+  // Typewriter reveal text (fast dramatic Undertale pacing!)
+  const totalChars = rawQuote.replace(/\n/g, '').length;
+  let remainingChars = Math.min(totalChars, Math.floor(elapsed * 95));
+  context.font = '800 18px "Malgun Gothic", "Noto Sans KR", monospace';
+  context.fillStyle = '#ffffff';
+  quoteLines.forEach((line, li) => {
+    const shown = line.slice(0, Math.max(0, remainingChars));
+    remainingChars -= line.length;
+    context.fillText(shown, boxX + 22, boxY + 34 + li * 28, boxW - 44);
+  });
+  context.restore();
+
+  // 6. IMPACT FRAME: Expanding Shockwave Ring & 8-Point Star-Flare at Detonation!
+  if (impactActive && impactBurstT < 1) {
+    context.save();
+    context.translate(px, py);
+    const ringR = pr * 0.6 + impactBurstT * Math.max(w, h) * 0.95;
+    context.strokeStyle = impactBurstT < 0.25 ? '#ffffff' : dynAccent;
+    context.lineWidth = 14 * (1 - impactBurstT);
+    context.globalAlpha = alpha * (1 - impactBurstT);
+    context.beginPath();
+    context.arc(0, 0, ringR, 0, Math.PI * 2);
+    context.stroke();
+    // 8-point bright star-burst rays
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 5 * (1 - impactBurstT);
+    for (let r = 0; r < 8; r += 1) {
+      const ang = (Math.PI * 2 * r) / 8 + 0.2;
+      context.beginPath();
+      context.moveTo(0, 0);
+      context.lineTo(Math.cos(ang) * ringR * 1.15, Math.sin(ang) * ringR * 1.15);
+      context.stroke();
+    }
+    context.restore();
+  }
+
+  // 7. Cinematic Widescreen Letterbox Bars + Subtle Film Tech Watermarks
+  const barH = Math.round(h * 0.11 * easeOut);
+  context.fillStyle = '#000000';
+  context.fillRect(-24, -24, w + 48, barH + 24);
+  context.fillRect(-24, h - barH, w + 48, barH + 24);
+  if (barH > 22) {
+    context.font = '800 11px monospace';
+    context.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    context.textAlign = 'left';
+    context.fillText(`// ULTIMATE SEQUENCE :: ${cs.weaponId.toUpperCase()}`, 18, barH - 12);
+    context.textAlign = 'right';
+    context.fillText(impactActive ? 'STATUS :: DETONATION!' : 'STATUS :: OVERDRIVE CHARGING...', w - 18, h - barH + 20);
+  }
+
+  context.restore();
 }
 
 function drawGame(context, game, canvas) {
@@ -4378,10 +9429,13 @@ function drawGame(context, game, canvas) {
       const startAngle = bullet.angle - bullet.arc / 2;
       const endAngle = startAngle + bullet.arc * progress;
       const alpha = clamp(bullet.life / (bullet.maxLife || 0.22) + 0.15, 0, 1);
+      const rainbowHue = Math.floor((game.time * 420) % 360);
 
       context.rotate(-bullet.spin);
-      context.globalAlpha = alpha * 0.3;
-      context.fillStyle = bullet.awakened ? '#facc15' : '#f43f5e';
+      context.globalAlpha = alpha * 0.34;
+      context.fillStyle = bullet.rainbow
+        ? `hsl(${rainbowHue}, 95%, 62%)`
+        : bullet.awakened ? '#facc15' : '#f43f5e';
       context.beginPath();
       context.moveTo(0, 0);
       context.arc(0, 0, bullet.radius, startAngle, endAngle);
@@ -4389,8 +9443,10 @@ function drawGame(context, game, canvas) {
       context.fill();
 
       context.globalAlpha = alpha;
-      context.strokeStyle = bullet.awakened ? '#fef08a' : '#fecdd3';
-      context.lineWidth = bullet.awakened ? 9 : 6;
+      context.strokeStyle = bullet.rainbow
+        ? `hsl(${(rainbowHue + 60) % 360}, 100%, 75%)`
+        : bullet.awakened ? '#fef08a' : '#fecdd3';
+      context.lineWidth = bullet.rainbow ? 10 : bullet.awakened ? 9 : 6;
       context.lineCap = 'round';
       context.beginPath();
       context.arc(0, 0, bullet.radius * 0.9, startAngle, endAngle);
@@ -4567,6 +9623,143 @@ function drawGame(context, game, canvas) {
       return;
     }
 
+    if (bullet.type === 'asrielStar') {
+      // ⭐ Undertale Asriel Spinning Rainbow Star!
+      context.rotate(bullet.spin * 0.7);
+      const rOuter = bullet.radius;
+      const rInner = rOuter * 0.45;
+      context.shadowColor = bullet.color || '#facc15';
+      context.shadowBlur = 16;
+      context.fillStyle = bullet.color || '#facc15';
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2;
+      context.beginPath();
+      for (let i = 0; i < 10; i += 1) {
+        const r = i % 2 === 0 ? rOuter : rInner;
+        const a = (Math.PI * i) / 5 - Math.PI / 2;
+        if (i === 0) context.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+        else context.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(0, 0, rInner * 0.55, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'charaKnife') {
+      // 🔪 Undertale Chara Glowing Red Determination Real Knife!
+      context.rotate(-bullet.spin + Math.atan2(bullet.vy, bullet.vx));
+      context.shadowColor = '#ef4444';
+      context.shadowBlur = bullet.awakened ? 18 : 11;
+      // Glowing crimson blade
+      context.fillStyle = '#fef2f2';
+      context.strokeStyle = '#ef4444';
+      context.lineWidth = 2.4;
+      context.beginPath();
+      context.moveTo(22, 0);
+      context.lineTo(-2, -6);
+      context.lineTo(-4, 4);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      // Guard & dark handle
+      context.fillStyle = '#facc15';
+      context.fillRect(-5, -7, 3, 14);
+      context.fillStyle = '#1f2937';
+      context.fillRect(-15, -3, 10, 6);
+      context.shadowBlur = 0;
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'floweyPellet') {
+      // 🌻 Undertale Omega Flowey Wiggling Friendliness Pellet!
+      context.rotate(bullet.spin * 0.8);
+      context.shadowColor = '#facc15';
+      context.shadowBlur = 12;
+      context.fillStyle = '#fef9c3';
+      context.strokeStyle = '#ca8a04';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.ellipse(0, 0, bullet.radius * 1.15, bullet.radius * 0.65, 0, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(2, -1, bullet.radius * 0.28, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'justiceSpear') {
+      // 🛡️ Undertale Undyne the Undying Glowing Spear of Justice!
+      context.rotate(-bullet.spin + Math.atan2(bullet.vy, bullet.vx));
+      const spearClr = bullet.color || '#38bdf8';
+      context.shadowColor = spearClr;
+      context.shadowBlur = bullet.awakened ? 20 : 12;
+      // Glowing shaft
+      context.strokeStyle = spearClr;
+      context.lineWidth = 4;
+      context.lineCap = 'round';
+      context.beginPath();
+      context.moveTo(-26, 0);
+      context.lineTo(14, 0);
+      context.stroke();
+      // White-hot diamond spearhead
+      context.fillStyle = '#ffffff';
+      context.strokeStyle = spearClr;
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(28, 0);
+      context.lineTo(10, -7);
+      context.lineTo(14, 0);
+      context.lineTo(10, 7);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      context.restore();
+      return;
+    }
+
+    if (bullet.type === 'neoStar') {
+      // 🌟 Mettaton NEO Hot-Pink & Gold 4-Point Glamour Starlight Bolt!
+      context.rotate(bullet.spin * 0.9);
+      const clr = bullet.color || '#ec4899';
+      const ro = bullet.radius * 1.15;
+      const ri = ro * 0.38;
+      context.shadowColor = clr;
+      context.shadowBlur = bullet.awakened ? 20 : 12;
+      context.fillStyle = clr;
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2;
+      context.beginPath();
+      for (let i = 0; i < 8; i += 1) {
+        const rr = i % 2 === 0 ? ro : ri;
+        const aa = (Math.PI * i) / 4;
+        if (i === 0) context.moveTo(Math.cos(aa) * rr, Math.sin(aa) * rr);
+        else context.lineTo(Math.cos(aa) * rr, Math.sin(aa) * rr);
+      }
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(0, 0, ri * 0.6, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+      context.restore();
+      return;
+    }
+
     if (bullet.awakened && bullet.type !== 'shockwave') {
       context.strokeStyle = '#facc15';
       context.lineWidth = 3;
@@ -4632,213 +9825,7 @@ function drawGame(context, game, canvas) {
   });
 
   game.enemies.forEach((enemy) => {
-    const hpRatio = clamp(enemy.hp / enemy.maxHp, 0, 1);
-
-    if (enemy.boss) {
-      const enraged = enemy.hp < enemy.maxHp * 0.5;
-      context.save();
-      if (enemy.dashWindup > 0) {
-        context.strokeStyle = 'rgba(239, 68, 68, 0.85)';
-        context.lineWidth = 5;
-        context.setLineDash([12, 8]);
-        context.beginPath();
-        context.moveTo(enemy.x, enemy.y);
-        context.lineTo(enemy.x + Math.cos(enemy.dashAngle) * 320, enemy.y + Math.sin(enemy.dashAngle) * 320);
-        context.stroke();
-        context.setLineDash([]);
-      }
-
-      context.strokeStyle = enraged ? '#facc15' : enemy.glow || '#f87171';
-      context.lineWidth = enraged ? 6 : 4;
-      context.globalAlpha = 0.55 + Math.sin(game.time * 8) * 0.25;
-      context.beginPath();
-      context.arc(enemy.x, enemy.y, enemy.radius + 12 + Math.sin(game.time * 6) * 4, 0, Math.PI * 2);
-      context.stroke();
-      context.globalAlpha = 1;
-
-      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
-      context.strokeStyle = enraged ? '#fef08a' : '#ffffff';
-      context.lineWidth = 5;
-      context.shadowColor = enemy.glow || '#ef4444';
-      context.shadowBlur = 24;
-      context.beginPath();
-      context.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-      context.fill();
-      context.stroke();
-      context.shadowBlur = 0;
-
-      // Boss horns / crown
-      context.fillStyle = enraged ? '#facc15' : '#fef3c7';
-      context.beginPath();
-      context.moveTo(enemy.x - enemy.radius * 0.65, enemy.y - enemy.radius * 0.65);
-      context.lineTo(enemy.x - enemy.radius * 0.38, enemy.y - enemy.radius * 1.24);
-      context.lineTo(enemy.x - enemy.radius * 0.14, enemy.y - enemy.radius * 0.88);
-      context.lineTo(enemy.x, enemy.y - enemy.radius * 1.32);
-      context.lineTo(enemy.x + enemy.radius * 0.14, enemy.y - enemy.radius * 0.88);
-      context.lineTo(enemy.x + enemy.radius * 0.38, enemy.y - enemy.radius * 1.24);
-      context.lineTo(enemy.x + enemy.radius * 0.65, enemy.y - enemy.radius * 0.65);
-      context.closePath();
-      context.fill();
-
-      // Angry glowing eyes
-      context.fillStyle = enraged ? '#fef08a' : '#ffffff';
-      context.beginPath();
-      context.arc(enemy.x - enemy.radius * 0.3, enemy.y - enemy.radius * 0.12, enemy.radius * 0.14, 0, Math.PI * 2);
-      context.arc(enemy.x + enemy.radius * 0.3, enemy.y - enemy.radius * 0.12, enemy.radius * 0.14, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = '#dc2626';
-      context.beginPath();
-      context.arc(enemy.x - enemy.radius * 0.3, enemy.y - enemy.radius * 0.12, enemy.radius * 0.07, 0, Math.PI * 2);
-      context.arc(enemy.x + enemy.radius * 0.3, enemy.y - enemy.radius * 0.12, enemy.radius * 0.07, 0, Math.PI * 2);
-      context.fill();
-
-      context.fillStyle = '#111827';
-      context.fillRect(enemy.x - enemy.radius, enemy.y + enemy.radius + 10, enemy.radius * 2, 8);
-      context.fillStyle = enraged ? '#facc15' : '#ef4444';
-      context.fillRect(enemy.x - enemy.radius, enemy.y + enemy.radius + 10, enemy.radius * 2 * hpRatio, 8);
-      context.restore();
-      return;
-    }
-
-    context.save();
-    if (enemy.kind === 'shooter') {
-      context.translate(enemy.x, enemy.y);
-      context.rotate(game.time * 1.4);
-      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
-      context.strokeStyle = '#f5d0fe';
-      context.lineWidth = 3;
-      context.beginPath();
-      context.moveTo(0, -enemy.radius);
-      context.lineTo(enemy.radius, 0);
-      context.lineTo(0, enemy.radius);
-      context.lineTo(-enemy.radius, 0);
-      context.closePath();
-      context.fill();
-      context.stroke();
-      context.fillStyle = '#ffffff';
-      context.beginPath();
-      context.arc(0, 0, enemy.radius * 0.34, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
-    } else if (enemy.kind === 'bomber') {
-      const pulse = 0.85 + Math.sin(game.time * 14) * 0.15;
-      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : '#1f2937';
-      context.strokeStyle = '#ef4444';
-      context.lineWidth = 3.5;
-      context.beginPath();
-      context.arc(enemy.x, enemy.y, enemy.radius * pulse, 0, Math.PI * 2);
-      context.fill();
-      context.stroke();
-      // Lit fuse & spark
-      context.strokeStyle = '#fbbf24';
-      context.lineWidth = 2.5;
-      context.beginPath();
-      context.moveTo(enemy.x, enemy.y - enemy.radius);
-      context.lineTo(enemy.x + 6, enemy.y - enemy.radius - 9);
-      context.stroke();
-      context.fillStyle = '#fde047';
-      context.beginPath();
-      context.arc(enemy.x + 7, enemy.y - enemy.radius - 10, 4, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = '#ef4444';
-      context.beginPath();
-      context.arc(enemy.x, enemy.y, enemy.radius * 0.36, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
-    } else if (enemy.kind === 'splitter' || enemy.kind === 'miniSlime') {
-      context.globalAlpha = 0.88;
-      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
-      context.strokeStyle = '#a7f3d0';
-      context.lineWidth = 3;
-      context.beginPath();
-      context.ellipse(
-        enemy.x,
-        enemy.y,
-        enemy.radius * (1 + Math.sin(game.time * 7) * 0.08),
-        enemy.radius * (1 - Math.sin(game.time * 7) * 0.08),
-        0,
-        0,
-        Math.PI * 2,
-      );
-      context.fill();
-      context.stroke();
-      context.fillStyle = '#ecfdf5';
-      context.beginPath();
-      context.arc(enemy.x - enemy.radius * 0.3, enemy.y - enemy.radius * 0.2, enemy.radius * 0.18, 0, Math.PI * 2);
-      context.arc(enemy.x + enemy.radius * 0.25, enemy.y + enemy.radius * 0.15, enemy.radius * 0.14, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
-    } else if (enemy.kind === 'shielder') {
-      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
-      context.strokeStyle = '#e2e8f0';
-      context.lineWidth = 4;
-      context.beginPath();
-      context.roundRect(enemy.x - enemy.radius, enemy.y - enemy.radius, enemy.radius * 2, enemy.radius * 2, 7);
-      context.fill();
-      context.stroke();
-      // Glowing front shield arc
-      const toPlayer = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-      context.strokeStyle = '#38bdf8';
-      context.lineWidth = 5;
-      context.beginPath();
-      context.arc(enemy.x, enemy.y, enemy.radius + 5, toPlayer - 0.85, toPlayer + 0.85);
-      context.stroke();
-      context.fillStyle = '#38bdf8';
-      context.fillRect(enemy.x - 8, enemy.y - 5, 16, 4);
-      context.restore();
-    } else if (enemy.kind === 'ghost') {
-      context.globalAlpha = (enemy.phaseDash ?? 0) > 0 ? 0.48 : 0.78;
-      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
-      context.strokeStyle = '#e0e7ff';
-      context.lineWidth = 2.5;
-      context.beginPath();
-      context.arc(enemy.x, enemy.y - 2, enemy.radius, Math.PI, 0);
-      context.lineTo(enemy.x + enemy.radius, enemy.y + enemy.radius * 0.85);
-      context.lineTo(enemy.x + enemy.radius * 0.35, enemy.y + enemy.radius * 0.45);
-      context.lineTo(enemy.x, enemy.y + enemy.radius * 0.9);
-      context.lineTo(enemy.x - enemy.radius * 0.35, enemy.y + enemy.radius * 0.45);
-      context.lineTo(enemy.x - enemy.radius, enemy.y + enemy.radius * 0.85);
-      context.closePath();
-      context.fill();
-      context.stroke();
-      context.fillStyle = '#fef08a';
-      context.beginPath();
-      context.arc(enemy.x - 5, enemy.y - 4, 3, 0, Math.PI * 2);
-      context.arc(enemy.x + 5, enemy.y - 4, 3, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
-    } else {
-      context.fillStyle = enemy.slow > 0 ? '#bae6fd' : enemy.color;
-      context.strokeStyle = enemy.elite ? '#f5d0fe' : '#111827';
-      context.lineWidth = enemy.elite ? 5 : 3;
-      context.beginPath();
-      context.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-      context.fill();
-      context.stroke();
-      context.fillStyle = '#ffffff';
-      context.beginPath();
-      context.arc(enemy.x - enemy.radius * 0.28, enemy.y - enemy.radius * 0.16, enemy.radius * 0.13, 0, Math.PI * 2);
-      context.arc(enemy.x + enemy.radius * 0.28, enemy.y - enemy.radius * 0.16, enemy.radius * 0.13, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
-    }
-
-    if ((enemy.karmaTimer ?? 0) > 0) {
-      context.save();
-      context.strokeStyle = '#d946ef';
-      context.lineWidth = 2.5;
-      context.shadowColor = '#c026d3';
-      context.shadowBlur = 12;
-      context.beginPath();
-      context.arc(enemy.x, enemy.y, enemy.radius + 5, 0, Math.PI * 2);
-      context.stroke();
-      context.restore();
-    }
-
-    context.fillStyle = '#111827';
-    context.fillRect(enemy.x - enemy.radius, enemy.y + enemy.radius + 8, enemy.radius * 2, 5);
-    context.fillStyle = (enemy.karmaTimer ?? 0) > 0 ? '#d946ef' : '#22c55e';
-    context.fillRect(enemy.x - enemy.radius, enemy.y + enemy.radius + 8, enemy.radius * 2 * hpRatio, 5);
+    drawEnemyArt(context, enemy, game, player);
   });
 
   const weapon = weapons[player.weaponIndex];
@@ -4883,201 +9870,7 @@ function drawGame(context, game, canvas) {
   }
 
   const hero = HEROES[game.heroIndex ?? 0] ?? HEROES[0];
-  context.fillStyle = player.invincible > 0 ? '#fef08a' : hero.body;
-  context.strokeStyle = hero.stroke;
-  context.lineWidth = 4;
-  if (game.bm?.immortal) {
-    context.save();
-    context.strokeStyle = '#ec4899';
-    context.lineWidth = 3.5;
-    context.shadowColor = '#a855f7';
-    context.shadowBlur = 16;
-    context.beginPath();
-    context.arc(player.x, player.y, 28 + Math.sin(game.time * 6) * 3, 0, Math.PI * 2);
-    context.stroke();
-    context.restore();
-  }
-  if (game.awakenedWeapons[weapons[player.weaponIndex]?.id]) {
-    context.strokeStyle = '#facc15';
-    context.lineWidth = 3;
-    context.globalAlpha = 0.72;
-    context.beginPath();
-    context.arc(player.x, player.y, 34 + Math.sin(game.time * 8) * 4, 0, Math.PI * 2);
-    context.stroke();
-    context.globalAlpha = 1;
-    context.strokeStyle = hero.stroke;
-    context.lineWidth = 4;
-  }
-  context.beginPath();
-  context.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-  context.fill();
-  context.stroke();
-
-  // Distinct character accessories & eyes
-  if (hero.id === 'commando') {
-    context.fillStyle = hero.accent;
-    context.fillRect(player.x - 16, player.y - 13, 32, 5);
-  } else if (hero.id === 'ninja') {
-    context.fillStyle = hero.accent;
-    context.fillRect(player.x - 17, player.y - 11, 34, 6);
-    context.beginPath();
-    context.moveTo(player.x + 15, player.y - 9);
-    context.lineTo(player.x + 28, player.y - 15 + Math.sin(game.time * 12) * 3);
-    context.lineTo(player.x + 24, player.y - 4);
-    context.closePath();
-    context.fill();
-  } else if (hero.id === 'titan') {
-    context.fillStyle = '#0f172a';
-    context.fillRect(player.x - 13, player.y - 9, 26, 7);
-    context.fillStyle = hero.accent;
-    context.fillRect(player.x - 10, player.y - 7, 20, 3);
-  } else if (hero.id === 'pyro') {
-    context.fillStyle = '#facc15';
-    context.beginPath();
-    context.moveTo(player.x - 12, player.y - 14);
-    context.lineTo(player.x - 6, player.y - 25);
-    context.lineTo(player.x, player.y - 17);
-    context.lineTo(player.x + 6, player.y - 25);
-    context.lineTo(player.x + 12, player.y - 14);
-    context.closePath();
-    context.fill();
-  } else if (hero.id === 'cyber') {
-    context.fillStyle = '#0f172a';
-    context.fillRect(player.x - 13, player.y - 10, 26, 8);
-    context.fillStyle = '#38bdf8';
-    context.fillRect(player.x - 10, player.y - 8, 20, 4);
-  } else if (hero.id === 'vampire') {
-    context.fillStyle = '#9f1239';
-    context.beginPath();
-    context.moveTo(player.x - 17, player.y + 4);
-    context.lineTo(player.x - 24, player.y - 10);
-    context.lineTo(player.x - 10, player.y - 4);
-    context.moveTo(player.x + 17, player.y + 4);
-    context.lineTo(player.x + 24, player.y - 10);
-    context.lineTo(player.x + 10, player.y - 4);
-    context.fill();
-  } else if (hero.id === 'sans') {
-    // 💀 Iconic Undertale Sans Blue Hoodie + Fluffy White Collar + Skull Face!
-    context.save();
-    // Blue hoodie shoulders at bottom
-    context.fillStyle = '#2563eb';
-    context.beginPath();
-    context.arc(player.x, player.y + 4, player.radius + 1, 0.25, Math.PI - 0.25);
-    context.closePath();
-    context.fill();
-    // White hood fluff trim
-    context.strokeStyle = '#cbd5e1';
-    context.lineWidth = 3;
-    context.beginPath();
-    context.arc(player.x, player.y + 6, player.radius * 0.72, 0.35, Math.PI - 0.35);
-    context.stroke();
-    // Dark skull eye sockets
-    context.fillStyle = '#020617';
-    context.beginPath();
-    context.ellipse(player.x - 6, player.y - 4, 4.2, 3.8, -0.1, 0, Math.PI * 2);
-    context.ellipse(player.x + 6, player.y - 4, 4.4, 4.0, 0.1, 0, Math.PI * 2);
-    context.fill();
-    // Nose triangle
-    context.beginPath();
-    context.moveTo(player.x, player.y - 1);
-    context.lineTo(player.x - 2, player.y + 2);
-    context.lineTo(player.x + 2, player.y + 2);
-    context.closePath();
-    context.fill();
-    // Classic wide toothy Sans grin!
-    context.strokeStyle = '#020617';
-    context.lineWidth = 2;
-    context.beginPath();
-    context.moveTo(player.x - 8, player.y + 5);
-    context.quadraticCurveTo(player.x, player.y + 9.5, player.x + 8, player.y + 5);
-    context.stroke();
-    [-4, 0, 4].forEach((tx) => {
-      context.beginPath();
-      context.moveTo(player.x + tx, player.y + 4.5);
-      context.lineTo(player.x + tx, player.y + 8);
-      context.stroke();
-    });
-    context.restore();
-  } else if (hero.id === 'forsaken') {
-    // 👁️ FORSAKEN: Corrupted Void Aura + Jagged Shadow Crown + Blazing Crimson Eye!
-    context.save();
-    // Pulsing corrupted crimson & toxic-green glitch aura
-    context.strokeStyle = Math.sin(game.time * 16) > 0 ? '#ef4444' : '#22c55e';
-    context.lineWidth = 2.5;
-    context.shadowColor = '#ef4444';
-    context.shadowBlur = 18;
-    context.beginPath();
-    context.arc(player.x, player.y, player.radius + 7 + Math.sin(game.time * 10) * 2, 0, Math.PI * 2);
-    context.stroke();
-    // Glitch pixel bars around body
-    context.fillStyle = '#22c55e';
-    context.fillRect(player.x - 22, player.y - 6 + Math.sin(game.time * 24) * 4, 6, 2.5);
-    context.fillStyle = '#ef4444';
-    context.fillRect(player.x + 16, player.y + 2 + Math.cos(game.time * 22) * 4, 7, 2.5);
-    // Jagged dark shadow crown
-    context.fillStyle = '#18181b';
-    context.strokeStyle = '#ef4444';
-    context.lineWidth = 2;
-    context.beginPath();
-    context.moveTo(player.x - 13, player.y - 12);
-    context.lineTo(player.x - 9, player.y - 25);
-    context.lineTo(player.x - 2, player.y - 16);
-    context.lineTo(player.x + 3, player.y - 27);
-    context.lineTo(player.x + 8, player.y - 16);
-    context.lineTo(player.x + 13, player.y - 23);
-    context.lineTo(player.x + 13, player.y - 11);
-    context.closePath();
-    context.fill();
-    context.stroke();
-    // Single piercing glowing crimson eye in center!
-    context.shadowColor = '#ef4444';
-    context.shadowBlur = 16;
-    context.fillStyle = '#ef4444';
-    context.beginPath();
-    context.ellipse(player.x, player.y - 2, 7.5, 4.5, 0, 0, Math.PI * 2);
-    context.fill();
-    context.fillStyle = '#ffffff';
-    context.beginPath();
-    context.ellipse(player.x, player.y - 2, 2.2, 4, 0, 0, Math.PI * 2);
-    context.fill();
-    context.restore();
-  }
-
-  if (hero.id !== 'titan' && hero.id !== 'cyber' && hero.id !== 'sans' && hero.id !== 'forsaken') {
-    context.fillStyle = hero.id === 'vampire' ? '#fda4af' : hero.id === 'ninja' ? '#fef08a' : '#1e293b';
-    context.fillRect(player.x - 6, player.y - 5, 4, 4);
-    context.fillRect(player.x + 3, player.y - 5, 4, 4);
-  }
-
-  // 💀 Sans Glowing Cyan/Yellow Left Eye Flame (Sans Hero OR Awakened Gaster Blaster)!
-  if (hero.id === 'sans' || (player.sansMode && weapon?.id === 'gaster')) {
-    const eyeFlash = Math.sin(game.time * 24) > 0 ? '#38bdf8' : '#facc15';
-    context.save();
-    context.shadowColor = eyeFlash;
-    context.shadowBlur = 18;
-    context.fillStyle = eyeFlash;
-    context.beginPath();
-    context.arc(player.x + 5, player.y - 3, 4.2, 0, Math.PI * 2);
-    context.fill();
-    // Flowing cyan eye flame trail
-    context.beginPath();
-    context.moveTo(player.x + 5, player.y - 7);
-    context.quadraticCurveTo(
-      player.x + 16,
-      player.y - 12 + Math.sin(game.time * 18) * 3,
-      player.x + 25,
-      player.y - 18 + Math.cos(game.time * 14) * 3,
-    );
-    context.quadraticCurveTo(player.x + 15, player.y - 2, player.x + 5, player.y + 1);
-    context.closePath();
-    context.fillStyle = 'rgba(56, 189, 248, 0.78)';
-    context.fill();
-    context.fillStyle = '#ffffff';
-    context.beginPath();
-    context.arc(player.x + 5, player.y - 3, 1.8, 0, Math.PI * 2);
-    context.fill();
-    context.restore();
-  }
+  drawHeroArt(context, player, hero, game, weapon);
 
   // Manual Aim Direction Indicator (glowing dashed sightline + aiming chevron!)
   if (game.running && game.aimMode === 'manual') {
@@ -5346,356 +10139,7 @@ function drawGame(context, game, canvas) {
   }
 
   if (game.ultCutscene) {
-    const cs = game.ultCutscene;
-    const elapsed = cs.maxTimer - cs.timer;
-    const enterT = clamp(elapsed / 0.14, 0, 1);
-    const exitT = cs.timer < 0.28 ? clamp(cs.timer / 0.28, 0, 1) : 1;
-    const easeOut = 1 - Math.pow(1 - enterT, 3);
-    const alpha = exitT;
-    const w = canvas.width;
-    const h = canvas.height;
-    const cy = h * 0.5;
-
-    context.save();
-    context.globalAlpha = alpha;
-
-    // 1. Dark anime dramatic backdrop vignette
-    context.fillStyle = cs.sansMode ? 'rgba(2, 6, 23, 0.84)' : 'rgba(2, 6, 23, 0.72)';
-    context.fillRect(0, 0, w, h);
-
-    // 2. High-speed anime radial speed-lines!
-    context.save();
-    context.translate(w * 0.28, cy);
-    for (let i = 0; i < 36; i += 1) {
-      const a = (Math.PI * 2 * i) / 36 + elapsed * 1.4;
-      const inner = 70 + ((i * 37) % 85);
-      const outer = Math.max(w, h) * 1.1;
-      context.strokeStyle = i % 3 === 0 ? '#ffffff' : cs.accent;
-      context.globalAlpha = alpha * (i % 2 === 0 ? 0.26 : 0.14);
-      context.lineWidth = i % 4 === 0 ? 3.5 : 1.6;
-      context.beginPath();
-      context.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
-      context.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
-      context.stroke();
-    }
-    context.restore();
-
-    // 3. Diagonal glowing Cut-In Slash Band across screen
-    const bandHalfH = (h * 0.24) * easeOut;
-    const tilt = h * 0.08;
-    context.save();
-    const bandGrad = context.createLinearGradient(0, cy - bandHalfH, w, cy + bandHalfH);
-    bandGrad.addColorStop(0, cs.bg);
-    bandGrad.addColorStop(0.5, cs.sansMode ? '#0f172a' : cs.bg);
-    bandGrad.addColorStop(1, '#020617');
-    context.fillStyle = bandGrad;
-    context.beginPath();
-    context.moveTo(-20, cy - bandHalfH + tilt);
-    context.lineTo(w + 20, cy - bandHalfH - tilt);
-    context.lineTo(w + 20, cy + bandHalfH - tilt);
-    context.lineTo(-20, cy + bandHalfH + tilt);
-    context.closePath();
-    context.fill();
-
-    // Clip energy streaks inside slash band
-    context.save();
-    context.clip();
-    for (let s = 0; s < 14; s += 1) {
-      const sy = cy - bandHalfH + ((s + 0.5) / 14) * (bandHalfH * 2);
-      const sx = ((elapsed * 2200 + s * 173) % (w + 360)) - 260;
-      const slen = 110 + (s % 4) * 70;
-      context.fillStyle = s % 2 === 0 ? cs.accent : '#ffffff';
-      context.globalAlpha = alpha * 0.35;
-      context.fillRect(sx, sy, slen, s % 3 === 0 ? 4 : 2);
-    }
-
-    // 4. Giant Stylized Hero (or SANS) Close-Up Portrait on the Left!
-    const px = w * 0.22 - (1 - easeOut) * 180;
-    const py = cy + 6;
-    const pr = Math.min(w, h) * 0.145;
-    context.save();
-    context.translate(px, py);
-
-    // Radiant portrait aura behind head
-    context.globalAlpha = alpha * 0.45;
-    const auraGrad = context.createRadialGradient(0, 0, pr * 0.2, 0, 0, pr * 1.65);
-    auraGrad.addColorStop(0, cs.accent);
-    auraGrad.addColorStop(1, 'rgba(0,0,0,0)');
-    context.fillStyle = auraGrad;
-    context.beginPath();
-    context.arc(0, 0, pr * 1.65, 0, Math.PI * 2);
-    context.fill();
-    context.globalAlpha = alpha;
-
-    if (cs.weaponId === 'gaster') {
-      // 💀 GIANT SANS SKULL CLOSE-UP + BLAZING CYAN EYE FLAME!
-      context.fillStyle = '#f8fafc';
-      context.strokeStyle = '#020617';
-      context.lineWidth = 5;
-      context.beginPath();
-      context.ellipse(0, -pr * 0.12, pr * 0.92, pr * 0.78, 0, 0, Math.PI * 2);
-      context.fill();
-      context.stroke();
-      context.beginPath();
-      context.roundRect(-pr * 0.66, pr * 0.2, pr * 1.32, pr * 0.52, 16);
-      context.fill();
-      context.stroke();
-      context.strokeStyle = '#020617';
-      context.lineWidth = 4;
-      context.beginPath();
-      context.moveTo(-pr * 0.5, pr * 0.44);
-      context.quadraticCurveTo(0, pr * 0.62, pr * 0.5, pr * 0.44);
-      context.stroke();
-      for (let t = -3; t <= 3; t += 1) {
-        context.beginPath();
-        context.moveTo(t * pr * 0.14, pr * 0.36);
-        context.lineTo(t * pr * 0.14, pr * 0.55);
-        context.stroke();
-      }
-      context.fillStyle = '#020617';
-      context.beginPath();
-      context.ellipse(-pr * 0.34, -pr * 0.1, pr * 0.22, pr * 0.2, -0.1, 0, Math.PI * 2);
-      context.ellipse(pr * 0.34, -pr * 0.1, pr * 0.24, pr * 0.22, 0.1, 0, Math.PI * 2);
-      context.fill();
-      context.beginPath();
-      context.moveTo(0, pr * 0.08);
-      context.lineTo(-pr * 0.1, pr * 0.24);
-      context.lineTo(pr * 0.1, pr * 0.24);
-      context.closePath();
-      context.fill();
-      const eyeClr = Math.sin(elapsed * 32) > 0 ? '#38bdf8' : '#facc15';
-      context.shadowColor = eyeClr;
-      context.shadowBlur = 28;
-      context.fillStyle = eyeClr;
-      context.beginPath();
-      context.arc(pr * 0.34, -pr * 0.1, pr * 0.13, 0, Math.PI * 2);
-      context.fill();
-      context.beginPath();
-      context.moveTo(pr * 0.34, -pr * 0.24);
-      context.quadraticCurveTo(pr * 0.92, -pr * 0.44, pr * 1.4, -pr * 0.65);
-      context.quadraticCurveTo(pr * 0.85, -pr * 0.02, pr * 0.34, pr * 0.04);
-      context.closePath();
-      context.fillStyle = 'rgba(56, 189, 248, 0.85)';
-      context.fill();
-      context.fillStyle = '#ffffff';
-      context.beginPath();
-      context.arc(pr * 0.34, -pr * 0.1, pr * 0.06, 0, Math.PI * 2);
-      context.fill();
-      context.shadowBlur = 0;
-    } else if (cs.weaponId === 'trident') {
-      // 🔱 GIANT GOLDEN POSEIDON TRIDENT + LIGHTNING!
-      context.rotate(-0.42);
-      context.shadowColor = '#2dd4bf';
-      context.shadowBlur = 26;
-      context.strokeStyle = '#f59e0b';
-      context.lineWidth = 10;
-      context.lineCap = 'round';
-      context.beginPath();
-      context.moveTo(-pr * 1.05, 0);
-      context.lineTo(pr * 0.35, 0);
-      context.stroke();
-      context.strokeStyle = '#fef08a';
-      context.lineWidth = 8;
-      context.beginPath();
-      context.moveTo(pr * 0.28, -pr * 0.48);
-      context.quadraticCurveTo(pr * 0.52, 0, pr * 0.28, pr * 0.48);
-      context.stroke();
-      // 3 Prongs
-      context.fillStyle = '#fef08a';
-      context.beginPath();
-      context.moveTo(pr * 1.18, 0);
-      context.lineTo(pr * 0.55, -pr * 0.16);
-      context.lineTo(pr * 0.65, 0);
-      context.lineTo(pr * 0.55, pr * 0.16);
-      context.closePath();
-      context.fill();
-      context.beginPath();
-      context.moveTo(pr * 0.28, 0);
-      context.lineTo(pr * 0.92, 0);
-      context.stroke();
-      [-1, 1].forEach((d) => {
-        context.beginPath();
-        context.moveTo(pr * 0.28, d * pr * 0.44);
-        context.quadraticCurveTo(pr * 0.68, d * pr * 0.48, pr * 0.98, d * pr * 0.28);
-        context.stroke();
-      });
-      context.fillStyle = '#2dd4bf';
-      context.beginPath();
-      context.arc(pr * 0.36, 0, pr * 0.13, 0, Math.PI * 2);
-      context.fill();
-      context.shadowBlur = 0;
-    } else if (cs.weaponId === 'katana' || cs.weaponId === 'lightchaser') {
-      // ⚔️ / ✨ GIANT BLAZING SWORD / CRESCENT WAVE!
-      context.rotate(-0.52);
-      context.shadowColor = cs.accent;
-      context.shadowBlur = 28;
-      context.fillStyle = '#ffffff';
-      context.beginPath();
-      context.moveTo(-pr * 0.85, 6);
-      context.lineTo(pr * 1.15, -6);
-      context.lineTo(pr * 0.92, 10);
-      context.lineTo(-pr * 0.85, 14);
-      context.closePath();
-      context.fill();
-      context.strokeStyle = cs.accent;
-      context.lineWidth = 6;
-      context.beginPath();
-      context.arc(0, 0, pr * 0.92, -1.1, 1.1);
-      context.stroke();
-      context.fillStyle = '#facc15';
-      context.fillRect(-pr * 0.62, -20, 10, 44);
-      context.shadowBlur = 0;
-    } else if (cs.weaponId === 'bat') {
-      // 🏏 GIANT GOLDEN CHAMPIONSHIP BAT + HOMERUN RINGS!
-      context.rotate(-0.6);
-      context.shadowColor = '#facc15';
-      context.shadowBlur = 28;
-      context.fillStyle = '#f59e0b';
-      context.strokeStyle = '#fef08a';
-      context.lineWidth = 5;
-      context.beginPath();
-      context.moveTo(-pr * 0.95, -6);
-      context.lineTo(pr * 0.85, -24);
-      context.arc(pr * 0.85, 0, 24, -Math.PI / 2, Math.PI / 2);
-      context.lineTo(-pr * 0.95, 6);
-      context.closePath();
-      context.fill();
-      context.stroke();
-      context.shadowBlur = 0;
-    } else if (cs.weaponId === 'frost') {
-      // ❄️ GIANT GLOWING ICE CRYSTAL SNOWFLAKE!
-      context.rotate(elapsed * 1.8);
-      context.shadowColor = '#7dd3fc';
-      context.shadowBlur = 26;
-      context.strokeStyle = '#e0f2fe';
-      context.lineWidth = 7;
-      for (let i = 0; i < 6; i += 1) {
-        const a = (Math.PI / 3) * i;
-        context.beginPath();
-        context.moveTo(0, 0);
-        context.lineTo(Math.cos(a) * pr * 0.95, Math.sin(a) * pr * 0.95);
-        context.stroke();
-      }
-      context.fillStyle = '#38bdf8';
-      context.beginPath();
-      context.arc(0, 0, pr * 0.24, 0, Math.PI * 2);
-      context.fill();
-      context.shadowBlur = 0;
-    } else if (cs.weaponId === 'kunai') {
-      // 🗡️ TRIPLE FANNED GLOWING KUNAI!
-      context.shadowColor = '#93c5fd';
-      context.shadowBlur = 22;
-      [-0.38, 0, 0.38].forEach((ang) => {
-        context.save();
-        context.rotate(ang);
-        context.fillStyle = '#f8fafc';
-        context.strokeStyle = '#38bdf8';
-        context.lineWidth = 4;
-        context.beginPath();
-        context.moveTo(pr * 0.98, 0);
-        context.lineTo(pr * 0.1, -pr * 0.22);
-        context.lineTo(-pr * 0.35, 0);
-        context.lineTo(pr * 0.1, pr * 0.22);
-        context.closePath();
-        context.fill();
-        context.stroke();
-        context.restore();
-      });
-      context.shadowBlur = 0;
-    } else {
-      // Glowing Weapon Emblem Crest for Blaster / Shotgun / Railgun / Boomer / Shockwave / Flame / Mine!
-      context.shadowColor = cs.accent;
-      context.shadowBlur = 30;
-      context.strokeStyle = cs.accent;
-      context.lineWidth = 7;
-      context.beginPath();
-      context.arc(0, 0, pr * 0.88, 0, Math.PI * 2);
-      context.stroke();
-      context.fillStyle = 'rgba(2, 6, 23, 0.72)';
-      context.fill();
-      context.strokeStyle = '#ffffff';
-      context.lineWidth = 2.5;
-      context.beginPath();
-      context.arc(0, 0, pr * 0.7, 0, Math.PI * 2);
-      context.stroke();
-      context.font = `900 ${Math.round(pr * 0.95)}px Arial`;
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillStyle = '#ffffff';
-      context.fillText(cs.ultIcon || '⚡', 0, 4);
-      context.textBaseline = 'alphabetic';
-      context.shadowBlur = 0;
-    }
-    context.restore();
-    context.restore();
-
-    // Glowing Metallic Borders for Slash Band
-    context.strokeStyle = cs.accent;
-    context.lineWidth = 6;
-    context.shadowColor = cs.accent;
-    context.shadowBlur = 20;
-    context.beginPath();
-    context.moveTo(-20, cy - bandHalfH + tilt);
-    context.lineTo(w + 20, cy - bandHalfH - tilt);
-    context.moveTo(-20, cy + bandHalfH + tilt);
-    context.lineTo(w + 20, cy + bandHalfH - tilt);
-    context.stroke();
-    context.strokeStyle = '#ffffff';
-    context.lineWidth = 2;
-    context.stroke();
-    context.shadowBlur = 0;
-    context.restore();
-
-    // 5. Dramatic Anime Typography Sliding in from Right!
-    const textX = w * 0.61 + (1 - easeOut) * 220;
-    context.save();
-    context.textAlign = 'center';
-
-    // Top badge
-    context.font = '900 15px Arial';
-    context.fillStyle = cs.accent;
-    context.fillText(
-      cs.synergyMode
-        ? '★ SYNERGY OVERDRIVE · 심판의 회랑 ★'
-        : cs.sansMode
-          ? '★ MEGALOVANIA · 가스터 블래스터 ★'
-          : `✦ WEAPON ULTIMATE · ${cs.weaponName} ✦`,
-      textX,
-      cy - 54,
-    );
-
-    // Giant Skill Name with heavy stroke + neon glow
-    context.font = `900 ${Math.min(54, Math.max(32, Math.round(w * 0.056)))}px Arial`;
-    context.lineWidth = 8;
-    context.strokeStyle = '#020617';
-    context.strokeText(`${cs.ultIcon} ${cs.ultName}`, textX, cy + 8);
-    context.shadowColor = cs.accent;
-    context.shadowBlur = 22;
-    context.fillStyle = '#ffffff';
-    context.fillText(`${cs.ultIcon} ${cs.ultName}`, textX, cy + 8);
-    context.shadowBlur = 0;
-
-    // English Subtext
-    context.font = '900 13px Arial';
-    context.fillStyle = 'rgba(255,255,255,0.75)';
-    context.fillText(cs.ultSub, textX, cy + 34);
-
-    // Anime Catchphrase Quote
-    context.font = '800 19px Arial';
-    context.strokeStyle = '#020617';
-    context.lineWidth = 5;
-    context.strokeText(`“${cs.ultQuote}”`, textX, cy + 68);
-    context.fillStyle = '#fef08a';
-    context.fillText(`“${cs.ultQuote}”`, textX, cy + 68);
-    context.restore();
-
-    // 6. Cinematic Top & Bottom Black Letterbox Bars
-    const barH = Math.round(h * 0.115 * easeOut);
-    context.fillStyle = '#000000';
-    context.fillRect(0, 0, w, barH);
-    context.fillRect(0, h - barH, w, barH);
-
-    context.restore();
+    drawUltimateCutscene(context, game.ultCutscene, canvas.width, canvas.height);
   }
 
   if ((game.ultImpactFlash ?? 0) > 0) {
@@ -5747,9 +10191,543 @@ function drawGame(context, game, canvas) {
     context.fillText(game.awakenBannerCustom || (weapon.displayName ?? weapon.name), canvas.width / 2, canvas.height / 2 + 30);
     context.restore();
   }
+
+  if ((game.deathAwakenFlash ?? 0) > 0) {
+    const daClr = game.deathAwakenColor || '#facc15';
+    const isStage2 = (game.deathAwakenStage ?? 1) >= 2;
+    context.save();
+    context.globalAlpha = Math.min(1, game.deathAwakenFlash / 1.4);
+    context.fillStyle = isStage2 ? 'rgba(69, 10, 10, 0.86)' : 'rgba(15, 23, 42, 0.86)';
+    context.fillRect(0, canvas.height / 2 - 84, canvas.width, 168);
+    context.strokeStyle = daClr;
+    context.lineWidth = 5;
+    context.beginPath();
+    context.moveTo(0, canvas.height / 2 - 84);
+    context.lineTo(canvas.width, canvas.height / 2 - 84);
+    context.moveTo(0, canvas.height / 2 + 84);
+    context.lineTo(canvas.width, canvas.height / 2 + 84);
+    context.stroke();
+    context.textAlign = 'center';
+    context.font = '900 15px Arial';
+    context.fillStyle = daClr;
+    context.fillText(
+      isStage2 ? '⚡ FINAL AWAKENING · 2차 초각성 발동! (무기 각성 + 필살기 MAX!) ⚡' : '🔥 DEATH AWAKENING · 1차 각성 발동! 🔥',
+      canvas.width / 2,
+      canvas.height / 2 - 44,
+    );
+    context.font = '900 32px Arial';
+    context.fillStyle = '#ffffff';
+    context.shadowColor = daClr;
+    context.shadowBlur = 18;
+    context.fillText(game.deathAwakenTitle || 'AWAKENED!', canvas.width / 2, canvas.height / 2 + 4);
+    context.shadowBlur = 0;
+    context.font = '800 17px "Malgun Gothic", sans-serif';
+    context.fillStyle = '#fef08a';
+    context.fillText(game.deathAwakenQuote || '', canvas.width / 2, canvas.height / 2 + 44);
+    context.restore();
+  }
 }
 
-export default function TangtangPage() {
+// 7종 특별 캐릭터 전용 BGM (Toby Fox 원곡 고증 Web Audio 신스 + 선택적 로컬 MP3 지원)
+const BGM_NOTES = {
+  E1: 41.2, F1: 43.65, Gb1: 46.25, G1: 49.0, Ab1: 51.91, A1: 55.0, Bb1: 58.27, B1: 61.74,
+  C2: 65.41, Db2: 69.3, D2: 73.42, Eb2: 77.78, E2: 82.41, F2: 87.31, Gb2: 92.5, G2: 98.0, Ab2: 103.83, A2: 110.0, Bb2: 116.54, B2: 123.47,
+  C3: 130.81, Db3: 138.59, D3: 146.83, Eb3: 155.56, E3: 164.81, F3: 174.61, Gb3: 185.0, G3: 196.0, Ab3: 207.65, A3: 220.0, Bb3: 233.08, B3: 246.94,
+  C4: 261.63, Db4: 277.18, D4: 293.66, Eb4: 311.13, E4: 329.63, F4: 349.23, Gb4: 369.99, G4: 392.0, Ab4: 415.3, A4: 440.0, Bb4: 466.16, B4: 493.88,
+  C5: 523.25, Db5: 554.37, D5: 587.33, Eb5: 622.25, E5: 659.25, F5: 698.46, Gb5: 739.99, G5: 783.99, Ab5: 830.61, A5: 880.0, Bb5: 932.33, B5: 987.77,
+  C6: 1046.5, Db6: 1108.73, D6: 1174.66, Eb6: 1244.51, E6: 1318.51, F6: 1396.91, Gb6: 1479.98, G6: 1567.98, Ab6: 1661.22,
+};
+
+const SPECIAL_HERO_BGM = (() => {
+  const N = BGM_NOTES;
+  const repeat = (arr, times) => {
+    const out = [];
+    for (let i = 0; i < times; i += 1) out.push(...arr);
+    return out;
+  };
+
+  return {
+    // 💀 샌즈 — Toby Fox: MEGALOVANIA (120 BPM · D Minor SNES EarthBound Overdriven Guitar Rock!)
+    sans: {
+      label: 'MEGALOVANIA',
+      title: 'MEGALOVANIA (Toby Fox)',
+      mp3: '/audio/megalovania.mp3',
+      stepMs: 125,
+      drumStyle: 'rock',
+      synth: {
+        leadWave1: 'square', leadWave2: 'sawtooth', detuneRatio: 1.004,
+        leadGain: 0.056, leadCutoffStart: 3600, leadCutoffEnd: 1200, leadQ: 2.5,
+        overdrive: 26,
+        bassWave: 'sawtooth', bassGain: 0.072, bassCutoffStart: 940, bassCutoffEnd: 280,
+        arpWave: 'square', arpGain: 0.015,
+      },
+      leadSeq: [
+        [N.D4, 0.9], [N.D4, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
+        null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
+        [N.C4, 0.9], [N.C4, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
+        null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
+        [N.B3, 0.9], [N.B3, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
+        null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
+        [N.Bb3, 0.9], [N.Bb3, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
+        null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
+        [N.F5, 1.8], null, [N.F5, 0.9], [N.F5, 0.9], [N.F5, 1.6], null, [N.D5, 1.6], null,
+        [N.D5, 1.6], null, [N.F5, 1.6], null, [N.F5, 0.9], [N.G5, 0.9], [N.Ab5, 1.5], null,
+        [N.G5, 1.5], null, [N.F5, 1.5], null, [N.D5, 1.5], null, [N.F5, 0.9], [N.G5, 0.9],
+        [N.A5, 2.2], null, null, [N.G5, 1.4], null, [N.F5, 1.4], [N.D5, 1.2], null,
+        [N.D5, 0.9], [N.F5, 0.9], [N.G5, 1.6], null, [N.A5, 1.8], null, [N.G5, 1.5], null,
+        [N.F5, 1.5], null, [N.D5, 1.5], null, [N.C5, 1.4], null, [N.D5, 1.4], null,
+        [N.E5, 1.8], null, [N.F5, 1.6], null, [N.G5, 1.8], null, [N.A5, 2.4], null,
+        null, [N.G5, 0.9], [N.F5, 0.9], [N.E5, 0.9], [N.D5, 1.4], null, [N.C5, 1.2], null,
+      ],
+      bassSeq: [
+        N.D2, 0, N.D3, 0, N.D2, 0, N.D3, N.D2, N.D2, 0, N.D3, 0, N.A1, 0, N.C2, 0,
+        N.C2, 0, N.C3, 0, N.C2, 0, N.C3, N.C2, N.C2, 0, N.C3, 0, N.C2, 0, N.D2, 0,
+        N.B1, 0, N.B2, 0, N.B1, 0, N.B2, N.B1, N.B1, 0, N.B2, 0, N.B1, 0, N.C2, 0,
+        N.Bb1, 0, N.Bb2, 0, N.Bb1, 0, N.Bb2, N.Bb1, N.Bb1, 0, N.C2, 0, N.A1, 0, N.C2, 0,
+        N.D2, N.D2, N.D3, 0, N.D2, 0, N.D3, N.D2, N.D2, N.D2, N.D3, 0, N.F2, 0, N.G2, 0,
+        N.C2, N.C2, N.C3, 0, N.C2, 0, N.C3, N.C2, N.C2, N.C2, N.C3, 0, N.G2, 0, N.C2, 0,
+        N.Bb1, N.Bb1, N.Bb2, 0, N.Bb1, 0, N.Bb2, N.Bb1, N.Bb1, N.Bb1, N.Bb2, 0, N.F2, 0, N.Bb1, 0,
+        N.C2, 0, N.C3, 0, N.C2, 0, N.C3, 0, N.A1, 0, N.A2, 0, N.A1, N.B1, N.C2, N.D2,
+      ],
+      arpSeq: [
+        ...repeat([0], 64),
+        ...repeat([N.D4, N.A4, N.F4, N.A4], 4),
+        ...repeat([N.C4, N.G4, N.E4, N.G4], 4),
+        ...repeat([N.Bb3, N.F4, N.D4, N.F4], 4),
+        ...repeat([N.C4, N.G4, N.A4, N.E4], 4),
+      ],
+      chordPads: {
+        0: [N.D3, N.A3, N.F4], 16: [N.C3, N.G3, N.E4], 32: [N.B2, N.F3, N.D4], 48: [N.Bb2, N.F3, N.D4],
+        64: [N.D3, N.A3, N.D4], 80: [N.C3, N.G3, N.C4], 96: [N.Bb2, N.F3, N.Bb3], 112: [N.C3, N.G3, N.C4], 120: [N.A2, N.E3, N.A3],
+      },
+    },
+
+    // 🌈 아스리엘 드리무어 — Toby Fox: Hopes and Dreams + SAVE the World (171 BPM · Bb Major / G Minor Exact Authentic Medley!)
+    asriel: {
+      label: 'HOPES & DREAMS / SAVE THE WORLD',
+      title: 'Hopes and Dreams + SAVE the World (Toby Fox)',
+      mp3: '/audio/hopes-and-dreams.mp3',
+      stepMs: 88,
+      drumStyle: 'anthem',
+      synth: {
+        leadWave1: 'sawtooth', leadWave2: 'square', detuneRatio: 1.005,
+        leadGain: 0.056, leadCutoffStart: 4800, leadCutoffEnd: 1900, leadQ: 2.0,
+        overdrive: 22,
+        part2Step: 128, part2Wave1: 'square', part2Wave2: 'triangle', part2Overdrive: 0,
+        bassWave: 'sawtooth', bassGain: 0.072, bassCutoffStart: 1200, bassCutoffEnd: 340,
+        arpWave: 'triangle', arpGain: 0.032, arpHarmonic: true,
+      },
+      leadSeq: [
+        // === PART 1: HOPES AND DREAMS (Exact Once Upon a Time / Hopes and Dreams Guitar Theme!) ===
+        // Bar 1 (Eb): Bb4 -> Bb5 -> F5 -> Eb5 -> Bb5 -> Bb4 -> Bb5 -> A5
+        [N.Bb4, 2.0], null, [N.Bb5, 2.0], null, [N.F5, 2.0], null, [N.Eb5, 2.0], null,
+        [N.Bb5, 2.0], null, [N.Bb4, 2.0], null, [N.Bb5, 2.0], null, [N.A5, 2.0], null,
+        // Bar 2 (F): F5 -> G5 -> F5 -> D5 -> Eb5 -> F5
+        [N.F5, 2.0], null, [N.G5, 2.0], null, [N.F5, 3.5], null, null, null,
+        [N.D5, 2.0], null, [N.Eb5, 2.0], null, [N.F5, 3.5], null, null, null,
+        // Bar 3 (Gm): Bb4 -> Bb5 -> F5 -> Eb5 -> Bb5 -> Bb4 -> C6 -> Bb5
+        [N.Bb4, 2.0], null, [N.Bb5, 2.0], null, [N.F5, 2.0], null, [N.Eb5, 2.0], null,
+        [N.Bb5, 2.0], null, [N.Bb4, 2.0], null, [N.C6, 2.0], null, [N.Bb5, 2.0], null,
+        // Bar 4 (Dm -> F): A5 -> G5 -> F5 -> D5 -> Eb5 -> F5 -> G5 -> A5
+        [N.A5, 2.0], null, [N.G5, 2.0], null, [N.F5, 2.0], null, [N.D5, 2.0], null,
+        [N.Eb5, 1.8], null, [N.F5, 1.8], null, [N.G5, 1.8], null, [N.A5, 1.8], null,
+        // Bar 5 (Eb Climax): Soaring High Guitar Answer!
+        [N.D5, 1.8], null, [N.F5, 1.8], null, [N.G5, 2.2], null, [N.F5, 1.8], null,
+        [N.Eb5, 1.8], null, [N.D5, 1.8], null, [N.C5, 1.8], null, [N.D5, 1.8], null,
+        // Bar 6 (F Climax): Eb5 -> F5 -> Bb5 -> A5 -> G5 -> F5
+        [N.Eb5, 1.8], null, [N.F5, 1.8], null, [N.Bb5, 2.6], null, [N.A5, 1.6], null,
+        [N.G5, 1.8], null, [N.F5, 1.8], null, [N.D5, 1.8], null, [N.F5, 1.8], null,
+        // Bar 7 (Gm Climax): G5 -> A5 -> Bb5 -> C6 -> D6 -> C6 -> Bb5
+        [N.G5, 1.8], null, [N.A5, 1.8], null, [N.Bb5, 2.2], null, [N.C6, 1.8], null,
+        [N.D6, 2.6], null, [N.C6, 1.6], null, [N.Bb5, 1.8], null, [N.A5, 1.8], null,
+        // Bar 8 (F -> SAVE THE WORLD Launch!)
+        [N.G5, 1.8], null, [N.A5, 1.8], null, [N.Bb5, 2.0], null, [N.C6, 2.0], null,
+        [N.D6, 1.5], [N.C6, 1.5], [N.Bb5, 1.5], [N.A5, 1.5], [N.F5, 2.0], null, [N.Bb5, 1.8], null,
+
+        // === PART 2: SAVE THE WORLD (Bright Joyful Chiptune Square Synth Reprise!) ===
+        // Bar 9 (Eb): Bb5 -> F5 -> D5 -> F5 -> G5 -> F5 -> Eb5 -> D5
+        [N.Bb5, 1.8], null, [N.F5, 1.8], null, [N.D5, 1.8], null, [N.F5, 1.8], null,
+        [N.G5, 1.8], null, [N.F5, 1.8], null, [N.Eb5, 1.8], null, [N.D5, 1.8], null,
+        // Bar 10 (F): C5 -> D5 -> Eb5 -> F5 -> G5 -> A5 -> Bb5 -> A5
+        [N.C5, 1.8], null, [N.D5, 1.8], null, [N.Eb5, 1.8], null, [N.F5, 1.8], null,
+        [N.G5, 1.8], null, [N.A5, 1.8], null, [N.Bb5, 2.2], null, [N.A5, 1.6], null,
+        // Bar 11 (Gm): Bb5 -> D6 -> C6 -> Bb5 -> A5 -> G5 -> F5 -> G5
+        [N.Bb5, 1.8], null, [N.D6, 2.2], null, [N.C6, 1.8], null, [N.Bb5, 1.8], null,
+        [N.A5, 1.8], null, [N.G5, 1.8], null, [N.F5, 1.8], null, [N.G5, 1.8], null,
+        // Bar 12 (Bb -> F): A5 -> Bb5 -> C6 -> D6 -> C6 -> Bb5 -> A5
+        [N.A5, 1.8], null, [N.Bb5, 1.8], null, [N.C6, 1.8], null, [N.D6, 2.4], null,
+        [N.C6, 1.8], null, [N.Bb5, 1.8], null, [N.A5, 2.2], null, [N.F5, 1.6], null,
+        // Bar 13 (Eb): Full-energy euphoric SAVE the World chorus!
+        [N.Bb5, 1.0], [N.Bb5, 1.0], [N.F5, 1.8], null, [N.G5, 1.8], null, [N.Bb5, 2.0], null,
+        [N.C6, 1.8], null, [N.Bb5, 1.8], null, [N.A5, 1.8], null, [N.G5, 1.8], null,
+        // Bar 14 (F): Soaring harmony
+        [N.A5, 1.0], [N.A5, 1.0], [N.F5, 1.8], null, [N.G5, 1.8], null, [N.A5, 2.0], null,
+        [N.Bb5, 1.8], null, [N.C6, 1.8], null, [N.D6, 2.2], null, [N.C6, 1.6], null,
+        // Bar 15 (Gm): Grand Finale peak!
+        [N.D6, 2.4], null, null, [N.C6, 1.4], [N.Bb5, 1.8], null, [N.A5, 1.8], null,
+        [N.G5, 1.8], null, [N.Bb5, 1.8], null, [N.D6, 2.4], null, [N.Eb6, 1.6], null,
+        // Bar 16 (F -> Bb): Radiant loop turnaround
+        [N.F6, 2.4], null, null, [N.Eb6, 1.4], [N.D6, 1.8], null, [N.C6, 1.8], null,
+        [N.Bb5, 1.8], null, [N.A5, 1.8], null, [N.F5, 2.2], null, [N.D5, 1.6], null,
+      ],
+      bassSeq: [
+        ...repeat([N.Eb2, 0, N.Eb3, 0, N.Eb2, 0, N.Eb3, N.Eb2], 2),
+        ...repeat([N.F2, 0, N.F3, 0, N.F2, 0, N.F3, N.F2], 2),
+        ...repeat([N.G2, 0, N.G3, 0, N.G2, 0, N.G3, N.G2], 2),
+        N.D2, 0, N.D3, 0, N.D2, 0, N.D3, 0, N.F2, 0, N.F3, 0, N.F2, 0, N.G2, 0,
+        ...repeat([N.Eb2, N.Eb2, N.Eb3, 0, N.Eb2, 0, N.Eb3, N.Eb2], 2),
+        ...repeat([N.F2, N.F2, N.F3, 0, N.F2, 0, N.F3, N.F2], 2),
+        ...repeat([N.G2, N.G2, N.G3, 0, N.G2, 0, N.G3, N.G2], 2),
+        N.F2, N.F2, N.F3, 0, N.F2, 0, N.G2, 0, N.F2, N.F2, N.F3, 0, N.A2, 0, N.Bb2, 0,
+        ...repeat([N.Eb2, N.Eb2, N.Eb3, 0, N.Eb2, 0, N.Eb3, N.Eb2], 2),
+        ...repeat([N.F2, N.F2, N.F3, 0, N.F2, 0, N.F3, N.F2], 2),
+        ...repeat([N.G2, N.G2, N.G3, 0, N.G2, 0, N.G3, N.G2], 2),
+        ...repeat([N.Bb1, N.Bb1, N.Bb2, 0, N.F2, 0, N.F3, N.F2], 2),
+        ...repeat([N.Eb2, N.Eb2, N.Eb3, 0, N.Eb2, N.Eb3, N.Eb2, N.Eb3], 2),
+        ...repeat([N.F2, N.F2, N.F3, 0, N.F2, N.F3, N.F2, N.F3], 2),
+        ...repeat([N.G2, N.G2, N.G3, 0, N.G2, N.G3, N.G2, N.G3], 2),
+        N.F2, N.F2, N.F3, 0, N.F2, 0, N.G2, 0, N.F2, N.F2, N.F3, 0, N.C2, 0, N.D2, 0,
+      ],
+      arpSeq: [
+        ...repeat([N.Eb5, N.G5, N.Bb5, N.Eb6], 4),
+        ...repeat([N.F5, N.A5, N.C6, N.F6], 4),
+        ...repeat([N.G5, N.Bb5, N.D6, N.G6], 4),
+        ...repeat([N.D5, N.F5, N.A5, N.D6], 2), ...repeat([N.F5, N.A5, N.C6, N.F6], 2),
+        ...repeat([N.Eb5, N.Bb5, N.G5, N.Eb6], 4),
+        ...repeat([N.F5, N.C6, N.A5, N.F6], 4),
+        ...repeat([N.G5, N.D6, N.Bb5, N.G6], 4),
+        ...repeat([N.F5, N.A5, N.C6, N.D6], 4),
+        ...repeat([N.Bb5, N.Eb6, N.G5, N.Eb6], 4),
+        ...repeat([N.C6, N.F6, N.A5, N.F6], 4),
+        ...repeat([N.D6, N.G6, N.Bb5, N.G6], 4),
+        ...repeat([N.Bb5, N.D6, N.F6, N.D6], 4),
+        ...repeat([N.Eb5, N.G5, N.Bb5, N.Eb6], 4),
+        ...repeat([N.F5, N.A5, N.C6, N.F6], 4),
+        ...repeat([N.G5, N.Bb5, N.D6, N.G6], 4),
+        ...repeat([N.F5, N.C6, N.A5, N.F6], 4),
+      ],
+      chordPads: {
+        0: [N.Eb3, N.G3, N.Bb3], 16: [N.F3, N.A3, N.C4], 32: [N.G3, N.Bb3, N.D4], 48: [N.D3, N.F3, N.A3], 56: [N.F3, N.A3, N.C4],
+        64: [N.Eb3, N.Bb3, N.Eb4], 80: [N.F3, N.C4, N.F4], 96: [N.G3, N.D4, N.G4], 112: [N.F3, N.C4, N.F4],
+        128: [N.Eb3, N.G3, N.Bb3], 144: [N.F3, N.A3, N.C4], 160: [N.G3, N.Bb3, N.D4], 176: [N.Bb2, N.F3, N.Bb3],
+        192: [N.Eb3, N.Bb3, N.Eb4], 208: [N.F3, N.C4, N.F4], 224: [N.G3, N.D4, N.G4], 240: [N.F3, N.C4, N.F4],
+      },
+    },
+
+    // 🔪 차라 — Toby Fox: Megalo Strike Back (150 BPM · C Minor Overdriven Industrial Chiptune Metal)
+    chara: {
+      label: 'STRIKE BACK',
+      title: 'Megalo Strike Back (Toby Fox)',
+      mp3: '/audio/megalo-strike-back.mp3',
+      stepMs: 100,
+      drumStyle: 'industrial',
+      synth: {
+        leadWave1: 'sawtooth', leadWave2: 'square', detuneRatio: 1.007,
+        leadGain: 0.056, leadCutoffStart: 4400, leadCutoffEnd: 900, leadQ: 3.8,
+        overdrive: 34,
+        bassWave: 'sawtooth', bassGain: 0.08, bassCutoffStart: 900, bassCutoffEnd: 220,
+        arpWave: 'square', arpGain: 0.018,
+      },
+      leadSeq: [
+        [N.C5, 0.9], [N.C5, 0.9], [N.Eb5, 1.5], null, [N.D5, 1.4], null, [N.C5, 0.9], [N.B4, 0.9],
+        [N.C5, 1.6], null, [N.G4, 1.4], null, [N.Ab4, 1.4], null, [N.G4, 1.4], null,
+        [N.Ab4, 0.9], [N.Ab4, 0.9], [N.C5, 1.5], null, [N.Eb5, 1.6], null, [N.D5, 1.4], null,
+        [N.C5, 1.6], null, [N.Bb4, 1.4], null, [N.Ab4, 1.4], null, [N.G4, 1.4], null,
+        [N.F4, 0.9], [N.F4, 0.9], [N.Ab4, 1.5], null, [N.C5, 1.6], null, [N.Eb5, 1.6], null,
+        [N.D5, 1.4], null, [N.C5, 1.4], null, [N.B4, 1.6], null, [N.G4, 1.4], null,
+        [N.G4, 0.9], [N.Ab4, 0.9], [N.A4, 0.9], [N.Bb4, 0.9], [N.B4, 1.5], null, [N.D5, 1.5], null,
+        [N.F5, 1.5], null, [N.E5, 0.9], [N.Eb5, 0.9], [N.D5, 1.5], null, [N.B4, 1.4], null,
+        [N.G5, 1.4], null, [N.G5, 0.9], [N.Ab5, 0.9], [N.G5, 1.5], null, [N.Eb5, 1.5], null,
+        [N.C5, 1.4], null, [N.Eb5, 0.9], [N.F5, 0.9], [N.G5, 1.8], null, [N.C6, 1.6], null,
+        [N.Ab5, 1.5], null, [N.G5, 1.4], null, [N.F5, 1.5], null, [N.Eb5, 1.5], null,
+        [N.D5, 1.4], null, [N.Eb5, 1.4], null, [N.F5, 1.8], null, [N.Ab5, 1.6], null,
+        [N.G5, 1.0], [N.Gb5, 1.0], [N.F5, 1.0], [N.E5, 1.0], [N.Eb5, 1.4], null, [N.D5, 1.4], null,
+        [N.C5, 1.4], null, [N.Eb5, 1.4], null, [N.G5, 1.8], null, [N.F5, 1.4], null,
+        [N.B5, 1.8], null, [N.G5, 1.4], null, [N.F5, 1.4], null, [N.D5, 1.4], null,
+        [N.G5, 0.9], [N.Gb5, 0.9], [N.F5, 0.9], [N.E5, 0.9], [N.Eb5, 1.2], [N.D5, 1.2], [N.B4, 1.4], null,
+      ],
+      bassSeq: [
+        N.C2, N.C2, N.C3, 0, N.C2, N.C2, N.G2, 0, N.C2, N.C2, N.C3, 0, N.Bb1, 0, N.B1, 0,
+        N.Ab1, N.Ab1, N.Ab2, 0, N.Ab1, N.Ab1, N.Eb2, 0, N.Ab1, N.Ab1, N.Ab2, 0, N.G1, 0, N.Ab1, 0,
+        N.F1, N.F1, N.F2, 0, N.F1, N.F1, N.C2, 0, N.F1, N.F1, N.F2, 0, N.G1, 0, N.Ab1, 0,
+        N.G1, N.G1, N.G2, 0, N.G1, N.G1, N.D2, 0, N.G1, N.Ab1, N.A1, N.Bb1, N.B1, 0, N.G1, 0,
+        N.C2, N.C2, N.C3, N.C2, N.Eb2, 0, N.G2, 0, N.C2, N.C2, N.C3, N.C2, N.Bb1, 0, N.G1, 0,
+        N.Ab1, N.Ab1, N.Ab2, N.Ab1, N.C2, 0, N.Eb2, 0, N.Ab1, N.Ab1, N.Ab2, N.Ab1, N.G1, 0, N.F1, 0,
+        N.F1, N.F1, N.F2, N.F1, N.Ab1, 0, N.C2, 0, N.D2, N.D2, N.D3, 0, N.Eb2, 0, N.F2, 0,
+        N.G1, N.G1, N.G2, N.G1, N.B1, 0, N.D2, 0, N.G1, N.G2, N.G1, N.G2, N.G1, N.Ab1, N.A1, N.B1,
+      ],
+      arpSeq: [
+        ...repeat([N.C4, 0, N.G4, 0], 4),
+        ...repeat([N.Ab3, 0, N.Eb4, 0], 4),
+        ...repeat([N.F3, 0, N.C4, 0], 4),
+        ...repeat([N.G3, 0, N.B3, N.D4], 4),
+        ...repeat([N.C4, N.Eb4, N.G4, N.C5], 4),
+        ...repeat([N.Ab3, N.C4, N.Eb4, N.Ab4], 4),
+        ...repeat([N.F3, N.Ab3, N.C4, N.F4], 4),
+        ...repeat([N.G3, N.B3, N.D4, N.F4], 4),
+      ],
+      chordPads: {
+        0: [N.C3, N.G3, N.Eb4], 16: [N.Ab2, N.Eb3, N.C4], 32: [N.F2, N.C3, N.Ab3], 48: [N.G2, N.D3, N.B3],
+        64: [N.C3, N.G3, N.C4], 80: [N.Ab2, N.Eb3, N.Ab3], 96: [N.F2, N.C3, N.F3], 112: [N.G2, N.D3, N.G3],
+      },
+    },
+
+    // 🌻 오메가 플라위 — Toby Fox: Finale (190 BPM · C Minor / Eb Major Authentic High-Speed Breakbeat Symphony!)
+    omegaFlowey: {
+      label: 'FINALE',
+      title: 'Finale (Toby Fox)',
+      mp3: '/audio/finale.mp3',
+      stepMs: 79,
+      drumStyle: 'finale',
+      synth: {
+        leadWave1: 'square', leadWave2: 'sawtooth', detuneRatio: 1.0035,
+        leadGain: 0.056, leadCutoffStart: 5200, leadCutoffEnd: 2200, leadQ: 2.0,
+        bassWave: 'sawtooth', bassGain: 0.074, bassCutoffStart: 1250, bassCutoffEnd: 380,
+        arpWave: 'triangle', arpGain: 0.038, arpHarmonic: true,
+      },
+      leadSeq: [
+        // Bar 1 (Cm): Iconic Finale Your-Best-Friend-transformed soaring motif!
+        [N.G5, 1.8], null, [N.Eb5, 1.8], null, [N.G5, 1.8], null, [N.Ab5, 2.0], null,
+        [N.G5, 1.8], null, [N.F5, 1.8], null, [N.Eb5, 1.8], null, [N.D5, 1.8], null,
+        // Bar 2 (Ab): Hopeful 6-Souls rising response
+        [N.Eb5, 3.2], null, null, null, [N.C5, 1.8], null, [N.D5, 1.8], null,
+        [N.Eb5, 1.8], null, [N.F5, 1.8], null, [N.G5, 3.2], null, null, null,
+        // Bar 3 (Bb): Rapid soaring determination motif
+        [N.F5, 1.8], null, [N.D5, 1.8], null, [N.F5, 1.8], null, [N.G5, 2.0], null,
+        [N.F5, 1.8], null, [N.Eb5, 1.8], null, [N.D5, 1.8], null, [N.C5, 1.8], null,
+        // Bar 4 (G7 -> Cm): Dramatic baroque climb
+        [N.D5, 3.0], null, null, null, [N.G5, 2.0], null, [N.A5, 1.8], null,
+        [N.B5, 2.8], null, null, [N.A5, 1.4], [N.G5, 2.0], null, [N.B5, 1.8], null,
+        // Bar 5 (Climax Cm — High-Octave Triumphant Finale!)
+        [N.C6, 1.8], null, [N.G5, 1.8], null, [N.C6, 1.8], null, [N.D6, 2.0], null,
+        [N.Eb6, 2.2], null, [N.D6, 1.6], null, [N.C6, 1.8], null, [N.Bb5, 1.8], null,
+        // Bar 6 (Climax Ab)
+        [N.Ab5, 2.0], null, [N.G5, 1.6], null, [N.Ab5, 1.8], null, [N.Bb5, 2.0], null,
+        [N.C6, 2.2], null, [N.Bb5, 1.6], null, [N.Ab5, 1.8], null, [N.G5, 1.8], null,
+        // Bar 7 (Climax Bb)
+        [N.Bb5, 1.8], null, [N.F5, 1.8], null, [N.Bb5, 1.8], null, [N.C6, 2.0], null,
+        [N.D6, 2.2], null, [N.C6, 1.6], null, [N.Bb5, 1.8], null, [N.Ab5, 1.8], null,
+        // Bar 8 (Climax G7 -> C6 Finale burst!)
+        [N.G5, 1.8], null, [N.F5, 1.6], null, [N.G5, 1.8], null, [N.Ab5, 1.8], null,
+        [N.B5, 1.8], null, [N.C6, 1.8], null, [N.D6, 2.0], null, [N.G5, 1.8], null,
+      ],
+      bassSeq: [
+        ...repeat([N.C2, N.C2, N.C3, 0, N.C2, 0, N.C3, N.C2], 2),
+        ...repeat([N.Ab1, N.Ab1, N.Ab2, 0, N.Ab1, 0, N.Ab2, N.Ab1], 2),
+        ...repeat([N.Bb1, N.Bb1, N.Bb2, 0, N.Bb1, 0, N.Bb2, N.Bb1], 2),
+        N.G1, N.G1, N.G2, 0, N.G1, 0, N.B1, 0, N.G1, N.G1, N.G2, 0, N.D2, 0, N.G2, 0,
+        ...repeat([N.C2, N.C2, N.C3, 0, N.C2, N.C3, N.C2, N.C3], 2),
+        ...repeat([N.Ab1, N.Ab1, N.Ab2, 0, N.Ab1, N.Ab2, N.Ab1, N.Ab2], 2),
+        ...repeat([N.Bb1, N.Bb1, N.Bb2, 0, N.Bb1, N.Bb2, N.Bb1, N.Bb2], 2),
+        N.G1, N.G1, N.G2, 0, N.G1, 0, N.B1, 0, N.G1, N.G2, N.G1, N.G2, N.D2, 0, N.G1, 0,
+      ],
+      arpSeq: [
+        // Authentic nonstop Finale baroque harp/bell ostinato!
+        ...repeat([N.C5, N.G5, N.Eb5, N.G5], 4),
+        ...repeat([N.Ab4, N.Eb5, N.C5, N.Eb5], 4),
+        ...repeat([N.Bb4, N.F5, N.D5, N.F5], 4),
+        ...repeat([N.G4, N.D5, N.B4, N.D5], 4),
+        ...repeat([N.C6, N.G5, N.Eb6, N.G5], 4),
+        ...repeat([N.Ab5, N.Eb5, N.C6, N.Eb5], 4),
+        ...repeat([N.Bb5, N.F5, N.D6, N.F5], 4),
+        ...repeat([N.G5, N.D5, N.B5, N.G6], 4),
+      ],
+      chordPads: {
+        0: [N.C3, N.G3, N.Eb4], 16: [N.Ab2, N.Eb3, N.C4], 32: [N.Bb2, N.F3, N.D4], 48: [N.G2, N.D3, N.B3],
+        64: [N.C3, N.G3, N.C4], 80: [N.Ab2, N.Eb3, N.Ab3], 96: [N.Bb2, N.F3, N.Bb3], 112: [N.G2, N.D3, N.G3],
+      },
+    },
+
+    // 🛡️ 불사의 언다인 — Toby Fox: Battle Against a True Hero (150 BPM · G Minor Exact Piano Arpeggios & Tragic Heroic Lead!)
+    undying: {
+      label: 'BATTLE AGAINST A TRUE HERO',
+      title: 'Battle Against a True Hero (Toby Fox)',
+      mp3: '/audio/battle-against-a-true-hero.mp3',
+      stepMs: 100,
+      drumStyle: 'march',
+      synth: {
+        leadWave1: 'sawtooth', leadWave2: 'triangle', detuneRatio: 1.003,
+        leadGain: 0.06, leadCutoffStart: 4000, leadCutoffEnd: 1700, leadQ: 2.0,
+        bassWave: 'sawtooth', bassGain: 0.072, bassCutoffStart: 1020, bassCutoffEnd: 300,
+        arpWave: 'triangle', arpGain: 0.042, arpHarmonic: true,
+      },
+      leadSeq: [
+        // Bar 1 (Gm): Exact Iconic BAATH Theme — Bb4 -> C5-D5 -> G5 -> F5-D5!
+        [N.Bb4, 3.4], null, null, null, [N.C5, 1.8], null, [N.D5, 1.8], null,
+        [N.G5, 3.4], null, null, null, [N.F5, 1.8], null, [N.D5, 1.8], null,
+        // Bar 2 (Eb): C5 -> D5 -> Bb4 -> A4-G4
+        [N.C5, 3.4], null, null, null, [N.D5, 3.4], null, null, null,
+        [N.Bb4, 3.4], null, null, null, [N.A4, 1.8], null, [N.G4, 1.8], null,
+        // Bar 3 (F): Second Phrase — Bb4 -> C5-D5 -> G5 -> F5-G5!
+        [N.Bb4, 3.4], null, null, null, [N.C5, 1.8], null, [N.D5, 1.8], null,
+        [N.G5, 3.4], null, null, null, [N.F5, 1.8], null, [N.G5, 1.8], null,
+        // Bar 4 (D7): A5 -> G5-F5 -> D5 (dramatic resolve!)
+        [N.A5, 3.6], null, null, null, [N.G5, 1.8], null, [N.F5, 1.8], null,
+        [N.D5, 4.8], null, null, null, null, null, [N.F5, 1.8], null,
+        // Bar 5 (Climax Eb — Blazing Spear of Justice / True Hero Peak!)
+        [N.Eb5, 1.8], null, [N.F5, 1.8], null, [N.G5, 2.2], null, [N.Bb5, 2.2], null,
+        [N.A5, 1.8], null, [N.G5, 1.8], null, [N.F5, 1.8], null, [N.D5, 1.8], null,
+        // Bar 6 (Climax F)
+        [N.Eb5, 1.8], null, [N.F5, 1.8], null, [N.G5, 2.0], null, [N.A5, 2.0], null,
+        [N.Bb5, 2.4], null, [N.A5, 1.6], null, [N.G5, 1.8], null, [N.F5, 1.8], null,
+        // Bar 7 (Climax Gm)
+        [N.G5, 3.0], null, null, null, [N.A5, 1.8], null, [N.Bb5, 1.8], null,
+        [N.C6, 2.4], null, [N.Bb5, 1.6], null, [N.A5, 1.8], null, [N.G5, 1.8], null,
+        // Bar 8 (Climax D7 -> G5 noble resolve!)
+        [N.A5, 3.0], null, null, null, [N.G5, 1.8], null, [N.Gb5, 1.8], null,
+        [N.D5, 3.0], null, null, null, [N.G5, 3.0], null, null, null,
+      ],
+      bassSeq: [
+        N.G2, 0, N.G3, 0, N.G2, 0, N.G3, N.G2, N.G2, 0, N.G3, 0, N.F2, 0, N.G2, 0,
+        N.Eb2, 0, N.Eb3, 0, N.Eb2, 0, N.Eb3, N.Eb2, N.Eb2, 0, N.Eb3, 0, N.D2, 0, N.Eb2, 0,
+        N.F2, 0, N.F3, 0, N.F2, 0, N.F3, N.F2, N.F2, 0, N.F3, 0, N.Eb2, 0, N.F2, 0,
+        N.D2, 0, N.D3, 0, N.D2, 0, N.D3, N.D2, N.D2, 0, N.Gb2, 0, N.A2, 0, N.D2, 0,
+        N.Eb2, N.Eb2, N.Eb3, 0, N.Eb2, 0, N.Eb3, N.Eb2, N.Eb2, N.Eb2, N.Eb3, 0, N.G2, 0, N.Bb2, 0,
+        N.F2, N.F2, N.F3, 0, N.F2, 0, N.F3, N.F2, N.F2, N.F2, N.F3, 0, N.A2, 0, N.C3, 0,
+        N.G2, N.G2, N.G3, 0, N.G2, 0, N.G3, N.G2, N.G2, N.G2, N.G3, 0, N.F2, 0, N.Eb2, 0,
+        N.D2, N.D2, N.D3, 0, N.D2, 0, N.Gb2, 0, N.D2, 0, N.A2, 0, N.D2, N.E2, N.Gb2, N.G2,
+      ],
+      arpSeq: [
+        // Authentic rising & falling classical piano 16th-note arpeggios!
+        ...repeat([N.G4, N.Bb4, N.D5, N.F5, N.G5, N.F5, N.D5, N.Bb4], 2),
+        ...repeat([N.Eb4, N.G4, N.Bb4, N.D5, N.Eb5, N.D5, N.Bb4, N.G4], 2),
+        ...repeat([N.F4, N.A4, N.C5, N.Eb5, N.F5, N.Eb5, N.C5, N.A4], 2),
+        ...repeat([N.D4, N.Gb4, N.A4, N.C5, N.D5, N.C5, N.A4, N.Gb4], 2),
+        ...repeat([N.Eb5, N.G5, N.Bb5, N.Eb6, N.D6, N.Bb5, N.G5, N.Eb5], 2),
+        ...repeat([N.F5, N.A5, N.C6, N.F6, N.Eb6, N.C6, N.A5, N.F5], 2),
+        ...repeat([N.G5, N.Bb5, N.D6, N.G6, N.F6, N.D6, N.Bb5, N.G5], 2),
+        ...repeat([N.D5, N.Gb5, N.A5, N.D6, N.C6, N.A5, N.Gb5, N.D5], 2),
+      ],
+      chordPads: {
+        0: [N.G3, N.Bb3, N.D4], 16: [N.Eb3, N.G3, N.Bb3], 32: [N.F3, N.A3, N.C4], 48: [N.D3, N.Gb3, N.A3],
+        64: [N.Eb3, N.Bb3, N.G4], 80: [N.F3, N.C4, N.A4], 96: [N.G3, N.D4, N.Bb4], 112: [N.D3, N.A3, N.Gb4],
+      },
+    },
+
+    // 👁️ 포세이큰 — FORSAKEN · VOID CORRUPTION (136 BPM · E Phrygian Gothic Industrial Void Boss)
+    forsaken: {
+      label: 'CORRUPTION',
+      title: 'Forsaken · Void Corruption',
+      mp3: '/audio/forsaken.mp3',
+      stepMs: 110,
+      drumStyle: 'gothic',
+      synth: {
+        leadWave1: 'square', leadWave2: 'triangle', detuneRatio: 1.009,
+        leadGain: 0.052, leadCutoffStart: 2800, leadCutoffEnd: 780, leadQ: 3.5,
+        bassWave: 'sawtooth', bassGain: 0.078, bassCutoffStart: 760, bassCutoffEnd: 190,
+        arpWave: 'sine', arpGain: 0.028,
+      },
+      leadSeq: [
+        [N.E4, 2.2], null, [N.F4, 1.5], null, [N.G4, 2.2], null, [N.F4, 1.5], null,
+        [N.E4, 1.8], null, [N.B4, 2.2], null, [N.A4, 1.5], null, [N.G4, 1.5], null,
+        [N.F4, 2.2], null, [N.A4, 1.5], null, [N.C5, 2.2], null, [N.B4, 1.5], null,
+        [N.A4, 1.8], null, [N.G4, 1.8], null, [N.F4, 2.2], null, [N.E4, 1.4], null,
+        [N.D4, 2.2], null, [N.F4, 1.5], null, [N.A4, 2.2], null, [N.G4, 1.5], null,
+        [N.F4, 1.8], null, [N.E4, 1.8], null, [N.D4, 2.0], null, [N.F4, 1.4], null,
+        [N.E4, 1.8], null, [N.G4, 1.8], null, [N.B4, 2.4], null, [N.Eb5, 1.6], null,
+        [N.E5, 2.2], null, [N.B4, 1.6], null, [N.A4, 1.6], null, [N.F4, 1.6], null,
+        [N.E5, 1.6], null, [N.F5, 1.4], null, [N.E5, 1.4], null, [N.B4, 1.4], null,
+        [N.C5, 1.6], null, [N.B4, 1.4], null, [N.A4, 1.4], null, [N.G4, 1.4], null,
+        [N.F5, 1.6], null, [N.A5, 1.6], null, [N.G5, 1.6], null, [N.F5, 1.4], null,
+        [N.E5, 1.6], null, [N.D5, 1.4], null, [N.C5, 1.6], null, [N.B4, 1.4], null,
+        [N.G5, 1.8], null, [N.F5, 1.4], null, [N.E5, 1.6], null, [N.D5, 1.4], null,
+        [N.C5, 1.6], null, [N.B4, 1.4], null, [N.A4, 1.6], null, [N.G4, 1.4], null,
+        [N.B5, 2.0], null, [N.A5, 1.4], null, [N.G5, 1.4], null, [N.F5, 1.4], null,
+        [N.E5, 1.4], null, [N.Eb5, 1.4], null, [N.B4, 1.8], null, [N.F4, 1.4], null,
+      ],
+      bassSeq: [
+        N.E1, 0, N.E2, 0, N.E1, N.E1, N.E2, 0, N.E1, 0, N.E2, 0, N.F1, 0, N.E1, 0,
+        N.F1, 0, N.F2, 0, N.F1, N.F1, N.F2, 0, N.F1, 0, N.F2, 0, N.E1, 0, N.F1, 0,
+        N.D2, 0, N.D3, 0, N.D2, N.D2, N.D3, 0, N.D2, 0, N.C2, 0, N.B1, 0, N.D2, 0,
+        N.E1, 0, N.E2, 0, N.B1, 0, N.B2, 0, N.E1, N.E2, N.F1, N.F2, N.E1, 0, N.B1, 0,
+        N.E1, N.E1, N.E2, 0, N.F1, 0, N.E2, 0, N.E1, N.E1, N.E2, 0, N.G1, 0, N.F1, 0,
+        N.F1, N.F1, N.F2, 0, N.A1, 0, N.F2, 0, N.F1, N.F1, N.F2, 0, N.E1, 0, N.D2, 0,
+        N.G1, N.G1, N.G2, 0, N.F1, 0, N.E1, 0, N.A1, N.A1, N.A2, 0, N.G1, 0, N.F1, 0,
+        N.B1, N.B1, N.B2, 0, N.B1, 0, N.Eb2, 0, N.B1, N.B2, N.A1, N.G1, N.F1, 0, N.E1, 0,
+      ],
+      arpSeq: [
+        ...repeat([N.E5, 0, N.B4, N.F5], 4),
+        ...repeat([N.F5, 0, N.C5, N.A5], 4),
+        ...repeat([N.D5, 0, N.A4, N.F5], 4),
+        ...repeat([N.E5, 0, N.B4, N.Eb5], 4),
+        ...repeat([N.E5, N.B4, N.F5, N.E5], 4),
+        ...repeat([N.F5, N.C5, N.A5, N.F5], 4),
+        ...repeat([N.G5, N.D5, N.A5, N.E5], 4),
+        ...repeat([N.B5, N.Eb5, N.F5, N.B4], 4),
+      ],
+      chordPads: {
+        0: [N.E2, N.B2, N.G3], 16: [N.F2, N.C3, N.A3], 32: [N.D2, N.A2, N.F3], 48: [N.E2, N.B2, N.E3], 56: [N.B2, N.Eb3, N.A3],
+        64: [N.E2, N.B2, N.E3], 80: [N.F2, N.C3, N.F3], 96: [N.G2, N.D3, N.G3], 112: [N.B2, N.Gb3, N.B3],
+      },
+    },
+
+    // 🌟 메타톤 NEO — Toby Fox: Power of "NEO" (138 BPM · C# Minor Exact Authentic Electronic Glam-Rock Anthem!)
+    mettatonNeo: {
+      label: 'POWER OF "NEO"',
+      title: 'Power of "NEO" (Toby Fox)',
+      mp3: '/audio/power-of-neo.mp3',
+      stepMs: 108,
+      drumStyle: 'anthem',
+      synth: {
+        leadWave1: 'sawtooth', leadWave2: 'square', detuneRatio: 1.005,
+        leadGain: 0.058, leadCutoffStart: 4800, leadCutoffEnd: 1700, leadQ: 2.6,
+        overdrive: 20,
+        bassWave: 'sawtooth', bassGain: 0.08, bassCutoffStart: 1120, bassCutoffEnd: 290,
+        arpWave: 'square', arpGain: 0.024,
+      },
+      leadSeq: [
+        // Bar 1 (C#m): Exact Iconic Power of "NEO" Synth-Brass Lead! E5 -> Gb5-Ab5 -> Db6 -> B5-Ab5!
+        [N.E5, 3.4], null, null, null, [N.Gb5, 1.8], null, [N.Ab5, 1.8], null,
+        [N.Db6, 3.4], null, null, null, [N.B5, 1.8], null, [N.Ab5, 1.8], null,
+        // Bar 2 (A): Gb5 -> Ab5 -> E5 -> Eb5-Db5!
+        [N.Gb5, 3.4], null, null, null, [N.Ab5, 3.4], null, null, null,
+        [N.E5, 3.4], null, null, null, [N.Eb5, 1.8], null, [N.Db5, 1.8], null,
+        // Bar 3 (B): Second Phrase — E5 -> Gb5-Ab5 -> Db6 -> B5-Db6!
+        [N.E5, 3.4], null, null, null, [N.Gb5, 1.8], null, [N.Ab5, 1.8], null,
+        [N.Db6, 3.4], null, null, null, [N.B5, 1.8], null, [N.Db6, 1.8], null,
+        // Bar 4 (G#7): Eb6 -> Db6-B5 -> Ab5!
+        [N.Eb6, 3.6], null, null, null, [N.Db6, 1.8], null, [N.B5, 1.8], null,
+        [N.Ab5, 4.6], null, null, null, null, null, [N.B5, 1.8], null,
+        // Bar 5-8: Staccato Glam-Synth Overdrive Hook (Death by Glamour / NEO Rhythm!)
+        [N.Db5, 0.9], [N.Db5, 0.9], [N.E5, 1.5], null, [N.Db5, 1.2], null, [N.Ab5, 1.6], null,
+        [N.Gb5, 1.5], null, [N.E5, 1.5], null, [N.Eb5, 1.5], null, [N.Db5, 1.5], null,
+        [N.A4, 0.9], [N.A4, 0.9], [N.Db5, 1.5], null, [N.E5, 1.6], null, [N.Ab5, 1.6], null,
+        [N.Gb5, 1.5], null, [N.E5, 1.5], null, [N.Db5, 1.6], null, [N.E5, 1.4], null,
+        [N.B4, 0.9], [N.B4, 0.9], [N.Eb5, 1.5], null, [N.Gb5, 1.6], null, [N.B5, 1.8], null,
+        [N.Ab5, 1.5], null, [N.Gb5, 1.5], null, [N.E5, 1.5], null, [N.Eb5, 1.5], null,
+        [N.Ab5, 1.8], null, [N.B5, 1.6], null, [N.Db6, 2.0], null, [N.Eb6, 2.0], null,
+        [N.Db6, 1.2], [N.B5, 1.2], [N.Ab5, 1.2], [N.Gb5, 1.2], [N.E5, 1.4], null, [N.Eb5, 1.4], null,
+      ],
+      bassSeq: [
+        // Iconic driving pulsing 8th-note Power of NEO synth bass (C#m -> A -> B -> G#)!
+        ...repeat([N.Db2, N.Db2, N.Db3, N.Db2, N.Db2, N.Db3, N.Db2, N.Db3], 2),
+        ...repeat([N.A1, N.A1, N.A2, N.A1, N.A1, N.A2, N.A1, N.A2], 2),
+        ...repeat([N.B1, N.B1, N.B2, N.B1, N.B1, N.B2, N.B1, N.B2], 2),
+        ...repeat([N.Ab1, N.Ab1, N.Ab2, N.Ab1, N.Ab1, N.Ab2, N.Ab1, N.Ab2], 2),
+        ...repeat([N.Db2, N.Db2, N.Db3, 0, N.Db2, N.Db3, N.E2, N.Gb2], 2),
+        ...repeat([N.A1, N.A1, N.A2, 0, N.A1, N.A2, N.B1, N.Db2], 2),
+        ...repeat([N.B1, N.B1, N.B2, 0, N.B1, N.B2, N.Db2, N.Eb2], 2),
+        N.Ab1, N.Ab1, N.Ab2, 0, N.C2, 0, N.Eb2, 0, N.Ab1, N.B1, N.Db2, N.Eb2, N.Ab1, 0, N.B1, 0,
+      ],
+      arpSeq: [
+        ...repeat([N.Db5, N.E5, N.Ab5, N.Db6], 4),
+        ...repeat([N.A4, N.Db5, N.E5, N.A5], 4),
+        ...repeat([N.B4, N.Eb5, N.Gb5, N.B5], 4),
+        ...repeat([N.Ab4, N.C5, N.Eb5, N.Ab5], 4),
+        ...repeat([N.Db5, N.Ab5, N.E5, N.Db6], 4),
+        ...repeat([N.A4, N.E5, N.Db5, N.A5], 4),
+        ...repeat([N.B4, N.Gb5, N.Eb5, N.B5], 4),
+        ...repeat([N.Ab4, N.Eb5, N.C5, N.Ab5], 4),
+      ],
+      chordPads: {
+        0: [N.Db3, N.E3, N.Ab3], 16: [N.A2, N.Db3, N.E3], 32: [N.B2, N.Eb3, N.Gb3], 48: [N.Ab2, N.C3, N.Eb3],
+        64: [N.Db3, N.Ab3, N.Db4], 80: [N.A2, N.E3, N.A3], 96: [N.B2, N.Gb3, N.B3], 112: [N.Ab2, N.Eb3, N.Ab3],
+      },
+    },
+  };
+})();
+
+export default function TangtangPage({ playerName = '' }) {
   const canvasRef = useRef(null);
   const gameRef = useRef(createGame());
   const frameRef = useRef(null);
@@ -5768,7 +10746,17 @@ export default function TangtangPage() {
   const audioRef = useRef(null);
   const bgmMutedRef = useRef(false);
   const [bgmMuted, setBgmMuted] = useState(false);
-  const sansBgmRef = useRef({ active: false, intervalId: null, step: 0, audioEl: null, hasMp3: null });
+  const [bgmPreviewHeroId, setBgmPreviewHeroId] = useState(null);
+  const heroBgmRef = useRef({
+    active: false,
+    heroId: null,
+    preview: false,
+    intervalId: null,
+    step: 0,
+    audioEl: null,
+    audioHeroId: null,
+    hasMp3: {},
+  });
   const arenaTouchRef = useRef({ pointerId: null, originX: 0, originY: 0 });
   const stickPointerRef = useRef(null);
   const [floatingStick, setFloatingStick] = useState(null);
@@ -5788,17 +10776,35 @@ export default function TangtangPage() {
   const blackMarketOpenRef = useRef(false);
   const [blackMarketOpen, setBlackMarketOpen] = useState(false);
   const secretProgressRef = useRef(0);
+  const reverseWeaponProgressRef = useRef(0);
+  const [specialHeroAreaOpen, setSpecialHeroAreaOpen] = useState(false);
+  const specialHeroAreaOpenRef = useRef(false);
+  const errorCodeProgressRef = useRef(0);
+  const recordedOverRef = useRef(false);
 
   useEffect(() => {
+    const GRANT_120K_KEY = 'gangyoon-tangtang-grant-120k-v1';
+    let shouldGrant120k = false;
+    try {
+      shouldGrant120k = !window.localStorage.getItem(GRANT_120K_KEY);
+    } catch {
+      shouldGrant120k = false;
+    }
+
     try {
       const saved = JSON.parse(window.localStorage.getItem(BLACK_MARKET_KEY) || '{}');
       const loaded = {
-        gold: Number.isFinite(Number(saved.gold)) ? Math.max(0, Number(saved.gold)) : DEFAULT_BLACK_MARKET.gold,
+        gold:
+          (Number.isFinite(Number(saved.gold)) ? Math.max(0, Number(saved.gold)) : DEFAULT_BLACK_MARKET.gold) +
+          (shouldGrant120k ? 120000 : 0),
         owned: saved.owned && typeof saved.owned === 'object' ? saved.owned : {},
         equipped: saved.equipped && typeof saved.equipped === 'object' ? saved.equipped : {},
       };
       bmStateRef.current = loaded;
       setBmState(loaded);
+      if (shouldGrant120k) {
+        window.localStorage.setItem(BLACK_MARKET_KEY, JSON.stringify(loaded));
+      }
     } catch {
       bmStateRef.current = DEFAULT_BLACK_MARKET;
     }
@@ -5806,7 +10812,9 @@ export default function TangtangPage() {
     try {
       const savedMeta = JSON.parse(window.localStorage.getItem(LOBBY_META_KEY) || '{}');
       const loadedMeta = {
-        coins: Number.isFinite(Number(savedMeta.coins)) ? Math.max(0, Number(savedMeta.coins)) : DEFAULT_LOBBY_META.coins,
+        coins:
+          (Number.isFinite(Number(savedMeta.coins)) ? Math.max(0, Number(savedMeta.coins)) : DEFAULT_LOBBY_META.coins) +
+          (shouldGrant120k ? 120000 : 0),
         ownedPets: {
           corgi: true,
           ...(savedMeta.ownedPets && typeof savedMeta.ownedPets === 'object' ? savedMeta.ownedPets : {}),
@@ -5823,9 +10831,17 @@ export default function TangtangPage() {
           ...DEFAULT_LOBBY_META.upgrades,
           ...(savedMeta.upgrades && typeof savedMeta.upgrades === 'object' ? savedMeta.upgrades : {}),
         },
+        unlockStats: {
+          ...DEFAULT_LOBBY_META.unlockStats,
+          ...(savedMeta.unlockStats && typeof savedMeta.unlockStats === 'object' ? savedMeta.unlockStats : {}),
+        },
       };
       lobbyMetaRef.current = loadedMeta;
       setLobbyMeta(loadedMeta);
+      if (shouldGrant120k) {
+        window.localStorage.setItem(LOBBY_META_KEY, JSON.stringify(loadedMeta));
+        window.localStorage.setItem(GRANT_120K_KEY, '1');
+      }
       const preview = createGame(0, bmStateRef.current.equipped, 0, loadedMeta);
       gameRef.current = preview;
       setHud({ ...preview, player: { ...preview.player } });
@@ -5861,11 +10877,21 @@ export default function TangtangPage() {
     });
   }
 
-  function earnLobbyCoins(amount) {
-    if (!amount || amount <= 0) return;
+  function earnLobbyCoins(amount, killDelta = null) {
+    if ((!amount || amount <= 0) && !killDelta) return;
+    const prevStats = lobbyMetaRef.current.unlockStats ?? DEFAULT_LOBBY_META.unlockStats;
+    const nextStats = killDelta
+      ? {
+          ...prevStats,
+          totalKills: (prevStats.totalKills ?? 0) + (killDelta.kills ?? 0),
+          eliteKills: (prevStats.eliteKills ?? 0) + (killDelta.elite ?? 0),
+          bossClears: (prevStats.bossClears ?? 0) + (killDelta.boss ?? 0),
+        }
+      : prevStats;
     const next = {
       ...lobbyMetaRef.current,
-      coins: lobbyMetaRef.current.coins + amount,
+      coins: lobbyMetaRef.current.coins + Math.max(0, amount || 0),
+      unlockStats: nextStats,
     };
     lobbyMetaRef.current = next;
     setLobbyMeta(next);
@@ -5961,8 +10987,29 @@ export default function TangtangPage() {
     }));
   }
 
+  function recordSansDeath() {
+    updateLobbyMeta((prev) => ({
+      ...prev,
+      unlockStats: {
+        ...(prev.unlockStats ?? DEFAULT_LOBBY_META.unlockStats),
+        sansDeaths: ((prev.unlockStats?.sansDeaths ?? 0) + 1),
+      },
+    }));
+  }
+
+  function recordChapterClear(heroId) {
+    if (heroId !== 'asriel') return;
+    updateLobbyMeta((prev) => ({
+      ...prev,
+      unlockStats: {
+        ...(prev.unlockStats ?? DEFAULT_LOBBY_META.unlockStats),
+        asrielClears: ((prev.unlockStats?.asrielClears ?? 0) + 1),
+      },
+    }));
+  }
+
   function returnToLobby(tab = 'deploy') {
-    stopSansBgm();
+    stopHeroBgm();
     setLobbyTab(tab);
     const preview = createGame(selectedStage, bmStateRef.current.equipped, selectedHero, lobbyMetaRef.current);
     preview.player.weaponIndex = selectedWeapon;
@@ -6080,9 +11127,12 @@ export default function TangtangPage() {
     game.sounds.splice(0, 5).forEach(playSound);
   }
 
-  function stopSansBgm() {
-    const bgm = sansBgmRef.current;
+  function stopHeroBgm() {
+    const bgm = heroBgmRef.current;
     bgm.active = false;
+    bgm.heroId = null;
+    bgm.preview = false;
+    setBgmPreviewHeroId(null);
     if (bgm.intervalId) {
       window.clearInterval(bgm.intervalId);
       bgm.intervalId = null;
@@ -6097,81 +11147,18 @@ export default function TangtangPage() {
     }
   }
 
-  function startSansChiptuneLoop() {
-    const bgm = sansBgmRef.current;
-    if (!bgm.active || bgmMutedRef.current) return;
+  function startHeroChiptuneLoop(heroId) {
+    const bgm = heroBgmRef.current;
+    const track = SPECIAL_HERO_BGM[heroId];
+    if (!track || !bgm.active || bgm.heroId !== heroId || bgmMutedRef.current) return;
     if (bgm.intervalId) {
       window.clearInterval(bgm.intervalId);
       bgm.intervalId = null;
     }
 
-    // 120 BPM (125ms/16th) SNES / Undertale-style Overdriven Chiptune Boss Rock BGM (128-step 2-section loop)
-    const N = {
-      A1: 55.0, Bb1: 58.27, B1: 61.74, C2: 65.41, D2: 73.42, F2: 87.31, G2: 98.0,
-      A2: 110.0, Bb2: 116.54, B2: 123.47, C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.0, A3: 220.0, Bb3: 233.08, B3: 246.94,
-      C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, Ab4: 415.3, A4: 440.0, Bb4: 466.16, B4: 493.88,
-      C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, Ab5: 830.61, A5: 880.0,
-    };
-
-    // Section A (0-63): Driving D -> C -> B -> Bb chiptune rock riff
-    // Section B (64-127): High-energy Boss Climax / Overdriven Solo + Power Chords
-    const leadSeq = [
-      // Bar 1 (D)
-      [N.D4, 0.9], [N.D4, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
-      null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
-      // Bar 2 (C)
-      [N.C4, 0.9], [N.C4, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
-      null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
-      // Bar 3 (B)
-      [N.B3, 0.9], [N.B3, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
-      null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
-      // Bar 4 (Bb)
-      [N.Bb3, 0.9], [N.Bb3, 0.9], [N.D5, 1.7], null, [N.A4, 2.2], null, null, [N.Ab4, 1.4],
-      null, [N.G4, 1.4], null, [N.F4, 1.7], null, [N.D4, 0.9], [N.F4, 0.9], [N.G4, 0.9],
-      // Bar 5 (Climax High Riff - Dm)
-      [N.F5, 1.8], null, [N.F5, 0.9], [N.F5, 0.9], [N.F5, 1.6], null, [N.D5, 1.6], null,
-      [N.D5, 1.6], null, [N.F5, 1.6], null, [N.F5, 0.9], [N.G5, 0.9], [N.Ab5, 1.5], null,
-      // Bar 6 (Climax - C)
-      [N.G5, 1.5], null, [N.F5, 1.5], null, [N.D5, 1.5], null, [N.F5, 0.9], [N.G5, 0.9],
-      [N.A5, 2.2], null, null, [N.G5, 1.4], null, [N.F5, 1.4], [N.D5, 1.2], null,
-      // Bar 7 (Climax - Bb)
-      [N.D5, 0.9], [N.F5, 0.9], [N.G5, 1.6], null, [N.A5, 1.8], null, [N.G5, 1.5], null,
-      [N.F5, 1.5], null, [N.D5, 1.5], null, [N.C5, 1.4], null, [N.D5, 1.4], null,
-      // Bar 8 (Turnaround - C -> A)
-      [N.E5, 1.8], null, [N.F5, 1.6], null, [N.G5, 1.8], null, [N.A5, 2.4], null,
-      null, [N.G5, 0.9], [N.F5, 0.9], [N.E5, 0.9], [N.D5, 1.4], null, [N.C5, 1.2], null,
-    ];
-
-    const bassSeq = [
-      // Bar 1 (D)
-      N.D2, 0, N.D3, 0, N.D2, 0, N.D3, N.D2, N.D2, 0, N.D3, 0, N.A1, 0, N.C2, 0,
-      // Bar 2 (C)
-      N.C2, 0, N.C3, 0, N.C2, 0, N.C3, N.C2, N.C2, 0, N.C3, 0, N.C2, 0, N.D2, 0,
-      // Bar 3 (B)
-      N.B1, 0, N.B2, 0, N.B1, 0, N.B2, N.B1, N.B1, 0, N.B2, 0, N.B1, 0, N.C2, 0,
-      // Bar 4 (Bb)
-      N.Bb1, 0, N.Bb2, 0, N.Bb1, 0, N.Bb2, N.Bb1, N.Bb1, 0, N.C2, 0, N.A1, 0, N.C2, 0,
-      // Bar 5 (Dm)
-      N.D2, N.D2, N.D3, 0, N.D2, 0, N.D3, N.D2, N.D2, N.D2, N.D3, 0, N.F2, 0, N.G2, 0,
-      // Bar 6 (C)
-      N.C2, N.C2, N.C3, 0, N.C2, 0, N.C3, N.C2, N.C2, N.C2, N.C3, 0, N.G2, 0, N.C2, 0,
-      // Bar 7 (Bb)
-      N.Bb1, N.Bb1, N.Bb2, 0, N.Bb1, 0, N.Bb2, N.Bb1, N.Bb1, N.Bb1, N.Bb2, 0, N.F2, 0, N.Bb1, 0,
-      // Bar 8 (C -> A)
-      N.C2, 0, N.C3, 0, N.C2, 0, N.C3, 0, N.A1, 0, N.A2, 0, N.A1, N.B1, N.C2, N.D2,
-    ];
-
-    const chordPads = {
-      0: [N.D3, N.A3, N.F4],
-      16: [N.C3, N.G3, N.E4],
-      32: [N.B2, N.F3, N.D4],
-      48: [N.Bb2, N.F3, N.D4],
-      64: [N.D3, N.A3, N.D4],
-      80: [N.C3, N.G3, N.C4],
-      96: [N.Bb2, N.F3, N.Bb3],
-      112: [N.C3, N.G3, N.C4],
-      120: [N.A2, N.E3, N.A3],
-    };
+    const { leadSeq, bassSeq, arpSeq, chordPads, stepMs, drumStyle, synth, pitchWarp } = track;
+    const stepDur = stepMs / 1000;
+    const totalSteps = leadSeq.length;
 
     let noiseBuf = null;
     function getNoiseBuffer(ctx) {
@@ -6186,47 +11173,78 @@ export default function TangtangPage() {
       return buf;
     }
 
+    const distCurves = {};
+    function getOverdriveCurve(amount) {
+      if (distCurves[amount]) return distCurves[amount];
+      const samples = 256;
+      const curve = new Float32Array(samples);
+      for (let i = 0; i < samples; i += 1) {
+        const x = (i * 2) / samples - 1;
+        curve[i] = ((3 + amount) * x * 20 * (Math.PI / 180)) / (Math.PI + amount * Math.abs(x));
+      }
+      distCurves[amount] = curve;
+      return curve;
+    }
+
     bgm.step = 0;
     bgm.intervalId = window.setInterval(() => {
-      if (!bgm.active || bgmMutedRef.current) return;
-      if (!gameRef.current.running || gameRef.current.over) {
-        stopSansBgm();
+      if (!bgm.active || bgm.heroId !== heroId || bgmMutedRef.current) return;
+      if (!bgm.preview && (!gameRef.current.running || gameRef.current.over)) {
+        stopHeroBgm();
         return;
       }
       const ctx = getAudioContext();
       if (!ctx) return;
 
-      const step = bgm.step % 128;
+      const step = bgm.step % totalSteps;
       bgm.step += 1;
       const now = ctx.currentTime;
-      const stepDur = 0.125;
+      const barStep = step % 16;
+      const inPart2 = Boolean(synth.part2Step && step >= synth.part2Step);
 
-      // 1. Overdriven SNES Chiptune Guitar Lead (Square + Detuned Saw through Dynamic Lowpass)
+      // 1. Lead Synth (Dual-Oscillator + Authentic EarthBound/SNES Overdrive Shaper + Dynamic Filter!)
       const leadEntry = leadSeq[step];
       if (leadEntry) {
-        const [leadFreq, mult] = leadEntry;
+        const [rawFreq, mult] = leadEntry;
         const dur = stepDur * mult;
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(3400, now);
-        filter.frequency.exponentialRampToValueAtTime(1100, now + dur);
-        filter.Q.setValueAtTime(2.4, now);
+        filter.frequency.setValueAtTime(synth.leadCutoffStart, now);
+        filter.frequency.exponentialRampToValueAtTime(synth.leadCutoffEnd, now + dur);
+        filter.Q.setValueAtTime(synth.leadQ, now);
 
         const gain = ctx.createGain();
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(0.056, now + 0.008);
+        gain.gain.linearRampToValueAtTime(synth.leadGain, now + 0.007);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
         const osc1 = ctx.createOscillator();
-        osc1.type = 'square';
-        osc1.frequency.setValueAtTime(leadFreq, now);
+        osc1.type = inPart2 && synth.part2Wave1 ? synth.part2Wave1 : synth.leadWave1;
+        osc1.frequency.setValueAtTime(rawFreq, now);
 
         const osc2 = ctx.createOscillator();
-        osc2.type = 'sawtooth';
-        osc2.frequency.setValueAtTime(leadFreq * 1.0035, now);
+        osc2.type = inPart2 && synth.part2Wave2 ? synth.part2Wave2 : synth.leadWave2;
+        osc2.frequency.setValueAtTime(rawFreq * synth.detuneRatio, now);
 
-        osc1.connect(filter);
-        osc2.connect(filter);
+        if (pitchWarp) {
+          const bendTarget = step >= 64 ? rawFreq * (step % 2 === 0 ? 1.04 : 0.96) : rawFreq * 0.985;
+          osc1.frequency.exponentialRampToValueAtTime(Math.max(40, bendTarget), now + dur);
+          osc2.frequency.exponentialRampToValueAtTime(Math.max(40, bendTarget * synth.detuneRatio), now + dur);
+        }
+
+        const driveAmt = inPart2 && synth.part2Overdrive !== undefined ? synth.part2Overdrive : (synth.overdrive ?? 0);
+        if (driveAmt > 0) {
+          const shaper = ctx.createWaveShaper();
+          shaper.curve = getOverdriveCurve(driveAmt);
+          shaper.oversample = '2x';
+          osc1.connect(shaper);
+          osc2.connect(shaper);
+          shaper.connect(filter);
+        } else {
+          osc1.connect(filter);
+          osc2.connect(filter);
+        }
+
         filter.connect(gain);
         gain.connect(ctx.destination);
         osc1.start(now);
@@ -6235,42 +11253,80 @@ export default function TangtangPage() {
         osc2.stop(now + dur + 0.015);
       }
 
-      // 2. Punchy Rock Bassline (Sawtooth + Sub Sine)
+      // 2. Piano / Harp / Bell Arpeggio Counter-Layer (with sparkling octave overtone!)
+      const arpFreq = arpSeq ? arpSeq[step % arpSeq.length] : 0;
+      if (arpFreq && synth.arpWave) {
+        const aOsc = ctx.createOscillator();
+        const aGain = ctx.createGain();
+        aOsc.type = synth.arpWave;
+        aOsc.frequency.setValueAtTime(arpFreq, now);
+        aGain.gain.setValueAtTime(0.0001, now);
+        aGain.gain.linearRampToValueAtTime(synth.arpGain ?? 0.024, now + 0.004);
+        aGain.gain.exponentialRampToValueAtTime(0.0001, now + stepDur * 0.95);
+        aOsc.connect(aGain);
+        aGain.connect(ctx.destination);
+        aOsc.start(now);
+        aOsc.stop(now + stepDur * 1.05);
+
+        if (synth.arpHarmonic) {
+          // Crisp piano/harp upper harmonic pluck
+          const hOsc = ctx.createOscillator();
+          const hGain = ctx.createGain();
+          hOsc.type = 'sine';
+          hOsc.frequency.setValueAtTime(arpFreq * 2, now);
+          hGain.gain.setValueAtTime(0.0001, now);
+          hGain.gain.linearRampToValueAtTime((synth.arpGain ?? 0.024) * 0.42, now + 0.003);
+          hGain.gain.exponentialRampToValueAtTime(0.0001, now + stepDur * 0.55);
+          hOsc.connect(hGain);
+          hGain.connect(ctx.destination);
+          hOsc.start(now);
+          hOsc.stop(now + stepDur * 0.6);
+        }
+      }
+
+      // 3. Punchy Layered Bassline (Sawtooth Growl + Warm Triangle Sub!)
       const bassFreq = bassSeq[step];
       if (bassFreq) {
         const bFilter = ctx.createBiquadFilter();
         bFilter.type = 'lowpass';
-        bFilter.frequency.setValueAtTime(920, now);
-        bFilter.frequency.exponentialRampToValueAtTime(280, now + 0.13);
+        bFilter.frequency.setValueAtTime(synth.bassCutoffStart, now);
+        bFilter.frequency.exponentialRampToValueAtTime(synth.bassCutoffEnd, now + stepDur * 1.05);
 
         const bGain = ctx.createGain();
         bGain.gain.setValueAtTime(0.0001, now);
-        bGain.gain.linearRampToValueAtTime(0.072, now + 0.007);
-        bGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+        bGain.gain.linearRampToValueAtTime(synth.bassGain, now + 0.006);
+        bGain.gain.exponentialRampToValueAtTime(0.0001, now + stepDur * 1.15);
 
         const bassOsc = ctx.createOscillator();
-        bassOsc.type = 'sawtooth';
+        bassOsc.type = synth.bassWave;
         bassOsc.frequency.setValueAtTime(bassFreq, now);
 
+        const subOsc = ctx.createOscillator();
+        subOsc.type = 'triangle';
+        subOsc.frequency.setValueAtTime(bassFreq, now);
+
         bassOsc.connect(bFilter);
+        subOsc.connect(bGain);
         bFilter.connect(bGain);
         bGain.connect(ctx.destination);
         bassOsc.start(now);
-        bassOsc.stop(now + 0.15);
+        subOsc.start(now);
+        bassOsc.stop(now + stepDur * 1.2);
+        subOsc.stop(now + stepDur * 1.2);
       }
 
-      // 3. Crunch Power-Chord Guitar Stabs on bar changes & climax beats
+      // 4. Chord Stabs / Orchestral Pads
       const chord = chordPads[step] || (step >= 64 && step % 4 === 0 ? chordPads[Math.floor(step / 16) * 16] : null);
       if (chord) {
         const isClimaxStab = step >= 64;
-        const cDur = isClimaxStab ? 0.16 : 0.36;
+        const cDur = isClimaxStab ? stepDur * 1.35 : stepDur * 2.8;
         chord.forEach((freq) => {
           const cOsc = ctx.createOscillator();
           const cGain = ctx.createGain();
-          cOsc.type = 'sawtooth';
+          cOsc.type = drumStyle === 'march' || drumStyle === 'finale' ? 'triangle' : 'sawtooth';
           cOsc.frequency.setValueAtTime(freq, now);
           cGain.gain.setValueAtTime(0.0001, now);
-          cGain.gain.linearRampToValueAtTime(isClimaxStab ? 0.016 : 0.012, now + 0.012);
+          cGain.gain.linearRampToValueAtTime(isClimaxStab ? 0.015 : 0.011, now + 0.012);
           cGain.gain.exponentialRampToValueAtTime(0.0001, now + cDur);
           cOsc.connect(cGain);
           cGain.connect(ctx.destination);
@@ -6279,46 +11335,93 @@ export default function TangtangPage() {
         });
       }
 
-      // 4. Arcade Rock Drum Kit (Punchy Kick + Crisp White-Noise Snare + 16th Hi-Hat!)
-      const barStep = step % 16;
-      if (barStep === 0 || barStep === 6 || barStep === 8 || barStep === 14) {
+      // 5. Character-Specific Drum Kit Patterns
+      let kickHit = false;
+      let snareHit = false;
+      let hatHit = false;
+      let glitchBurst = false;
+
+      if (drumStyle === 'finale') {
+        // High-speed Toby Fox Finale breakbeat!
+        kickHit = barStep === 0 || barStep === 3 || barStep === 8 || barStep === 10 || barStep === 14;
+        snareHit = barStep === 4 || barStep === 12 || (step >= 64 && barStep === 15);
+        hatHit = true;
+      } else if (drumStyle === 'anthem') {
+        kickHit = barStep === 0 || barStep === 6 || barStep === 8 || barStep === 10 || barStep === 14;
+        snareHit = barStep === 4 || barStep === 12 || (step >= 120 && barStep % 2 === 0);
+        hatHit = true;
+      } else if (drumStyle === 'industrial') {
+        kickHit = barStep === 0 || barStep === 2 || barStep === 6 || barStep === 8 || barStep === 10 || barStep === 14;
+        snareHit = barStep === 4 || barStep === 12 || (step >= 112 && barStep === 15);
+        hatHit = step % 2 === 1 || step >= 64;
+      } else if (drumStyle === 'nightmare') {
+        kickHit = barStep === 0 || barStep === 3 || barStep === 7 || barStep === 10 || (step >= 64 && barStep === 13);
+        snareHit = barStep === 4 || barStep === 11 || (step >= 64 && (barStep === 6 || barStep === 14));
+        hatHit = step >= 32 && (step % 2 === 0 || barStep % 3 === 0);
+        glitchBurst = (step >= 64 && (barStep === 15 || barStep === 7)) || step === 14 || step === 30;
+      } else if (drumStyle === 'march') {
+        kickHit = barStep === 0 || barStep === 3 || barStep === 8 || barStep === 11 || barStep === 14;
+        snareHit = barStep === 4 || barStep === 12 || barStep === 14 || barStep === 15 || (step >= 64 && barStep === 6);
+        hatHit = step % 2 === 0 || step >= 64;
+      } else if (drumStyle === 'gothic') {
+        kickHit = barStep === 0 || barStep === 6 || barStep === 8 || (step >= 64 && barStep === 11);
+        snareHit = barStep === 4 || barStep === 12;
+        hatHit = step % 2 === 1 || (step >= 64 && barStep % 4 === 2);
+      } else {
+        kickHit = barStep === 0 || barStep === 6 || barStep === 8 || barStep === 14;
+        snareHit = barStep === 4 || barStep === 12 || (step >= 120 && barStep % 2 === 0);
+        hatHit = step % 2 === 1 || step >= 64;
+      }
+
+      if (kickHit) {
         const kick = ctx.createOscillator();
         const kGain = ctx.createGain();
         kick.type = 'sine';
-        kick.frequency.setValueAtTime(155, now);
-        kick.frequency.exponentialRampToValueAtTime(38, now + 0.09);
-        kGain.gain.setValueAtTime(barStep === 0 || barStep === 8 ? 0.12 : 0.08, now);
+        kick.frequency.setValueAtTime(drumStyle === 'gothic' ? 135 : 162, now);
+        kick.frequency.exponentialRampToValueAtTime(drumStyle === 'gothic' ? 32 : 38, now + 0.09);
+        kGain.gain.setValueAtTime(barStep === 0 || barStep === 8 ? 0.125 : 0.082, now);
         kGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
         kick.connect(kGain);
         kGain.connect(ctx.destination);
         kick.start(now);
         kick.stop(now + 0.11);
       }
-      if (barStep === 4 || barStep === 12 || (step >= 120 && barStep % 2 === 0)) {
-        // Real white-noise Snare + body snap!
+      if (snareHit) {
         const src = ctx.createBufferSource();
         src.buffer = getNoiseBuffer(ctx);
         const sFilter = ctx.createBiquadFilter();
         sFilter.type = 'bandpass';
-        sFilter.frequency.setValueAtTime(1900, now);
+        sFilter.frequency.setValueAtTime(drumStyle === 'march' ? 2400 : drumStyle === 'gothic' ? 1400 : 2000, now);
         const sGain = ctx.createGain();
-        sGain.gain.setValueAtTime(0.085, now);
+        sGain.gain.setValueAtTime(drumStyle === 'march' && (barStep === 14 || barStep === 15) ? 0.052 : 0.082, now);
         sGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
         src.connect(sFilter);
         sFilter.connect(sGain);
         sGain.connect(ctx.destination);
         src.start(now);
         src.stop(now + 0.12);
+
+        // Snare tonal body snap!
+        const sBody = ctx.createOscillator();
+        const sbGain = ctx.createGain();
+        sBody.type = 'triangle';
+        sBody.frequency.setValueAtTime(220, now);
+        sBody.frequency.exponentialRampToValueAtTime(115, now + 0.055);
+        sbGain.gain.setValueAtTime(0.055, now);
+        sbGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
+        sBody.connect(sbGain);
+        sbGain.connect(ctx.destination);
+        sBody.start(now);
+        sBody.stop(now + 0.07);
       }
-      if (step % 2 === 1 || step >= 64) {
-        // Crisp Hi-Hat ticks
+      if (hatHit) {
         const hSrc = ctx.createBufferSource();
         hSrc.buffer = getNoiseBuffer(ctx);
         const hFilter = ctx.createBiquadFilter();
         hFilter.type = 'highpass';
         hFilter.frequency.setValueAtTime(7500, now);
         const hGain = ctx.createGain();
-        hGain.gain.setValueAtTime(step % 2 === 0 ? 0.028 : 0.018, now);
+        hGain.gain.setValueAtTime(step % 2 === 0 ? 0.026 : 0.017, now);
         hGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
         hSrc.connect(hFilter);
         hFilter.connect(hGain);
@@ -6326,54 +11429,81 @@ export default function TangtangPage() {
         hSrc.start(now);
         hSrc.stop(now + 0.04);
       }
-    }, 125);
+      if (glitchBurst) {
+        const gSrc = ctx.createBufferSource();
+        gSrc.buffer = getNoiseBuffer(ctx);
+        const gFilter = ctx.createBiquadFilter();
+        gFilter.type = 'bandpass';
+        gFilter.frequency.setValueAtTime(3400, now);
+        gFilter.Q.setValueAtTime(4, now);
+        const gGain = ctx.createGain();
+        gGain.gain.setValueAtTime(0.075, now);
+        gGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+        gSrc.connect(gFilter);
+        gFilter.connect(gGain);
+        gGain.connect(ctx.destination);
+        gSrc.start(now);
+        gSrc.stop(now + 0.08);
+      }
+    }, stepMs);
   }
 
-  function startSansBgm() {
+  function startHeroBgm(heroId, { preview = false } = {}) {
+    const track = SPECIAL_HERO_BGM[heroId];
+    if (!track) {
+      stopHeroBgm();
+      return;
+    }
     if (bgmMutedRef.current) return;
-    stopSansBgm();
-    const bgm = sansBgmRef.current;
+    stopHeroBgm();
+    const bgm = heroBgmRef.current;
     bgm.active = true;
+    bgm.heroId = heroId;
+    bgm.preview = Boolean(preview);
+    setBgmPreviewHeroId(preview ? heroId : null);
 
-    // Optional local user-supplied MP3 at public/audio/megalovania.mp3; falls back seamlessly to built-in 8-bit Chiptune Boss BGM!
+    // Optional local user-supplied MP3 (e.g. public/audio/megalovania.mp3); seamlessly plays built-in chiptune theme if absent!
     const playMp3 = () => {
-      if (!bgm.active || bgmMutedRef.current) return;
-      if (!bgm.audioEl) {
-        const el = new Audio('/audio/megalovania.mp3');
+      if (!bgm.active || bgm.heroId !== heroId || bgmMutedRef.current) return;
+      if (!bgm.audioEl || bgm.audioHeroId !== heroId) {
+        const el = new Audio(track.mp3);
         el.loop = true;
         el.volume = 0.45;
         bgm.audioEl = el;
+        bgm.audioHeroId = heroId;
       }
       bgm.audioEl.currentTime = 0;
       bgm.audioEl.play().catch(() => {
-        bgm.hasMp3 = false;
-        startSansChiptuneLoop();
+        bgm.hasMp3[heroId] = false;
+        startHeroChiptuneLoop(heroId);
       });
     };
 
-    if (bgm.hasMp3 === true) {
+    if (bgm.hasMp3[heroId] === true) {
       playMp3();
       return;
     }
-    if (bgm.hasMp3 === false) {
-      startSansChiptuneLoop();
+    if (bgm.hasMp3[heroId] === false) {
+      startHeroChiptuneLoop(heroId);
       return;
     }
 
-    fetch('/audio/megalovania.mp3', { method: 'HEAD' })
+    fetch(track.mp3, { method: 'HEAD' })
       .then((res) => {
-        if (!bgm.active || bgmMutedRef.current) return;
+        if (!bgm.active || bgm.heroId !== heroId || bgmMutedRef.current) return;
         if (res.ok) {
-          bgm.hasMp3 = true;
+          bgm.hasMp3[heroId] = true;
           playMp3();
         } else {
-          bgm.hasMp3 = false;
-          startSansChiptuneLoop();
+          bgm.hasMp3[heroId] = false;
+          startHeroChiptuneLoop(heroId);
         }
       })
       .catch(() => {
-        bgm.hasMp3 = false;
-        if (bgm.active && !bgmMutedRef.current) startSansChiptuneLoop();
+        bgm.hasMp3[heroId] = false;
+        if (bgm.active && bgm.heroId === heroId && !bgmMutedRef.current) {
+          startHeroChiptuneLoop(heroId);
+        }
       });
   }
 
@@ -6382,29 +11512,49 @@ export default function TangtangPage() {
       const next = !prev;
       bgmMutedRef.current = next;
       if (next) {
-        stopSansBgm();
-      } else if (gameRef.current.running && HEROES[gameRef.current.heroIndex]?.id === 'sans') {
-        startSansBgm();
+        stopHeroBgm();
+      } else if (gameRef.current.running && !gameRef.current.over) {
+        const activeId = HEROES[gameRef.current.heroIndex]?.id;
+        if (SPECIAL_HERO_BGM[activeId]) {
+          startHeroBgm(activeId);
+        }
       }
       return next;
     });
   }
 
+  function toggleLobbyBgmPreview(heroId) {
+    if (!SPECIAL_HERO_BGM[heroId]) return;
+    getAudioContext();
+    if (heroBgmRef.current.active && heroBgmRef.current.preview && heroBgmRef.current.heroId === heroId) {
+      stopHeroBgm();
+      return;
+    }
+    if (bgmMutedRef.current) {
+      bgmMutedRef.current = false;
+      setBgmMuted(false);
+    }
+    startHeroBgm(heroId, { preview: true });
+  }
+
   function resetGame(stageIndex = selectedStage, weaponIndex = selectedWeapon, heroIndex = selectedHero) {
     getAudioContext();
     closeBlackMarket();
+    recordedOverRef.current = false;
     const equippedBm = bmStateRef.current.equipped;
-    const heroUnlockKey = HEROES[heroIndex]?.blackMarketUnlockId;
-    const safeHeroIndex =
-      heroUnlockKey && !bmStateRef.current.owned?.[heroUnlockKey]
-        ? 0
-        : heroIndex;
-    const gasterIdx = weapons.findIndex((w) => w.id === 'gaster');
-    const isSansHero = HEROES[safeHeroIndex]?.id === 'sans';
-    const unlockKey = weapons[weaponIndex]?.blackMarketUnlockId;
-    const safeWeaponIndex = isSansHero && gasterIdx >= 0
-      ? gasterIdx
-      : unlockKey && !bmStateRef.current.owned?.[unlockKey]
+    const safeHeroIndex = isHeroUnlocked(HEROES[heroIndex], bmStateRef.current.owned, lobbyMetaRef.current.unlockStats)
+      ? heroIndex
+      : 0;
+    const safeHero = HEROES[safeHeroIndex] ?? HEROES[0];
+    const sigIdx = safeHero.signatureWeaponId
+      ? weapons.findIndex((w) => w.id === safeHero.signatureWeaponId)
+      : -1;
+    const chosenSpec = weapons[weaponIndex];
+    const unlockKey = chosenSpec?.blackMarketUnlockId;
+    const exclusiveMismatch = chosenSpec?.exclusiveHeroId && chosenSpec.exclusiveHeroId !== safeHero.id;
+    const safeWeaponIndex = sigIdx >= 0
+      ? sigIdx
+      : (unlockKey && !bmStateRef.current.owned?.[unlockKey]) || exclusiveMismatch
         ? 0
         : weaponIndex;
     const nextGame = createGame(stageIndex, equippedBm, safeHeroIndex, lobbyMetaRef.current);
@@ -6423,10 +11573,10 @@ export default function TangtangPage() {
     }
     nextGame.running = true;
     gameRef.current = nextGame;
-    if (isSansHero) {
-      startSansBgm();
+    if (SPECIAL_HERO_BGM[safeHero.id]) {
+      startHeroBgm(safeHero.id);
     } else {
-      stopSansBgm();
+      stopHeroBgm();
     }
     queueSound(gameRef.current, 'level');
     setSelectedStage(stageIndex);
@@ -6438,19 +11588,30 @@ export default function TangtangPage() {
 
   function selectHero(index) {
     if (gameRef.current.running) return;
-    const heroUnlockKey = HEROES[index]?.blackMarketUnlockId;
-    if (heroUnlockKey && !bmStateRef.current.owned?.[heroUnlockKey]) return;
+    if (!isHeroUnlocked(HEROES[index], bmStateRef.current.owned, lobbyMetaRef.current.unlockStats)) return;
     getAudioContext();
-    const gasterIdx = weapons.findIndex((w) => w.id === 'gaster');
+    const nextHero = HEROES[index] ?? HEROES[0];
+    const sigIdx = nextHero.signatureWeaponId
+      ? weapons.findIndex((w) => w.id === nextHero.signatureWeaponId)
+      : -1;
     let nextWeaponIdx = selectedWeapon;
-    if (HEROES[index]?.id === 'sans' && gasterIdx >= 0) {
-      // 💀 Sans can ONLY wield Gaster Blaster -> auto-equip + activate Synergy Combo!
-      nextWeaponIdx = gasterIdx;
-    } else if (
-      weapons[nextWeaponIdx]?.blackMarketUnlockId &&
-      !bmStateRef.current.owned?.[weapons[nextWeaponIdx].blackMarketUnlockId]
-    ) {
-      nextWeaponIdx = 0;
+    if (sigIdx >= 0) {
+      // Special heroes can ONLY wield their own signature weapon -> auto-equip!
+      nextWeaponIdx = sigIdx;
+    } else {
+      const curW = weapons[nextWeaponIdx];
+      const lockedByBm = curW?.blackMarketUnlockId && !bmStateRef.current.owned?.[curW.blackMarketUnlockId];
+      const lockedByHero = curW?.exclusiveHeroId && curW.exclusiveHeroId !== nextHero.id;
+      if (lockedByBm || lockedByHero) {
+        nextWeaponIdx = 0;
+      }
+    }
+    if (heroBgmRef.current.preview) {
+      if (SPECIAL_HERO_BGM[nextHero.id]) {
+        startHeroBgm(nextHero.id, { preview: true });
+      } else {
+        stopHeroBgm();
+      }
     }
     setSelectedHero(index);
     setSelectedWeapon(nextWeaponIdx);
@@ -6470,9 +11631,11 @@ export default function TangtangPage() {
   function setWeapon(index, fromKeyboard = false) {
     if (gameRef.current.running) return;
     const activeHero = HEROES[gameRef.current.heroIndex ?? selectedHero];
-    if (activeHero?.id === 'sans' && weapons[index]?.id !== 'gaster') return;
-    const unlockKey = weapons[index]?.blackMarketUnlockId;
-    if (activeHero?.id !== 'sans' && unlockKey && !bmStateRef.current.owned?.[unlockKey]) return;
+    if (activeHero?.signatureWeaponId && weapons[index]?.id !== activeHero.signatureWeaponId) return;
+    const targetW = weapons[index];
+    if (targetW?.exclusiveHeroId && targetW.exclusiveHeroId !== activeHero?.id) return;
+    const unlockKey = targetW?.blackMarketUnlockId;
+    if (!activeHero?.signatureWeaponId && unlockKey && !bmStateRef.current.owned?.[unlockKey]) return;
     getAudioContext();
     setSelectedWeapon(index);
     gameRef.current.player.weaponIndex = index;
@@ -6480,7 +11643,9 @@ export default function TangtangPage() {
     queueSound(gameRef.current, 'switch');
     setHud({ ...gameRef.current, player: { ...gameRef.current.player } });
 
-    // Mobile & Click Secret Easter Egg: tap weapons 1→2→3→4→5→6→7→8→9 in order to open Black Market!
+    // Mobile & Click Secret Easter Eggs:
+    // - Forward 1→2→3→4→5→6→7→8→9 opens Black Market!
+    // - Reverse (12→11→10→)9→8→7→6→5→4→3→2→1 opens the secret ERROR special hero & weapon panel!
     if (!fromKeyboard && index >= 0 && index < SECRET_CODE.length) {
       const digit = String(index + 1);
       if (digit === SECRET_CODE[secretProgressRef.current]) {
@@ -6493,6 +11658,19 @@ export default function TangtangPage() {
         }
       } else {
         secretProgressRef.current = digit === '1' ? 1 : 0;
+      }
+
+      const reverseSeq = '987654321';
+      if (digit === reverseSeq[reverseWeaponProgressRef.current]) {
+        reverseWeaponProgressRef.current += 1;
+        if (reverseWeaponProgressRef.current >= reverseSeq.length) {
+          reverseWeaponProgressRef.current = 0;
+          specialHeroAreaOpenRef.current = true;
+          setSpecialHeroAreaOpen(true);
+          playSound('blackMarket');
+        }
+      } else {
+        reverseWeaponProgressRef.current = digit === '9' ? 1 : 0;
       }
     }
   }
@@ -6607,9 +11785,26 @@ export default function TangtangPage() {
       if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
       const delta = Math.min((timestamp - lastTimeRef.current) / 1000, 0.033);
       lastTimeRef.current = timestamp;
-      updateGame(gameRef.current, inputRef.current, canvas, delta, earnBlackMarketGold, earnLobbyCoins);
-      if (gameRef.current.over && sansBgmRef.current.active) {
-        stopSansBgm();
+      updateGame(
+        gameRef.current,
+        inputRef.current,
+        canvas,
+        delta,
+        earnBlackMarketGold,
+        earnLobbyCoins,
+        recordChapterClear,
+      );
+      if (gameRef.current.over) {
+        if (heroBgmRef.current.active) {
+          stopHeroBgm();
+        }
+        if (!recordedOverRef.current) {
+          recordedOverRef.current = true;
+          const fallenHero = HEROES[gameRef.current.heroIndex ?? 0];
+          if (fallenHero?.id === 'sans') {
+            recordSansDeath();
+          }
+        }
       }
       drainSounds(gameRef.current);
       drawGame(context, gameRef.current, canvas);
@@ -6627,8 +11822,10 @@ export default function TangtangPage() {
 
       const key = event.key.toLowerCase();
 
-      // Secret Lobby Easter Egg: press 123456789 in order while in lobby (!running)
-      if (!gameRef.current.running && !event.repeat) {
+      // Secret Lobby Easter Egg: press 123456789 (Black Market) or type "error" (Special Character Zone) while in lobby (!running)
+      const targetTag = event.target?.tagName?.toLowerCase();
+      const typingInField = targetTag === 'input' || targetTag === 'textarea' || Boolean(event.target?.isContentEditable);
+      if (!gameRef.current.running && !event.repeat && !typingInField) {
         const digit =
           /^Digit[1-9]$/.test(event.code) ? event.code.slice(5) :
           /^Numpad[1-9]$/.test(event.code) ? event.code.slice(6) :
@@ -6647,13 +11844,33 @@ export default function TangtangPage() {
             secretProgressRef.current = digit === '1' ? 1 : 0;
           }
         }
+
+        const letter =
+          /^Key[A-Z]$/.test(event.code) ? event.code.slice(3).toLowerCase() :
+          /^[a-z]$/.test(key) ? key : '';
+        if (letter) {
+          const errorSeq = 'error';
+          if (letter === errorSeq[errorCodeProgressRef.current]) {
+            errorCodeProgressRef.current += 1;
+            if (errorCodeProgressRef.current >= errorSeq.length) {
+              errorCodeProgressRef.current = 0;
+              specialHeroAreaOpenRef.current = true;
+              setSpecialHeroAreaOpen(true);
+              playSound('blackMarket');
+              return;
+            }
+          } else {
+            errorCodeProgressRef.current = letter === 'e' ? 1 : 0;
+          }
+        }
       }
 
-      if (['arrowup', 'w'].includes(key)) inputRef.current.up = true;
-      if (['arrowdown', 's'].includes(key)) inputRef.current.down = true;
-      if (['arrowleft', 'a'].includes(key)) inputRef.current.left = true;
-      if (['arrowright', 'd'].includes(key)) inputRef.current.right = true;
-      if (gameRef.current.running && !event.repeat && [' ', 'e', 'q'].includes(key)) {
+      const code = event.code || '';
+      if (['arrowup', 'w'].includes(key) || code === 'KeyW') inputRef.current.up = true;
+      if (['arrowdown', 's'].includes(key) || code === 'KeyS') inputRef.current.down = true;
+      if (['arrowleft', 'a'].includes(key) || code === 'KeyA') inputRef.current.left = true;
+      if (['arrowright', 'd'].includes(key) || code === 'KeyD') inputRef.current.right = true;
+      if (gameRef.current.running && !event.repeat && ([' ', 'e', 'q'].includes(key) || code === 'KeyE' || code === 'KeyQ')) {
         event.preventDefault();
         activateUltimate();
       }
@@ -6664,10 +11881,11 @@ export default function TangtangPage() {
 
     function handleKeyUp(event) {
       const key = event.key.toLowerCase();
-      if (['arrowup', 'w'].includes(key)) inputRef.current.up = false;
-      if (['arrowdown', 's'].includes(key)) inputRef.current.down = false;
-      if (['arrowleft', 'a'].includes(key)) inputRef.current.left = false;
-      if (['arrowright', 'd'].includes(key)) inputRef.current.right = false;
+      const code = event.code || '';
+      if (['arrowup', 'w'].includes(key) || code === 'KeyW') inputRef.current.up = false;
+      if (['arrowdown', 's'].includes(key) || code === 'KeyS') inputRef.current.down = false;
+      if (['arrowleft', 'a'].includes(key) || code === 'KeyA') inputRef.current.left = false;
+      if (['arrowright', 'd'].includes(key) || code === 'KeyD') inputRef.current.right = false;
     }
 
     resize();
@@ -6684,7 +11902,7 @@ export default function TangtangPage() {
     };
   }, [version]);
 
-  useEffect(() => () => stopSansBgm(), []);
+  useEffect(() => () => stopHeroBgm(), []);
 
   const player = hud.player;
   const stage = stages[hud.stageIndex];
@@ -6711,18 +11929,33 @@ export default function TangtangPage() {
 
   const ultPct = Math.floor(clamp(player.ultCharge ?? 0, 0, 100));
   const ultReady = hud.running && ultPct >= 100;
-  const isSansSelected = HEROES[selectedHero]?.id === 'sans';
+  const selectedHeroObj = HEROES[selectedHero] ?? HEROES[0];
+  const signatureWeaponId = selectedHeroObj.signatureWeaponId || null;
+  const isSansSelected = selectedHeroObj.id === 'sans';
   const isSansSynergyActive = Boolean(isSansSelected && weapons[selectedWeapon]?.id === 'gaster');
+  const isAsrielSynergyActive = Boolean(selectedHeroObj.id === 'asriel' && weapons[selectedWeapon]?.id === 'chaosSaber');
+  const isCharaSynergyActive = Boolean(selectedHeroObj.id === 'chara' && weapons[selectedWeapon]?.id === 'realKnife');
+  const unlockStats = lobbyMeta.unlockStats ?? DEFAULT_LOBBY_META.unlockStats;
   const visibleHeroEntries = HEROES
-    .map((hero, index) => ({ hero, index }))
-    .filter(({ hero }) => !hero.blackMarketUnlockId || Boolean(bmState.owned?.[hero.blackMarketUnlockId]));
+    .map((hero, index) => ({
+      hero,
+      index,
+      unlocked: isHeroUnlocked(hero, bmState.owned, unlockStats),
+    }))
+    .filter(({ hero, unlocked }) => !hero.blackMarketUnlockId || unlocked);
+  const baseHeroEntries = visibleHeroEntries.filter(({ hero }) => !hero.signatureWeaponId);
+  const specialHeroEntries = visibleHeroEntries.filter(({ hero }) => Boolean(hero.signatureWeaponId));
   const visibleWeaponEntries = weapons
     .map((weapon, index) => ({ weapon, index }))
-    .filter(({ weapon }) =>
-      isSansSelected
-        ? weapon.id === 'gaster'
-        : !weapon.blackMarketUnlockId || Boolean(bmState.owned?.[weapon.blackMarketUnlockId]),
-    );
+    .filter(({ weapon }) => {
+      if (signatureWeaponId) {
+        return weapon.id === signatureWeaponId;
+      }
+      return !weapon.exclusiveHeroId && !weapon.blackMarketUnlockId;
+    });
+  const specialWeaponEntries = weapons
+    .map((weapon, index) => ({ weapon, index }))
+    .filter(({ weapon }) => Boolean(weapon.exclusiveHeroId || weapon.blackMarketUnlockId));
   const activeWeaponUlt = WEAPON_ULTIMATES[currentWeapon?.id] ?? WEAPON_ULTIMATES.blaster;
   const lobbySelectedWeapon = weapons[selectedWeapon] ?? weapons[0];
   const lobbyWeaponUlt = WEAPON_ULTIMATES[lobbySelectedWeapon?.id] ?? WEAPON_ULTIMATES.blaster;
@@ -6735,7 +11968,7 @@ export default function TangtangPage() {
           <h1>탕탕 특공대</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          {activeHeroObj.id === 'sans' && (
+          {SPECIAL_HERO_BGM[activeHeroObj.id] && (
             <button
               type="button"
               className={
@@ -6745,7 +11978,7 @@ export default function TangtangPage() {
               }
               onClick={toggleBgmMute}
             >
-              {bgmMuted ? '🔇 BGM OFF' : '🎵 MEGALOVANIA ON'}
+              {bgmMuted ? '🔇 BGM OFF' : `🎵 ${SPECIAL_HERO_BGM[activeHeroObj.id].label} ON`}
             </button>
           )}
           <button
@@ -6830,8 +12063,26 @@ export default function TangtangPage() {
 
           <div className="barBlock">
             <div>
-              <span>HP</span>
-              <em>{Math.ceil(player.hp)} / {player.maxHp}</em>
+              <span>
+                HP
+                {(player.maxAwakenings ?? 0) > 0 && (
+                  <>
+                    {' '}
+                    <strong style={{ color: (player.awakeningStage ?? 0) >= 2 ? '#facc15' : '#fb923c', fontSize: '0.78rem' }}>
+                      {(player.awakeningStage ?? 0) >= 2
+                        ? '⚡2차 초각성'
+                        : (player.awakeningStage ?? 0) === 1
+                          ? (player.maxAwakenings ?? 0) > 1
+                            ? `🔥1차 각성 (잔여 ${(player.maxAwakenings ?? 1) - 1})`
+                            : '🔥각성 완료'
+                          : `각성 0/${player.maxAwakenings}`}
+                    </strong>
+                  </>
+                )}
+              </span>
+              <em>
+                {Math.ceil(player.hp).toLocaleString()} / {player.maxHp.toLocaleString()}
+              </em>
             </div>
             <i className="hpTrack"><b style={{ width: `${hpRatio}%` }} /></i>
           </div>
@@ -6859,7 +12110,15 @@ export default function TangtangPage() {
             onClick={activateUltimate}
           >
             <span>
-              {activeWeaponUlt.icon} 필살기 · {isSansSynergyActive ? '심판의 회랑 · 메갈로바니아' : activeWeaponUlt.name} ({ultReady ? 'SPACE 발동!' : `${ultPct}%`})
+              {activeWeaponUlt.icon} 필살기 ·{' '}
+              {isSansSynergyActive
+                ? '심판의 회랑 · 메갈로바니아'
+                : isAsrielSynergyActive
+                  ? '호프 앤 드림즈 · 하이퍼 고너'
+                  : isCharaSynergyActive
+                    ? '세계 삭제 · ERASE (9999999)'
+                    : activeWeaponUlt.name}{' '}
+              ({ultReady ? 'SPACE 발동!' : `${ultPct}%`})
             </span>
             <i className={bmStyles.ultTrack}>
               <b className={bmStyles.ultFill} style={{ width: `${ultPct}%` }} />
@@ -7045,7 +12304,7 @@ export default function TangtangPage() {
           <div className="mobileGameHud">
             <span>{stage.name} · {activeBoss ? '🔥 BOSS' : `LV ${hud.level}`}</span>
             <strong>{minutes}:{seconds}</strong>
-            <em>HP {Math.ceil(player.hp)}</em>
+            <em>HP {Math.ceil(player.hp).toLocaleString()}</em>
           </div>
           {activeBoss && (
             <div className={bmStyles.bossBarWrap} role="status" aria-label="챕터 보스 체력">
@@ -7075,7 +12334,7 @@ export default function TangtangPage() {
               <div className={bmStyles.lobbyWindow}>
                 <div className={bmStyles.lobbyTopBar}>
                   <div className={bmStyles.lobbyTitleWrap}>
-                    <h2>🏕️ 탕탕 작전 준비 로비</h2>
+                    <h2>🏕️ {playerName ? `${playerName}님의 ` : ''}탕탕 작전 준비 로비</h2>
                     <p>출격 전 캐릭터·무기·전투 펫·영구 업그레이드를 세팅하세요!</p>
                   </div>
                   <span className={bmStyles.lobbyCoinBadge}>🪙 {lobbyMeta.coins.toLocaleString()} 코인</span>
@@ -7151,37 +12410,201 @@ export default function TangtangPage() {
                       </div>
 
                       <div className={bmStyles.lobbySectionTitle}>
-                        <span>캐릭터 선택 ({visibleHeroEntries.length}명)</span>
+                        <span>캐릭터 선택 ({baseHeroEntries.length}명)</span>
                         <span>{HEROES[selectedHero].icon} {HEROES[selectedHero].name}</span>
                       </div>
                       <div className={bmStyles.heroPicker} aria-label="캐릭터 선택">
-                        {visibleHeroEntries.map(({ hero: heroItem, index }) => (
-                          <button
-                            key={heroItem.id}
-                            type="button"
-                            className={
-                              selectedHero === index
-                                ? `${bmStyles.heroBtn} ${bmStyles.heroBtnActive}`
-                                : bmStyles.heroBtn
-                            }
-                            onClick={() => selectHero(index)}
-                          >
-                            <span className={bmStyles.heroIcon} style={{ background: heroItem.body }}>
-                              {heroItem.icon}
-                            </span>
-                            <span className={bmStyles.heroName}>{heroItem.name}</span>
-                            <span className={bmStyles.heroRole}>{heroItem.role}</span>
-                          </button>
-                        ))}
+                        {baseHeroEntries.map(({ hero: heroItem, index, unlocked }) => {
+                          const lockLabel = !unlocked
+                            ? getHeroQuestLabel(heroItem, unlockStats)
+                            : heroItem.role;
+                          return (
+                            <button
+                              key={heroItem.id}
+                              type="button"
+                              disabled={!unlocked}
+                              style={!unlocked ? { opacity: 0.52, cursor: 'not-allowed' } : undefined}
+                              className={
+                                selectedHero === index
+                                  ? `${bmStyles.heroBtn} ${bmStyles.heroBtnActive}`
+                                  : bmStyles.heroBtn
+                              }
+                              onClick={() => selectHero(index)}
+                              title={!unlocked ? lockLabel : heroItem.perk}
+                            >
+                              <span className={bmStyles.heroIcon} style={{ background: heroItem.body }}>
+                                {unlocked ? heroItem.icon : '🔒'}
+                              </span>
+                              <span className={bmStyles.heroName}>{heroItem.name}</span>
+                              <span className={bmStyles.heroRole}>{lockLabel}</span>
+                            </button>
+                          );
+                        })}
                       </div>
+
+                      {specialHeroAreaOpen && specialHeroEntries.length > 0 && (
+                        <div
+                          style={{
+                            marginTop: '10px',
+                            padding: '10px',
+                            borderRadius: '14px',
+                            border: '1px solid rgba(239, 68, 68, 0.55)',
+                            background: 'linear-gradient(135deg, rgba(24, 9, 24, 0.92), rgba(15, 23, 42, 0.92))',
+                            boxShadow: '0 0 22px rgba(239, 68, 68, 0.22)',
+                          }}
+                        >
+                          <div className={bmStyles.lobbySectionTitle} style={{ marginTop: 0 }}>
+                            <span style={{ color: '#f87171', fontWeight: 800 }}>
+                              ⚠️ ERROR · 특별 캐릭터 선택 ({specialHeroEntries.length}명)
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                specialHeroAreaOpenRef.current = false;
+                                setSpecialHeroAreaOpen(false);
+                              }}
+                              className={bmStyles.lobbySecondaryBtn}
+                              style={{ padding: '2px 8px', fontSize: '0.75rem' }}
+                            >
+                              숨기기
+                            </button>
+                          </div>
+                          <div className={bmStyles.heroPicker} aria-label="특별 캐릭터 선택">
+                            {specialHeroEntries.map(({ hero: heroItem, index, unlocked }) => {
+                              const lockLabel = !unlocked
+                                ? getHeroQuestLabel(heroItem, unlockStats)
+                                : heroItem.role;
+                              return (
+                                <button
+                                  key={heroItem.id}
+                                  type="button"
+                                  disabled={!unlocked}
+                                  style={!unlocked ? { opacity: 0.52, cursor: 'not-allowed' } : undefined}
+                                  className={
+                                    selectedHero === index
+                                      ? `${bmStyles.heroBtn} ${bmStyles.heroBtnActive}`
+                                      : bmStyles.heroBtn
+                                  }
+                                  onClick={() => selectHero(index)}
+                                  title={!unlocked ? lockLabel : heroItem.perk}
+                                >
+                                  <span className={bmStyles.heroIcon} style={{ background: heroItem.body }}>
+                                    {unlocked ? heroItem.icon : '🔒'}
+                                  </span>
+                                  <span className={bmStyles.heroName}>{heroItem.name}</span>
+                                  <span className={bmStyles.heroRole}>{lockLabel}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className={bmStyles.lobbySectionTitle} style={{ marginTop: '12px' }}>
+                            <span style={{ color: '#fbbf24', fontWeight: 800 }}>
+                              ⚔️ ERROR · 특별 무기 선택 ({specialWeaponEntries.length}종)
+                            </span>
+                            <span style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>
+                              전용 무기 클릭 시 해당 특별 캐릭 자동 선택
+                            </span>
+                          </div>
+                          <div className="startWeaponPicker" aria-label="특별 무기 선택" style={{ maxWidth: '100%' }}>
+                            {specialWeaponEntries.map(({ weapon, index }) => {
+                              const ownerHeroIdx = weapon.exclusiveHeroId
+                                ? HEROES.findIndex((h) => h.id === weapon.exclusiveHeroId)
+                                : -1;
+                              const ownerHero = ownerHeroIdx >= 0 ? HEROES[ownerHeroIdx] : null;
+                              const sansIdx = HEROES.findIndex((h) => h.id === 'sans');
+                              const sansUnlocked = sansIdx >= 0 && isHeroUnlocked(HEROES[sansIdx], bmState.owned, unlockStats);
+                              const bmOwned = weapon.blackMarketUnlockId
+                                ? Boolean(bmState.owned?.[weapon.blackMarketUnlockId])
+                                : false;
+                              const weaponUnlocked = ownerHero
+                                ? isHeroUnlocked(ownerHero, bmState.owned, unlockStats)
+                                : weapon.id === 'gaster'
+                                  ? bmOwned || sansUnlocked
+                                  : bmOwned;
+                              const blockedBySpecialHero = Boolean(
+                                !ownerHero &&
+                                signatureWeaponId &&
+                                weapon.id !== signatureWeaponId &&
+                                !(weapon.id === 'gaster' && sansUnlocked),
+                              );
+                              const canClick = weaponUnlocked && !blockedBySpecialHero;
+                              const subTag = !weaponUnlocked
+                                ? '🔒 잠금'
+                                : ownerHero
+                                  ? `${ownerHero.icon} ${ownerHero.name} 전용`
+                                  : blockedBySpecialHero
+                                    ? '기본 캐릭 전용'
+                                    : weapon.id === 'gaster' && !bmOwned
+                                      ? '💀 샌즈 전용'
+                                      : '장착 가능';
+
+                              return (
+                                <button
+                                  key={weapon.id}
+                                  type="button"
+                                  disabled={!canClick}
+                                  style={!canClick ? { opacity: 0.48, cursor: 'not-allowed' } : undefined}
+                                  className={selectedWeapon === index ? 'active' : ''}
+                                  title={`${weapon.name} · ${subTag} — ${weapon.detail}`}
+                                  onClick={() => {
+                                    if (!canClick) return;
+                                    if (ownerHeroIdx >= 0) {
+                                      selectHero(ownerHeroIdx);
+                                    } else if (weapon.id === 'gaster' && (!bmOwned || signatureWeaponId)) {
+                                      if (sansIdx >= 0) selectHero(sansIdx);
+                                    } else {
+                                      setWeapon(index, true);
+                                    }
+                                  }}
+                                >
+                                  <i style={{ background: weapon.color }} />
+                                  <span>
+                                    {weaponUnlocked ? weapon.name : `🔒 ${weapon.name}`}
+                                    <small style={{ display: 'block', fontSize: '0.7rem', opacity: 0.82 }}>
+                                      {subTag}
+                                    </small>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                       <div className={bmStyles.heroPerkNote}>
-                        {HEROES[selectedHero].icon} {HEROES[selectedHero].name}: {HEROES[selectedHero].perk}
+                        <div>
+                          {HEROES[selectedHero].icon} {HEROES[selectedHero].name}: {HEROES[selectedHero].perk}
+                        </div>
+                        {SPECIAL_HERO_BGM[selectedHeroObj.id] && (
+                          <div
+                            style={{
+                              marginTop: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <span style={{ color: '#fde047', fontWeight: 700 }}>
+                              🎵 전용 BGM: {SPECIAL_HERO_BGM[selectedHeroObj.id].title}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleLobbyBgmPreview(selectedHeroObj.id)}
+                              className={bmStyles.lobbySecondaryBtn}
+                              style={{ padding: '4px 10px', fontSize: '0.82rem' }}
+                            >
+                              {bgmPreviewHeroId === selectedHeroObj.id ? '⏹ 미리듣기 정지' : '▶ 노래 미리듣기'}
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className={bmStyles.lobbySectionTitle}>
                         <span>
-                          {isSansSelected
-                            ? '💀 샌즈 전용 무기 고정 (가스터 블래스터 전용!)'
+                          {signatureWeaponId
+                            ? `${selectedHeroObj.icon} ${selectedHeroObj.name} 전용 무기 고정 (${lobbySelectedWeapon.name} 전용!)`
                             : `시작 무기 선택 (${visibleWeaponEntries.length}종 · 전투 중 변경 불가)`}
                         </span>
                         <span>{lobbySelectedWeapon.name}</span>
@@ -7200,10 +12623,24 @@ export default function TangtangPage() {
                         ))}
                       </div>
                       <div className={bmStyles.heroPerkNote}>
-                        {lobbyWeaponUlt.icon} 무기 필살기 · <strong>{isSansSynergyActive ? '심판의 회랑 · 메갈로바니아' : lobbyWeaponUlt.name}</strong>:{' '}
+                        {lobbyWeaponUlt.icon} 무기 필살기 ·{' '}
+                        <strong>
+                          {isSansSynergyActive
+                            ? '심판의 회랑 · 메갈로바니아'
+                            : isAsrielSynergyActive
+                              ? '호프 앤 드림즈 · 하이퍼 고너'
+                              : isCharaSynergyActive
+                                ? '세계 삭제 · ERASE (9999999)'
+                                : lobbyWeaponUlt.name}
+                        </strong>
+                        :{' '}
                         {isSansSynergyActive
                           ? '⚡ 시너지 콤보 발동! 3.1초마다 [뼈 감옥 십자 심판] & [심판의 회랑 대격돌] 추가 기술 자동 발동 + 12블래스터·24뼈다귀 초강화 필살기!'
-                          : lobbyWeaponUlt.detail}
+                          : isAsrielSynergyActive
+                            ? '🌈 시너지 콤보 발동! 3.2초마다 [하이퍼 고너] 무지개 소용돌이·낙뢰·회복 추가 기술 발동 + 24연 별똥별·16연 낙뢰 초강화 필살기!'
+                            : isCharaSynergyActive
+                              ? '🔪 시너지 콤보 발동! 3.0초마다 [ERASE 3중 진홍 참격 & 10연 칼날] 추가 기술 발동 + 620px 9999999 초강화 필살기!'
+                              : lobbyWeaponUlt.detail}
                       </div>
                     </>
                   )}
@@ -7535,7 +12972,14 @@ export default function TangtangPage() {
 
                 <div className={bmStyles.grid}>
                   {BLACK_MARKET_ITEMS.map((item) => {
-                    const isOwned = Boolean(bmState.owned[item.id]);
+                    const unlockedViaChallenge =
+                      item.isHeroUnlock &&
+                      isHeroUnlocked(
+                        HEROES.find((h) => h.id === item.unlockHeroId),
+                        bmState.owned,
+                        unlockStats,
+                      );
+                    const isOwned = Boolean(bmState.owned[item.id]) || Boolean(unlockedViaChallenge);
                     const isEquipped = Boolean(bmState.equipped[item.id]);
                     const canAfford = bmState.gold >= item.price;
 
@@ -7567,7 +13011,11 @@ export default function TangtangPage() {
                                 className={`${bmStyles.toggleBtn} ${bmStyles.toggleBtnActive}`}
                                 onClick={() => {
                                   const wIdx = weapons.findIndex((w) => w.id === item.unlockWeaponId);
-                                  if (wIdx >= 0) setWeapon(wIdx, true);
+                                  if (wIdx >= 0) {
+                                    specialHeroAreaOpenRef.current = true;
+                                    setSpecialHeroAreaOpen(true);
+                                    setWeapon(wIdx, true);
+                                  }
                                   closeBlackMarket();
                                 }}
                               >
@@ -7579,7 +13027,11 @@ export default function TangtangPage() {
                                 className={`${bmStyles.toggleBtn} ${bmStyles.toggleBtnActive}`}
                                 onClick={() => {
                                   const hIdx = HEROES.findIndex((h) => h.id === item.unlockHeroId);
-                                  if (hIdx >= 0) selectHero(hIdx);
+                                  if (hIdx >= 0) {
+                                    specialHeroAreaOpenRef.current = true;
+                                    setSpecialHeroAreaOpen(true);
+                                    selectHero(hIdx);
+                                  }
                                   closeBlackMarket();
                                 }}
                               >

@@ -363,6 +363,17 @@ export default function SwingHookPage() {
 
       player.vy += gravity * delta;
 
+      if (inputRef.current.left) {
+        player.vx -= (ropeRef.current ? 420 : 540) * delta;
+      }
+      if (inputRef.current.right) {
+        player.vx += (ropeRef.current ? 460 : 580) * delta;
+      }
+      if (inputRef.current.down) {
+        ropeRef.current = null;
+        player.vy += 620 * delta;
+      }
+
       if (ropeRef.current) {
         const rope = ropeRef.current;
         const dx = player.x - rope.hook.x;
@@ -798,22 +809,66 @@ export default function SwingHookPage() {
     }
 
     function handleKeyDown(event) {
-      if (event.key.toLowerCase() === 'r') {
+      const key = event.key.toLowerCase();
+      const code = event.code || '';
+
+      if (key === 'r' || code === 'KeyR') {
         resetLevel(levelRef.current, false);
+        return;
       }
 
       if (['1', '2', '3', '4', '5'].includes(event.key)) {
         resetLevel(Number(event.key) - 1, false);
+        return;
       }
 
-      if (['q', 'w', 'e', 'a', 's', 'd'].includes(event.key.toLowerCase())) {
-        const keyMap = { q: 0, w: 1, e: 2, a: 3, s: 4, d: 5 };
-        const nextCharacter = keyMap[event.key.toLowerCase()];
-        const unlocked = getUnlockedCount(clearedStagesRef.current);
-        if (nextCharacter < unlocked) {
-          selectedCharacterRef.current = nextCharacter;
-          saveProgress(levelRef.current);
+      if (['w', 'arrowup', ' '].includes(key) || code === 'KeyW') {
+        event.preventDefault();
+        if (!inputRef.current.holding) {
+          inputRef.current.holding = true;
+          getAudioContext();
+          attachNearestHook();
         }
+        return;
+      }
+
+      if (['a', 'arrowleft'].includes(key) || code === 'KeyA') {
+        event.preventDefault();
+        inputRef.current.left = true;
+        return;
+      }
+
+      if (['d', 'arrowright'].includes(key) || code === 'KeyD') {
+        event.preventDefault();
+        inputRef.current.right = true;
+        return;
+      }
+
+      if (['s', 'arrowdown'].includes(key) || code === 'KeyS') {
+        event.preventDefault();
+        inputRef.current.down = true;
+        inputRef.current.holding = false;
+        ropeRef.current = null;
+        return;
+      }
+    }
+
+    function handleKeyUp(event) {
+      const key = event.key.toLowerCase();
+      const code = event.code || '';
+
+      if (['w', 'arrowup', ' '].includes(key) || code === 'KeyW') {
+        inputRef.current.holding = false;
+        ropeRef.current = null;
+      }
+      if (['a', 'arrowleft'].includes(key) || code === 'KeyA') {
+        inputRef.current.left = false;
+      }
+      if (['d', 'arrowright'].includes(key) || code === 'KeyD') {
+        inputRef.current.right = false;
+      }
+      if (['s', 'arrowdown'].includes(key) || code === 'KeyS') {
+        inputRef.current.down = false;
       }
     }
 
@@ -822,6 +877,7 @@ export default function SwingHookPage() {
     resetLevel(loadProgress(), false);
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointercancel', handlePointerUp);
@@ -831,6 +887,7 @@ export default function SwingHookPage() {
       resetLevelFnRef.current = null;
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
       canvas.removeEventListener('pointerdown', handlePointerDown);
       canvas.removeEventListener('pointerup', handlePointerUp);
       canvas.removeEventListener('pointercancel', handlePointerUp);

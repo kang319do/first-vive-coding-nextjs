@@ -4,24 +4,24 @@ import styles from '@/styles/JumpMap.module.css';
 const playerWidth = 28;
 const standHeight = 38;
 const slideHeight = 20;
-const gravity = 1850;
-const moveSpeed = 370;
-const airMoveSpeed = 325;
-const jumpPower = 755;
-const wallJumpX = 675;
-const wallJumpY = 805;
-const slideSpeed = 610;
-const slideDuration = 0.36;
-const slideCooldown = 0.2;
-const dashSpeed = 665;
-const dashDuration = 0.16;
-const blockWidth = 76;
+const gravity = 1600;
+const moveSpeed = 380;
+const airMoveSpeed = 360;
+const jumpPower = 780;
+const wallJumpX = 685;
+const wallJumpY = 830;
+const slideSpeed = 620;
+const slideDuration = 0.38;
+const slideCooldown = 0.16;
+const dashSpeed = 715;
+const dashDuration = 0.19;
+const blockWidth = 96;
 const blockHeight = 20;
-const blockLifetimeMs = 5600;
-const maxActiveBlocks = 6;
-const grappleRange = 360;
+const blockLifetimeMs = 8500;
+const maxActiveBlocks = 8;
+const grappleRange = 390;
 const grappleDuration = 0.25;
-const grappleCooldownSec = 1.4;
+const grappleCooldownSec = 0.9;
 const blinkDistance = 220;
 const blinkCooldownSec = 0.45;
 const SECRET_CODE = 'abcdefghijklmnopqrstuvwxyz';
@@ -91,7 +91,7 @@ const SHOP_ITEMS = [
     id: 'doubleJump',
     name: '더블 점프',
     icon: '🪽',
-    price: 90,
+    price: 55,
     keyHint: '공중 Enter',
     kind: 'permanent',
     description: '공중에서 Enter를 한 번 더 눌러 2단 점프로 위기를 탈출합니다.',
@@ -100,7 +100,7 @@ const SHOP_ITEMS = [
     id: 'grappleHook',
     name: '그래플링 후크',
     icon: '🪝',
-    price: 150,
+    price: 95,
     keyHint: 'G 키 / 후크',
     kind: 'permanent',
     description: '앞쪽 위로 갈고리 줄을 발사해 빠르게 날아가며 넓은 절벽을 돌파합니다.',
@@ -109,7 +109,7 @@ const SHOP_ITEMS = [
     id: 'shield',
     name: '가시 방어막',
     icon: '🛡️',
-    price: 112,
+    price: 70,
     keyHint: '자동 발동',
     kind: 'permanent',
     description: '스테이지당 1회(체크포인트 리필) 가시·레이저·톱날 피해를 막아냅니다.',
@@ -118,7 +118,7 @@ const SHOP_ITEMS = [
     id: 'feather',
     name: '저중력 깃털',
     icon: '🪶',
-    price: 135,
+    price: 85,
     keyHint: '패시브',
     kind: 'permanent',
     description: '중력이 16% 줄어 더 멀리, 더 부드럽게 점프하고 착지할 수 있습니다.',
@@ -127,7 +127,7 @@ const SHOP_ITEMS = [
     id: 'blockBag',
     name: '블록 가방 확장',
     icon: '🧱',
-    price: 75,
+    price: 45,
     keyHint: '패시브',
     kind: 'permanent',
     description: '스테이지 시작 블록 +3개 증가, 설치한 블록 유지 시간 +2초 연장!',
@@ -136,7 +136,7 @@ const SHOP_ITEMS = [
     id: 'skipTicket',
     name: '스테이지 스킵권',
     icon: '🎟️',
-    price: 188,
+    price: 110,
     keyHint: '소모품',
     kind: 'consumable',
     description: '어려운 스테이지를 즉시 클리어하고 다음 스테이지로 넘어갑니다.',
@@ -156,13 +156,13 @@ function hasBlackMarketItems(owned) {
 }
 
 const difficultyBands = [
-  { name: 'Tutorial', label: '튜토리얼', color: '#38bdf8', from: 0, to: 9, width: 2400, gap: 170, maxBlocks: 6, crumbleMs: 610 },
-  { name: 'Easy', label: '쉬움', color: '#22c55e', from: 10, to: 19, width: 3200, gap: 205, maxBlocks: 5, crumbleMs: 540 },
-  { name: 'Normal', label: '보통', color: '#facc15', from: 20, to: 29, width: 4100, gap: 238, maxBlocks: 5, crumbleMs: 470 },
-  { name: 'Hard', label: '어려움', color: '#fb923c', from: 30, to: 39, width: 5200, gap: 270, maxBlocks: 4, crumbleMs: 400 },
-  { name: 'Extreme', label: '극악', color: '#ef4444', from: 40, to: 49, width: 6500, gap: 305, maxBlocks: 4, crumbleMs: 330 },
-  { name: 'Nightmare', label: '악몽', color: '#c084fc', from: 50, to: 59, width: 7400, gap: 325, maxBlocks: 4, crumbleMs: 295 },
-  { name: 'Mythic', label: '신화', color: '#f472b6', from: 60, to: 69, width: 8300, gap: 345, maxBlocks: 4, crumbleMs: 260 },
+  { name: 'Tutorial', label: '튜토리얼', color: '#38bdf8', from: 0, to: 9, width: 2050, gap: 140, maxBlocks: 8, crumbleMs: 920 },
+  { name: 'Easy', label: '쉬움', color: '#22c55e', from: 10, to: 19, width: 2700, gap: 165, maxBlocks: 7, crumbleMs: 820 },
+  { name: 'Normal', label: '보통', color: '#facc15', from: 20, to: 29, width: 3450, gap: 190, maxBlocks: 7, crumbleMs: 740 },
+  { name: 'Hard', label: '어려움', color: '#fb923c', from: 30, to: 39, width: 4350, gap: 215, maxBlocks: 6, crumbleMs: 660 },
+  { name: 'Extreme', label: '극악', color: '#ef4444', from: 40, to: 49, width: 5300, gap: 235, maxBlocks: 6, crumbleMs: 600 },
+  { name: 'Nightmare', label: '악몽', color: '#c084fc', from: 50, to: 59, width: 6100, gap: 255, maxBlocks: 6, crumbleMs: 560 },
+  { name: 'Mythic', label: '신화', color: '#f472b6', from: 60, to: 69, width: 6900, gap: 270, maxBlocks: 6, crumbleMs: 520 },
 ];
 
 function clamp(value, min, max) {
@@ -266,17 +266,17 @@ function makeStage(index) {
   while (x < width - 380) {
     const wave = Math.sin(index * 0.9 + step * 1.35);
     const rising = Math.sin(index * 0.4 + step * 0.7);
-    const isSlideSection = (index >= 2 && step % 6 === 2) || (index >= 22 && step % 5 === 1);
-    const baseWidth = clamp(144 - difficulty * 82 - (step % 3) * 8, 48, 152);
-    const platformWidth = isSlideSection ? Math.max(baseWidth, 148) : baseWidth;
+    const isSlideSection = (index >= 2 && step % 6 === 2) || (index >= 24 && step % 6 === 1);
+    const baseWidth = clamp(172 - difficulty * 54 - (step % 3) * 6, 92, 180);
+    const platformWidth = isSlideSection ? Math.max(baseWidth, 160) : baseWidth;
 
-    y = clamp(y + wave * (74 + difficulty * 24) - 18 + rising * 26, 128, floorY - 70);
+    y = clamp(y + wave * (58 + difficulty * 18) - 14 + rising * 20, 145, floorY - 70);
 
-    const isMoving = !isSlideSection && index >= 7 && (step + index) % (index >= 30 ? 4 : 6) === 3;
+    const isMoving = !isSlideSection && index >= 9 && (step + index) % (index >= 35 ? 5 : 7) === 3;
     const platformKind =
       isMoving ? 'moving' :
-      index >= 16 && step % 6 === 4 ? 'ice' :
-      index >= 8 && step % 5 === 2 ? 'crumble' :
+      index >= 18 && step % 7 === 4 ? 'ice' :
+      index >= 10 && step % 6 === 2 ? 'crumble' :
       index >= 5 && step % 5 === 1 ? 'spring' :
       step % 5 === 0 ? 'thin' :
       'normal';
@@ -294,8 +294,8 @@ function makeStage(index) {
       const vertical = (step + index) % 2 === 0;
       platform.move = {
         axis: vertical ? 'y' : 'x',
-        distance: Math.round((vertical ? 54 : 66) + difficulty * 46),
-        speed: Number((1.15 + difficulty * 1.45).toFixed(2)),
+        distance: Math.round((vertical ? 40 : 50) + difficulty * 32),
+        speed: Number((0.85 + difficulty * 0.85).toFixed(2)),
         phase: (step * 1.1 + index * 0.7) % 6.28,
       };
     }
@@ -328,9 +328,9 @@ function makeStage(index) {
     }
 
     // Grounded steel pit spike bed (sits on an iron trap girder — never floating in mid-air!)
-    if (index >= 2 && (step + index) % 4 === 1) {
-      const groundSpikeWidth = Math.round(clamp(64 + noise01(index, step, 1) * (80 + difficulty * 36), 58, 144));
-      const groundSpikeH = Math.round(24 + noise01(index, step, 2) * 8);
+    if (index >= 3 && (step + index) % 5 === 1) {
+      const groundSpikeWidth = Math.round(clamp(54 + noise01(index, step, 1) * (58 + difficulty * 26), 48, 118));
+      const groundSpikeH = Math.round(20 + noise01(index, step, 2) * 6);
       hazards.push({
         x: Math.round(x - band.gap * 0.35),
         y: floorY - groundSpikeH,
@@ -341,12 +341,12 @@ function makeStage(index) {
       });
     }
 
-    // Platform top spikes (100% flush with platform surface, always leaves a clean landing edge!)
+    // Platform top spikes (100% flush with platform surface, always leaves a wide clean landing edge!)
     const hasPlatformBox = !isSlideSection && !isMoving && step > 1 && step % 7 === 3 && platformWidth >= 82;
-    if (!isSlideSection && !isMoving && !hasPlatformBox && index >= 2 && (step + index) % (index >= 28 ? 3 : 4) === 0 && platformWidth >= 82) {
-      const topSpikeWidth = Math.round(clamp(platformWidth * (0.28 + noise01(index, step, 3) * 0.18), 26, platformWidth - 52));
-      const topSpikeOffset = Math.round(10 + noise01(index, step, 4) * Math.max(0, platformWidth - topSpikeWidth - 20));
-      const topSpikeH = Math.round(22 + noise01(index, step, 5) * 7);
+    if (!isSlideSection && !isMoving && !hasPlatformBox && index >= 4 && (step + index) % (index >= 34 ? 4 : 5) === 0 && platformWidth >= 96) {
+      const topSpikeWidth = Math.round(clamp(platformWidth * (0.2 + noise01(index, step, 3) * 0.12), 22, platformWidth - 68));
+      const topSpikeOffset = Math.round(16 + noise01(index, step, 4) * Math.max(0, platformWidth - topSpikeWidth - 32));
+      const topSpikeH = Math.round(18 + noise01(index, step, 5) * 5);
       hazards.push({
         x: Math.round(x + topSpikeOffset),
         y: Math.round(y - topSpikeH),
@@ -357,9 +357,9 @@ function makeStage(index) {
     }
 
     // Downward spikes attached flush to the underside of elevated platforms on harder stages
-    if (!isSlideSection && !isMoving && index >= 12 && y < floorY - 135 && (step + index) % 7 === 5 && platformWidth >= 74) {
-      const downSpikeW = Math.round(clamp(platformWidth * 0.55, 36, platformWidth - 16));
-      const downSpikeH = 22;
+    if (!isSlideSection && !isMoving && index >= 16 && y < floorY - 145 && (step + index) % 8 === 5 && platformWidth >= 84) {
+      const downSpikeW = Math.round(clamp(platformWidth * 0.44, 30, platformWidth - 24));
+      const downSpikeH = 18;
       hazards.push({
         x: Math.round(x + (platformWidth - downSpikeW) / 2),
         y: Math.round(y + 26),
@@ -369,17 +369,17 @@ function makeStage(index) {
       });
     }
 
-    // Blinking laser gates (Stage 11+, faster and denser at higher stages)
-    if (index >= 10 && (step + local) % (index >= 32 ? 4 : 6) === 4) {
-      const cycle = clamp(2.8 - difficulty * 1.25, 1.35, 2.8);
+    // Blinking laser gates (Stage 13+, gentler timing & shorter ON duration)
+    if (index >= 12 && (step + local) % (index >= 36 ? 5 : 7) === 4) {
+      const cycle = clamp(3.3 - difficulty * 0.9, 2.1, 3.3);
       hazards.push({
         x: Math.round(x + platformWidth + 46),
-        y: Math.round(y - 120),
-        width: 16,
-        height: Math.round(clamp(96 + difficulty * 85, 96, 185)),
+        y: Math.round(y - 110),
+        width: 14,
+        height: Math.round(clamp(88 + difficulty * 66, 88, 155)),
         kind: 'blinkLaser',
         cycle,
-        onTime: cycle * (0.48 + difficulty * 0.14),
+        onTime: cycle * (0.36 + difficulty * 0.1),
         phase: (step * 0.8 + index * 0.4) % cycle,
       });
 
@@ -387,7 +387,7 @@ function makeStage(index) {
         interactables.push({
           id: `${index}-switch-${step}`,
           kind: 'switch',
-          label: '레이저 끄기 (5초)',
+          label: '레이저 끄기 (8초)',
           x: Math.round(x + platformWidth - 36),
           y: Math.round(y - 34),
           width: 28,
@@ -396,24 +396,24 @@ function makeStage(index) {
       }
     }
 
-    // Moving spinning sawblades (Stage 16+, faster & wider patrol at high stages)
-    if (index >= 15 && (step + index) % (index >= 34 ? 4 : 6) === 2) {
+    // Moving spinning sawblades (Stage 19+, gentler speed & smaller hitbox)
+    if (index >= 18 && (step + index) % (index >= 38 ? 5 : 7) === 2) {
       const verticalBlade = (step + index) % 2 === 1;
       hazards.push({
-        x: Math.round(x + platformWidth / 2 - 17),
-        y: Math.round(verticalBlade ? y - 62 : y - 34),
-        width: 34,
-        height: 34,
+        x: Math.round(x + platformWidth / 2 - 14),
+        y: Math.round(verticalBlade ? y - 62 : y - 32),
+        width: 28,
+        height: 28,
         kind: 'movingBlade',
         axis: verticalBlade ? 'y' : 'x',
-        range: Math.round((verticalBlade ? 48 : 58) + difficulty * 55),
-        speed: Number((1.6 + difficulty * 1.85).toFixed(2)),
+        range: Math.round((verticalBlade ? 38 : 46) + difficulty * 38),
+        speed: Number((1.1 + difficulty * 1.05).toFixed(2)),
         phase: (step * 1.3) % 6.28,
       });
     }
 
-    // Checkpoints
-    if (index >= 6 && step % 7 === 5) {
+    // Frequent Checkpoints starting from Stage 2!
+    if (index >= 1 && step % 5 === 3) {
       checkpoints.push({
         x: Math.round(x + platformWidth / 2 - 16),
         y: Math.round(y - 62),
@@ -423,21 +423,21 @@ function makeStage(index) {
       });
     }
 
-    // Gap / Wall-Jump / Mega-Chasm (requires Block Stacking + Air Dash!)
-    const isMegaChasm = index >= 11 && step > 1 && (step + index) % (index >= 30 ? 6 : 8) === 0;
-    const forcedWallGap = !isMegaChasm && (step + 1) % 5 === 0;
-    const randomGap = !isMegaChasm && index >= 7 && noise01(index, step, 11) > (0.8 - difficulty * 0.25);
+    // Gap / Wall-Jump / Mega-Chasm (much fairer jump distances!)
+    const isMegaChasm = index >= 13 && step > 1 && (step + index) % (index >= 34 ? 7 : 9) === 0;
+    const forcedWallGap = !isMegaChasm && (step + 1) % 6 === 0;
+    const randomGap = !isMegaChasm && index >= 9 && noise01(index, step, 11) > (0.84 - difficulty * 0.2);
 
     const gapSize = isMegaChasm
-      ? Math.round(310 + difficulty * 185)
+      ? Math.round(225 + difficulty * 115)
       : forcedWallGap
-        ? Math.round(185 + difficulty * 130)
+        ? Math.round(145 + difficulty * 82)
         : randomGap
-          ? Math.round(122 + difficulty * 98)
-          : Math.round(18 + difficulty * 45 + Math.abs(Math.sin(index + step)) * 22);
+          ? Math.round(94 + difficulty * 60)
+          : Math.round(16 + difficulty * 34 + Math.abs(Math.sin(index + step)) * 18);
 
     if ((forcedWallGap || randomGap) && index >= 1) {
-      const wallHeight = Math.round(160 + difficulty * 130);
+      const wallHeight = Math.round(150 + difficulty * 110);
       const wallBaseY = Math.round(clamp(y + 52, 240, floorY + 24));
       const firstWallX = Math.round(x + platformWidth + gapSize * 0.26);
       walls.push({
@@ -448,7 +448,7 @@ function makeStage(index) {
         kind: forcedWallGap ? 'wallJump' : 'wall',
       });
 
-      if (forcedWallGap || index >= 18) {
+      if (forcedWallGap || index >= 22) {
         walls.push({
           x: Math.round(x + platformWidth + gapSize * 0.72),
           y: wallBaseY - wallHeight - 28,
@@ -459,21 +459,21 @@ function makeStage(index) {
       }
     }
 
-    // Place a bonus coin mid-air over mega-chasm + bridge lever before chasm!
+    // Place a bonus coin mid-air over mega-chasm + wide bridge lever before chasm!
     if (isMegaChasm) {
       if (!isMoving) {
         interactables.push({
           id: `${index}-lever-${step}`,
           kind: 'bridgeLever',
-          label: '다리 소환 (6초)',
+          label: '다리 소환 (9초)',
           x: Math.round(x + platformWidth - 38),
           y: Math.round(y - 34),
           width: 28,
           height: 34,
           bridge: {
-            x: Math.round(x + platformWidth + 24),
+            x: Math.round(x + platformWidth + 18),
             y: Math.round(y + 4),
-            width: Math.round(gapSize * 0.62),
+            width: Math.round(gapSize * 0.78),
             height: 20,
           },
         });
@@ -1150,6 +1150,12 @@ export default function JumpMapPage() {
         setShopOpen(false);
         setStageModalOpen(false);
         setBlackMarketOpen(false);
+        try {
+          const savedNick = (window.localStorage.getItem('gangyoon-lab-nickname-v1') || '').trim();
+          if (savedNick) setHallNameDraft(savedNick);
+        } catch {
+          // Ignore storage read failure.
+        }
         hallModalOpenRef.current = true;
         setHallModalOpen(true);
       }
@@ -1362,7 +1368,7 @@ export default function JumpMapPage() {
       const input = inputRef.current;
       const wasGrounded = player.grounded;
       if (wasGrounded) {
-        player.coyoteTimer = 0.1;
+        player.coyoteTimer = 0.16;
       } else {
         player.coyoteTimer = Math.max(0, player.coyoteTimer - delta);
       }
@@ -1396,19 +1402,19 @@ export default function JumpMapPage() {
             updateHud('상자 열림! 블록 +2');
           } else if (nearestObj.kind === 'switch') {
             usedInteractablesRef.current.add(nearestObj.id);
-            laserDisabledUntilRef.current = now + 5000;
+            laserDisabledUntilRef.current = now + 8000;
             playSound('interact');
-            updateHud('레이저 정지 (5초)!');
+            updateHud('레이저 정지 (8초)!');
           } else if (nearestObj.kind === 'bridgeLever' && nearestObj.bridge) {
             usedInteractablesRef.current.add(nearestObj.id);
             activeBridgesRef.current.push({
               ...nearestObj.bridge,
               kind: 'bridge',
-              expiresAt: now + 6000,
+              expiresAt: now + 9000,
               id: `bridge-${now}`,
             });
             playSound('interact');
-            updateHud('다리 소환! (6초)');
+            updateHud('다리 소환! (9초)');
           }
         }
         input.interactPressed = false;
@@ -1664,16 +1670,16 @@ export default function JumpMapPage() {
           hazard.kind === 'spike' || hazard.kind === 'topSpike' || hazard.kind === 'downSpike';
         const shrunk = isPointedSpike
           ? {
-              x: liveHazard.x + 5,
-              y: hazard.kind === 'downSpike' ? liveHazard.y : liveHazard.y + liveHazard.height * 0.24,
-              width: Math.max(8, liveHazard.width - 10),
-              height: Math.max(8, liveHazard.height * 0.76),
+              x: liveHazard.x + 7,
+              y: hazard.kind === 'downSpike' ? liveHazard.y : liveHazard.y + liveHazard.height * 0.34,
+              width: Math.max(6, liveHazard.width - 14),
+              height: Math.max(6, liveHazard.height * 0.66),
             }
           : {
-              x: liveHazard.x + 3,
-              y: liveHazard.y + 3,
-              width: Math.max(6, liveHazard.width - 6),
-              height: Math.max(6, liveHazard.height - 6),
+              x: liveHazard.x + 5,
+              y: liveHazard.y + 5,
+              width: Math.max(6, liveHazard.width - 10),
+              height: Math.max(6, liveHazard.height - 10),
             };
         return intersects(playerBox, shrunk);
       });
@@ -1857,7 +1863,7 @@ export default function JumpMapPage() {
 
       // Summoned emerald bridges (from A-interact levers!)
       activeBridgesRef.current.forEach((bridge) => {
-        const remaining = clamp((bridge.expiresAt - now) / 6000, 0, 1);
+        const remaining = clamp((bridge.expiresAt - now) / 9000, 0, 1);
         const bx = bridge.x - camera.x;
         const by = bridge.y - camera.y;
         context.save();
@@ -2296,20 +2302,21 @@ export default function JumpMapPage() {
         }
       }
 
-      if (['arrowleft', 'a'].includes(key)) {
+      const code = event.code || '';
+      if (['arrowleft', 'a'].includes(key) || code === 'KeyA') {
         event.preventDefault();
         inputRef.current.left = pressed;
       }
-      if (['arrowright', 'd'].includes(key)) {
+      if (['arrowright', 'd'].includes(key) || code === 'KeyD') {
         event.preventDefault();
         inputRef.current.right = pressed;
       }
-      if (['enter', 'arrowup', ' '].includes(key)) {
+      if (['enter', 'arrowup', ' ', 'w'].includes(key) || code === 'KeyW') {
         event.preventDefault();
         if (pressed && !inputRef.current.jump) inputRef.current.jumpPressed = true;
         inputRef.current.jump = pressed;
       }
-      if (['shift', 'arrowdown'].includes(key)) {
+      if (['shift', 'arrowdown', 's'].includes(key) || code === 'KeyS') {
         event.preventDefault();
         if (pressed && !inputRef.current.slide) inputRef.current.slidePressed = true;
         inputRef.current.slide = pressed;

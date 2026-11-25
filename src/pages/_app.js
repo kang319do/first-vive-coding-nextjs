@@ -1,21 +1,65 @@
 import '@/styles/globals.css';
+import profileStyles from '@/styles/PlayerProfile.module.css';
 import { isMenuGroupActive, navigationMenus } from '@/config/navigation';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 
+const PLAYER_NAME_KEY = 'gangyoon-lab-nickname-v1';
+const NAME_PRESETS = ['강윤', '특공대원', '점프마스터', '샌즈러버'];
+
 export default function App({ Component, pageProps }) {
   const router = useRouter();
   const navRef = useRef(null);
   const lastPointerTypeRef = useRef('mouse');
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [playerName, setPlayerName] = useState('');
+  const [nameDraft, setNameDraft] = useState('');
+  const [nameModalOpen, setNameModalOpen] = useState(false);
 
   const activeGroup =
     navigationMenus.find((group) => isMenuGroupActive(group, router.pathname)) ?? navigationMenus[0];
   const activeItem = activeGroup?.items.find((item) => item.href === router.pathname);
   const pageTitle =
     activeItem && activeItem.href !== '/' ? `${activeItem.label} · GANGYOON!LAB!` : 'GANGYOON!LAB!';
+
+  useEffect(() => {
+    try {
+      const saved = (window.localStorage.getItem(PLAYER_NAME_KEY) || '').trim();
+      if (saved) {
+        setPlayerName(saved);
+        setNameDraft(saved);
+      } else {
+        setNameModalOpen(true);
+      }
+    } catch {
+      setNameModalOpen(true);
+    }
+  }, []);
+
+  function openNameModal() {
+    setNameDraft(playerName);
+    setNameModalOpen(true);
+  }
+
+  function savePlayerName(nextRaw) {
+    const cleaned = String(nextRaw ?? '').trim().slice(0, 14);
+    if (!cleaned) return;
+    setPlayerName(cleaned);
+    setNameDraft(cleaned);
+    setNameModalOpen(false);
+    try {
+      window.localStorage.setItem(PLAYER_NAME_KEY, cleaned);
+    } catch {
+      // Ignore storage write failure.
+    }
+  }
+
+  function handleNameSubmit(event) {
+    event.preventDefault();
+    savePlayerName(nameDraft);
+  }
 
   useEffect(() => {
     const handleRouteStart = () => {
@@ -167,22 +211,102 @@ export default function App({ Component, pageProps }) {
             </ul>
           </div>
 
-          {activeGroup && (
-            <div className="siteCurrentPath" aria-label="현재 위치">
-              <span className="siteCurrentGroup">{activeGroup.label}</span>
-              {activeItem && activeItem.href !== activeGroup.href && (
-                <>
-                  <span className="siteCurrentDivider" aria-hidden="true">/</span>
-                  <span className="siteCurrentPage">{activeItem.label}</span>
-                </>
-              )}
-            </div>
-          )}
+          <div className={profileStyles.navRight}>
+            {activeGroup && (
+              <div className="siteCurrentPath" aria-label="현재 위치">
+                <span className="siteCurrentGroup">{activeGroup.label}</span>
+                {activeItem && activeItem.href !== activeGroup.href && (
+                  <>
+                    <span className="siteCurrentDivider" aria-hidden="true">/</span>
+                    <span className="siteCurrentPage">{activeItem.label}</span>
+                  </>
+                )}
+              </div>
+            )}
+            <button
+              type="button"
+              className={profileStyles.playerBadge}
+              onClick={openNameModal}
+              title="클릭해서 플레이어 이름 변경"
+            >
+              <span aria-hidden="true">👤</span>
+              <span>{playerName || '이름 설정'}</span>
+            </button>
+          </div>
         </nav>
       </header>
       <main className="siteMain">
-        <Component {...pageProps} />
+        <Component {...pageProps} playerName={playerName} openNameModal={openNameModal} />
       </main>
+
+      {nameModalOpen && (
+        <div
+          className={profileStyles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-label="플레이어 이름 설정"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && playerName) {
+              setNameModalOpen(false);
+            }
+            e.stopPropagation();
+          }}
+        >
+          <div className={profileStyles.modalCard}>
+            <span className={profileStyles.modalTag}>WELCOME TO GANGYOON!LAB!</span>
+            <h2>👋 시작하기 전에 이름을 정해주세요!</h2>
+            <p>
+              설정한 이름은 상단 프로필과 게임 기록·명예의 전당에 사용됩니다. 언제든 상단 이름 버튼을 눌러 바꿀 수 있어요.
+            </p>
+            <form className={profileStyles.modalForm} onSubmit={handleNameSubmit}>
+              <input
+                type="text"
+                className={profileStyles.modalInput}
+                value={nameDraft}
+                maxLength={14}
+                autoFocus
+                placeholder="사용할 이름 입력 (최대 14자)"
+                onChange={(e) => setNameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== 'Escape') {
+                    e.stopPropagation();
+                  }
+                }}
+              />
+              <div className={profileStyles.presetRow} aria-label="추천 이름 빠른 선택">
+                {NAME_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={profileStyles.presetChip}
+                    onClick={() => setNameDraft(preset)}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+              <div className={profileStyles.modalActions}>
+                <button
+                  type="submit"
+                  className={profileStyles.modalSubmit}
+                  disabled={!nameDraft.trim()}
+                >
+                  🚀 {playerName ? '이름 변경하기' : '이 이름으로 시작하기'}
+                </button>
+                {playerName && (
+                  <button
+                    type="button"
+                    className={profileStyles.modalCancel}
+                    onClick={() => setNameModalOpen(false)}
+                  >
+                    닫기
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
